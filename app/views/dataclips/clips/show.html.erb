@@ -1,0 +1,109 @@
+<% content_for :title, @clip_id %>
+  <script>
+    Dataclips.config = {
+      locale: '<%= I18n.locale %>',
+      id: '<%= @clip_id %>',
+      url: '<%= clip_path(@clip_id) %>',
+      params: <%= raw params.to_json(except: ["action", "controller"]) %>,
+      schema: <%= raw @schema.to_json %>,
+      headers: <%= raw @headers.to_json %>,
+      variables: <%= raw @variables.to_json %>
+    };
+
+    $(window).resize(function(){
+      $("#grid").height($(window).height() - 120);
+    });
+
+    $(document).ready(function(){
+      $(window).trigger("resize");
+      Dataclips.run();
+    });
+  </script>
+<div class="panel panel-default" id="dataclip">
+  <div class="panel-heading">
+    <div class="row">
+      <div class="col-lg-9">
+        <h4><%= I18n.t("#{@clip_id}.name", scope: "dataclips", default: @clip_id.humanize) %></h4>
+        <span class="count">0</span> / <span class="total_entries">0</span>
+      </div>
+      <div class="col-lg-3">
+        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#query">Query</button>
+      </div>
+    </div>
+  </div>
+  <div class="panel-body">
+    <div class="row">
+      <div class="col-lg-9">
+        <div id="grid"></div>
+      </div>
+      <div class="col-lg-3">
+        <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+          <% @schema.each do |key, options| %>
+            <% id = "#{@clip_id}_#{key}" %>
+
+            <div class="panel panel-default">
+              <div class="panel-heading" role="tab" id="headingOne">
+                <h4 class="panel-title">
+                  <a data-toggle="collapse" data-parent="#accordion" href="#collapse_<%= id %>" aria-expanded="true" aria-controls="<%= id %>">
+                    <%= @headers[key] %>
+                  </a>
+                </h4>
+              </div>
+              <div id="collapse_<%= id %>" class="panel-collapse collapse out" role="tabpanel" aria-labelledby="headingOne">
+                <div class="panel-body">
+                  <div class="form-group">
+                    <% if options[:type] == "text" %>
+                      <%= render "text", key: key, id: id, dictionary: options[:dictionary] %>
+                    <% end %>
+
+                    <% if options[:type] == "datetime" %>
+                      <%= render "datetime", key: key, id: id %>
+                    <% end %>
+
+                    <% if options[:type] == "date" %>
+                      <%= render "date", key: key, id: id %>
+                    <% end %>
+
+                    <% if options[:type] == "time" %>
+                      <%= render "time", key: key, id: id %>
+                    <% end %>
+
+                    <% if options[:type] == "integer" %>
+                      <%= render "integer", key: key, id: id %>
+                    <% end %>
+
+                    <% if options[:type] == "float" %>
+                      <%= render "float", key: key, id: id %>
+                    <% end %>
+
+                    <% if options[:type] == "boolean" %>
+                      <%= render "boolean", key: key, id: id %>
+                    <% end %>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="query">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title"><%= @clip_id %></h4>
+      </div>
+      <div class="modal-body">
+        <pre><%= @clip.query %></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%= javascript_include_tag "twitter/bootstrap" %>
