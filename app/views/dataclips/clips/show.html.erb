@@ -1,7 +1,7 @@
 <script>
   Dataclips.config = {
     id: '<%= @clip_id %>',
-    url: '<%= @clip_url %>',
+    url: '<%= clip_path(@clip_id) %>',
     params: <%= raw params.to_json(except: ["action", "controller"]) %>,
     schema: <%= raw @schema.to_json %>,
     headers: <%= raw @headers.to_json %>,
@@ -27,7 +27,7 @@
       </h3>
     </div>
     <div class="col-lg-2">
-      <span class="glyphicon glyphicon-share"></span>
+      <%= link_to "CSV", clip_path(@clip_id, params.merge(format: :csv)) %>
     </div>
   </div>
 

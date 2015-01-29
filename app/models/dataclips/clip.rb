@@ -44,7 +44,6 @@ module Dataclips
       as_json(except: ["errors", "validation_context"])
     end
 
-
     def paginate(page = 1)
       return unless valid?
       query = self.class.template % context.symbolize_keys

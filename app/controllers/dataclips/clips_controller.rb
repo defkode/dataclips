@@ -3,14 +3,12 @@ module Dataclips
     def show
       Dataclips.load_clips
       @clip_id = params[:clip_id]
-      @clip_url = clip_path @clip_id
-
       klass = "Dataclips::Clip::#{@clip_id.camelize}".constantize
 
       @schema = klass.schema
 
       @headers = @schema.keys.inject({}) do |memo, key|
-        memo[key] =  I18n.t("#{@clip_id}.#{key}", scope: "dataclips", default: key.to_s.humanize)
+        memo[key] = I18n.t("#{@clip_id}.#{key}", scope: "dataclips", default: key.to_s.humanize)
         memo
       end
 
@@ -26,17 +24,25 @@ module Dataclips
         format.html do; end
 
         format.csv do
-          self.response.headers["Content-Type"] ||= 'text/csv'
-          self.response.headers["Content-Disposition"] = "attachment; filename=users.csv"
-          self.response.headers["Content-Transfer-Encoding"] = "binary"
-          self.response.headers["Last-Modified"] = Time.now.ctime.to_s
+          self.response_body = Enumerator.new do |y|
+            xxx = CSV.generate({col_sep: ";", encoding: "cp1250"}) do |csv|
+              records = @clip.paginate(1)
 
-          self.response_body = Enumerator.new do |yielder|
-            records = @clip.paginate(1)
+              csv << records.first.keys
 
-            records.each do |record|
-              yielder << CSV.generate_line(record.values)
+              records.each do |r|
+                csv << r.values
+              end
+
+              while next_page = records.next_page do
+                records = @clip.paginate(next_page)
+                records.each do |r|
+                  csv << r.values
+                end
+              end
             end
+
+            y << xxx
           end
         end
 
