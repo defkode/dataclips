@@ -1,51 +1,59 @@
-<script>
-  Dataclips.config = {
-    id: '<%= @clip_id %>',
-    url: '<%= clip_path(@clip_id) %>',
-    params: <%= raw params.to_json(except: ["action", "controller"]) %>,
-    schema: <%= raw @schema.to_json %>,
-    headers: <%= raw @headers.to_json %>,
-    variables: <%= raw @variables.to_json %>
-  };
+<% if @clip.invalid? %>
+  fff
+  <%= @clip.errors.inspect %>
+<% else %>
+  <script>
+    Dataclips.config = {
+      id: '<%= @clip_id %>',
+      url: '<%= clip_path(@clip_id) %>',
+      params: <%= raw params.to_json(except: ["action", "controller"]) %>,
+      schema: <%= raw @schema.to_json %>,
+      headers: <%= raw @headers.to_json %>,
+      variables: <%= raw @variables.to_json %>
+    };
 
-  $(window).resize(function(){
-    $("#grid").height($(window).height() - 90);
-  });
+    $(window).resize(function(){
+      $("#grid").height($(window).height() - 90);
+    });
 
-  $(document).ready(function(){
-    $(window).trigger("resize");
-    Dataclips.run();
-  });
-</script>
+    $(document).ready(function(){
+      $(window).trigger("resize");
+      Dataclips.run();
+    });
+  </script>
 
-<div id="dataclip">
-  <div class="row">
-    <div class="col-lg-10">
-      <h3>
-        <%= @clip_id %>
-        <span class="count">0</span> / <span class="total_entries">0</span>
-      </h3>
+  <div id="dataclip">
+    <div class="row">
+      <pre><%= @clip.query %></pre>
     </div>
-    <div class="col-lg-2">
-      <%= link_to "CSV", clip_path(@clip_id, params.merge(format: :csv)) %>
+    <div class="row">
+      <div class="col-lg-10">
+        <h3>
+          <%= @clip_id %>
+          <span class="count">0</span> / <span class="total_entries">0</span>
+        </h3>
+      </div>
+      <div class="col-lg-2">
+        <%= link_to "CSV", clip_path(@clip_id, params.merge(format: :csv)) %>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-lg-10">
+        <div id="grid"></div>
+      </div>
+      <div class="col-lg-2">
+        <form>
+          <% @schema.each do |k, options| %>
+            <div class="form-group">
+              <% if options["type"] == "text" %>
+                <label class="control-label" for="<%= @clip_id %>_<%= k %>"><%= @headers[k] %></label>
+                <input class="form-control" id="<%= @clip_id %>_<%= k %>" name="<%= k %>" type="text" autocomplete="off" />
+              <% end %>
+            </div>
+          <% end %>
+        </form>
+      </div>
     </div>
   </div>
-
-  <div class="row">
-    <div class="col-lg-10">
-      <div id="grid"></div>
-    </div>
-    <div class="col-lg-2">
-      <form>
-        <% @schema.each do |k, type| %>
-          <div class="form-group">
-            <%- if type == :string %>
-              <label class="control-label" for="<%= @clip_id %>_<%= k %>"><%= @headers[k] %></label>
-              <input class="form-control" id="<%= @clip_id %>_<%= k %>" name="<%= k %>" type="text" autocomplete="off" />
-            <% end %>
-          </div>
-        <% end %>
-      </form>
-    </div>
-  </div>
-</div>
+<% end %>

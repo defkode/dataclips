@@ -5,7 +5,7 @@ module Dataclips
     include ActiveModel::Model
 
     class << self
-      attr_accessor :template
+      attr_accessor :template, :query
 
       def variables
         @variables || {}
@@ -44,9 +44,12 @@ module Dataclips
       as_json(except: ["errors", "validation_context"])
     end
 
+    def query
+      self.class.template % context.symbolize_keys
+    end
+
     def paginate(page = 1)
       return unless valid?
-      query = self.class.template % context.symbolize_keys
 
       WillPaginate::Collection.create(page, self.class.per_page) do |pager|
         sql_with_total_entries = %{WITH _q AS (#{query}) SELECT COUNT(*) OVER () AS _total_entries, * FROM _q LIMIT #{pager.per_page} OFFSET #{pager.offset};}

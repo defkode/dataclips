@@ -25,6 +25,8 @@ class Dataclips.Records extends Backbone.Collection
         $("span.total_entries").text(data.total_entries)
         collection.trigger "batchInsert", data.records
         fetchNextPage(collection, data.page, data.total_pages)
+      error: (collection, response) ->
+        alert(response.responseText)
 
   parse: (data) -> data.records
 
@@ -49,14 +51,14 @@ class Dataclips.View extends Backbone.View
 
     columns = []
 
-    _.each Dataclips.config.schema, (type, attr) ->
+    _.each Dataclips.config.schema, (options, attr) ->
       columns.push
         field: attr
         id: attr
         name: Dataclips.config.headers[attr]
         sortable: true
-        cssClass: type
-        headerCssClass: type
+        cssClass: options.type
+        headerCssClass: options.type
 
     grid = new Slick.Grid("#grid", dataView, columns, options)
 
@@ -81,8 +83,8 @@ class Dataclips.View extends Backbone.View
       item[attr].has(query)
 
     dataView.setFilter (item, args) ->
-      _.all Dataclips.config.schema, (type, attr) ->
-        switch type
+      _.all Dataclips.config.schema, (options, attr) ->
+        switch options.type
           when "string", "text" then textFilter(item, attr, args[attr])
           else true
 

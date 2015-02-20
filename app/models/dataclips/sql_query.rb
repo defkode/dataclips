@@ -4,8 +4,11 @@ module Dataclips
 
     def initialize(sqlfile)
       @template       = parse_template(sqlfile)
-      @schema         = parse_schema(sqlfile)
       @configuration  = parse_configuration(sqlfile)
+    end
+
+    def schema
+      configuration["schema"] || {}
     end
 
     def variables
@@ -19,7 +22,7 @@ module Dataclips
     private
 
     def parse_configuration(sqlfile)
-      if matches = sqlfile.match(/\/\*\s+(.+)\s+\*\/\s+SELECT/m)
+      if matches = sqlfile.match(/\/\*\s+(.+)\s+\*\/\s+-- QUERY/m)
         YAML.load matches[1]
       else
         {}
@@ -28,14 +31,6 @@ module Dataclips
 
     def parse_template(sqlfile)
       sqlfile.match(/(SELECT.+)/m)[1]
-    end
-
-    def parse_schema(sqlfile)
-      columns = sqlfile.match(/SELECT(.+)FROM.+/m)[1] # catch everything between SELECT and FROM statements
-      columns.scan(/.+ AS (\w+),?(\s+\/\*\s+(\w+)\s+\*\/)?$/).inject({}) do |m, (name, comment, type)|
-        m[name.to_sym] = (type || "string").to_sym
-        m
-      end
     end
   end
 end

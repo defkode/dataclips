@@ -1,5 +1,16 @@
 require "dataclips/engine"
 
+class DateValidator < ActiveModel::EachValidator
+  def validate_each(record, attribute, value)
+    return unless value.present?
+    begin
+      Date.parse(value)
+    rescue ArgumentError
+      record.errors[attribute] << :invalid
+    end
+  end
+end
+
 module Dataclips
   mattr_accessor :path, :connection
 
@@ -17,7 +28,7 @@ module Dataclips
         attr_accessor *sql.variables.keys
 
         sql.variables.each do |key, options|
-          validates key, presence: true
+          validates key, date: true
         end
       end
 
