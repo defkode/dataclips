@@ -1,9 +1,0 @@
-= @error
-
-%form{action: clip_path(@clip_id), method: :get}
-  - @variables.each do |variable, type|
-    %p
-      %label{for: variable}= variable
-      %input{id: variable, name: variable, type: type, value: params[variable.to_sym]}
-
-  %button{type: :submit} Query

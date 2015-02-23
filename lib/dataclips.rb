@@ -28,7 +28,7 @@ module Dataclips
         attr_accessor *sql.variables.keys
 
         sql.variables.each do |key, options|
-          validates key, date: true
+          validates key, date: options[:type] == "date"
         end
       end
 

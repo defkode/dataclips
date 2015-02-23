@@ -16,7 +16,7 @@ module Dataclips
             setup
             process_json
           rescue ActiveRecord::StatementInvalid => e
-            render json: e.message, status: :unprocessable_entity
+            render json: @debug ? e.message : "Report is broken.", status: :unprocessable_entity
           end
         end
 
@@ -50,7 +50,7 @@ module Dataclips
         y << CSV.generate({col_sep: ";", encoding: "cp1250"}) do |csv|
           records = @clip.paginate(1)
 
-          csv << records.first.keys
+          csv << @headers.values
 
           records.each do |r|
             csv << r.values
@@ -68,8 +68,9 @@ module Dataclips
 
     def setup
       Dataclips.load_clips
+      @debug = Rails.env.development?
       load_clip_configuration
-      # require_parameters
+      require_parameters
       setup_headers
 
       @clip = @klass.new params.slice(*@variables.keys)

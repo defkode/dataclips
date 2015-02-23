@@ -311,13 +311,18 @@ classes should alter those!
 .slick-cell:focus {
   outline: none;
 }
-.slick-cell.integer, .slick-cell.float, .slick-cell.date {
+.slick-cell.integer, .slick-cell.float, .slick-cell.decimal, .slick-cell.email {
   text-align: right;
   color: darkblue;
 }
+
+.slick-cell.date, .slick-cell.time, .slick-cell.datetime, .slick-cell.timestamp {
+  text-align: right;
+  color: darkgreen;
+}
+
 .slick-cell.boolean {
   text-align: center;
-  text-transform: uppercase;
 }
 
 .slick-reorder-proxy {
@@ -342,17 +347,9 @@ classes should alter those!
   border: 2px dashed black;
 }
 
-body {
-  background-color: #f5f5f5;
-}
-
 #grid {
   background-color: #fff;
   border: 1px solid #c0c0c0;
-}
-
-#dataclip {
-  margin: 10px;
 }
 
 

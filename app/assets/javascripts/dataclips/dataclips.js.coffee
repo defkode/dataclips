@@ -1,7 +1,24 @@
 window.Dataclips = {}
 
+Dataclips.Formatters =
+  text:      (row, cell, value, columnDef, context) -> value
+  integer:   (row, cell, value, columnDef, context) -> value
+  float:     (row, cell, value, columnDef, context) -> value
+  decimal:   (row, cell, value, columnDef, context) -> value
+  date:      (row, cell, value, columnDef, context) -> value
+  time:      (row, cell, value, columnDef, context) -> value
+  datetime:  (row, cell, value, columnDef, context) -> value
+  timestamp: (row, cell, value, columnDef, context) -> value
+  binary:    (row, cell, value, columnDef, context) -> value
+  boolean:   (row, cell, value, columnDef, context) ->
+    if value is true then "&#9679" else "&#9675;"
+
+  email:     (row, cell, value, columnDef, context) ->
+    "<a href='mailto:#{value}'>#{value}</a>"
+
 class Dataclips.Record extends Backbone.Model
   parse: (options) ->
+    # create a
     options.id = @cid
     super(options)
 
@@ -52,24 +69,34 @@ class Dataclips.View extends Backbone.View
     columns = []
 
     _.each Dataclips.config.schema, (options, attr) ->
+      formatter = if options.formatter?
+        options.formatter
+      else
+        options.type
+
       columns.push
-        field: attr
-        id: attr
-        name: Dataclips.config.headers[attr]
-        sortable: true
-        cssClass: options.type
+        focusable:      true
+        field:          attr
+        id:             attr
+        name:           Dataclips.config.headers[attr]
+        sortable:       options.sortable?
+        cssClass:       options.type
         headerCssClass: options.type
+        formatter:      Dataclips.Formatters[formatter]
 
     grid = new Slick.Grid("#grid", dataView, columns, options)
 
-    # grid.setSortColumn("date", false)
+    # grid.onSelectedRowsChanged.subscribe (e, args) ->
+    #    console.log(grid.getSelectedRows())
+
+    # grid.setSelectionModel(new Slick.RowSelectionModel)
 
     grid.onSort.subscribe (e, args) ->
       sortcol = args.sortCol.field
 
       compareByColumn = (a, b) ->
-        x = a[sortcol]
-        y = b[sortcol]
+        x = a[sortcol] || ""
+        y = b[sortcol] || ""
         if x is y
           0
         else
@@ -80,12 +107,12 @@ class Dataclips.View extends Backbone.View
     textFilter = (item, attr, query) ->
       return true unless query
       return true if query.isBlank()
-      item[attr].has(query)
+      item[attr]?.has(query)
 
     dataView.setFilter (item, args) ->
       _.all Dataclips.config.schema, (options, attr) ->
         switch options.type
-          when "string", "text" then textFilter(item, attr, args[attr])
+          when "text" then textFilter(item, attr, args[attr])
           else true
 
     dataView.onRowCountChanged.subscribe (e, args) ->
@@ -95,6 +122,7 @@ class Dataclips.View extends Backbone.View
     dataView.onRowsChanged.subscribe (e, args) ->
       grid.invalidateRows(args.rows)
       grid.render()
+
 
     dataView.onPagingInfoChanged.subscribe (e, args) ->
       $("span.count").text(args.totalRows)
@@ -108,6 +136,7 @@ class Dataclips.View extends Backbone.View
       updateDataView(@collection.toJSON())
 
 Dataclips.run = ->
+  Date.setLocale("pl");
   collection = new Dataclips.Records
   collection.url = @config.url
 
