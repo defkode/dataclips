@@ -1,4 +1,5 @@
 require "dataclips/engine"
+require "hashids"
 
 class DateValidator < ActiveModel::EachValidator
   def validate_each(record, attribute, value)
@@ -12,7 +13,7 @@ class DateValidator < ActiveModel::EachValidator
 end
 
 module Dataclips
-  mattr_accessor :path, :connection
+  mattr_accessor :path, :connection, :salt
 
   def load_clips
     Dir.glob("#{path}/*.sql") do |clip_path|
@@ -40,5 +41,9 @@ module Dataclips
     SQLQuery.new File.read(File.join(path, "#{clip_id}.sql"))
   end
 
-  module_function :load_clips, :read_sql
+  def hashids
+    Hashids.new(salt, 8)
+  end
+
+  module_function :load_clips, :read_sql, :hashids
 end

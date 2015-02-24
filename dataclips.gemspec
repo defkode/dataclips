@@ -20,7 +20,8 @@ Gem::Specification.new do |s|
   s.add_dependency "rails", "~> 4.1"
   s.add_dependency "jquery-rails"
   s.add_dependency "will_paginate"
-  s.add_dependency "font-awesome-rails"
+  s.add_dependency "hashids"
+  s.add_dependency "globalid"
   s.add_dependency "twitter-bootstrap-rails"
 
   s.add_development_dependency "sqlite3"
