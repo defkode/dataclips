@@ -13,7 +13,7 @@ class DateValidator < ActiveModel::EachValidator
 end
 
 module Dataclips
-  mattr_accessor :path, :connection, :salt
+  mattr_accessor :path, :connection, :salt, :csv_options
 
   def load_clips
     Dir.glob("#{path}/*.sql") do |clip_path|

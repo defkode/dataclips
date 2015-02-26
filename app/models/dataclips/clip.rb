@@ -3,7 +3,6 @@ require 'will_paginate/array'
 module Dataclips
   class Clip
     include ActiveModel::Model
-    include ActiveModel::Validations::Callbacks
 
     class << self
       attr_accessor :template, :query

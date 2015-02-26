@@ -2,8 +2,7 @@
   <script>
     Dataclips.config = {
       id: '<%= @clip_id %>',
-      url: '<%= clip_path(@clip_id) %>',
-      params: <%= raw params.to_json(except: ["action", "controller"]) %>,
+      url: '<%= insight_path(@insight) %>',
       schema: <%= raw @schema.to_json %>,
       headers: <%= raw @headers.to_json %>,
       variables: <%= raw @variables.to_json %>
@@ -23,7 +22,9 @@
     <div class="row">
       <div class="col-lg-10"><h4><%= @clip_id %></h4></div>
       <div class="col-lg-2">
-        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#query">Query</button>
+       <a class="btn btn-primary" href="<%= insight_path(@insight, format: :csv) %>">
+         <span class="glyphicon glyphicon-download"></span> CSV
+       </a>
       </div>
     </div>
   </div>
@@ -45,20 +46,6 @@
             </div>
           <% end %>
         </form>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal fade" id="query">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title"><%= @clip_id %></h4>
-      </div>
-      <div class="modal-body">
-        <pre><%= @clip.query %></pre>
       </div>
     </div>
   </div>

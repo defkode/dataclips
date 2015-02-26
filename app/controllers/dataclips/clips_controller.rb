@@ -1,10 +1,23 @@
 module Dataclips
   class ClipsController < ApplicationController
     def show
+      load_clips
+      @clip_id = params[:clip_id]
+
+      begin
+        initialize_clip(@clip_id)
+      rescue
+        raise ActionController::RoutingError.new('Not Found')
+      end
+
+      @headers = localize_headers(@clip_id, @schema.keys)
+
+      @clip = @klass.new params.slice(*@variables.keys)
+
       respond_to do |format|
         format.html do
           begin
-            setup
+            require_parameters
           rescue ActionController::ParameterMissing => e
             @error = e
             render :edit
@@ -13,19 +26,9 @@ module Dataclips
 
         format.json do
           begin
-            setup
-            process_json
+            process_json(@clip, params[:page])
           rescue ActiveRecord::StatementInvalid => e
-            render json: @debug ? e.message : "Report is broken.", status: :unprocessable_entity
-          end
-        end
-
-        format.csv do
-          begin
-            setup
-            process_csv
-          rescue ActiveRecord::StatementInvalid
-            head :unprocessable_entity
+            render json: e.message, status: :unprocessable_entity
           end
         end
       end
@@ -34,65 +37,6 @@ module Dataclips
     def edit; end
 
     private
-
-    def process_json
-      records = @clip.paginate(params[:page] || 1)
-      render json: {
-        page:          records.current_page,
-        total_pages:   records.total_pages,
-        total_entries: records.total_entries,
-        records:       records
-      }
-    end
-
-    def process_csv
-      self.response_body = Enumerator.new do |y|
-        y << CSV.generate({col_sep: ";", encoding: "cp1250"}) do |csv|
-          records = @clip.paginate(1)
-
-          csv << @headers.values
-
-          records.each do |r|
-            csv << r.values
-          end
-
-          while next_page = records.next_page do
-            records = @clip.paginate(next_page)
-            records.each do |r|
-              csv << r.values
-            end
-          end
-        end
-      end
-    end
-
-    def setup
-      Dataclips.load_clips
-      @debug = Rails.env.development?
-      load_clip_configuration
-      require_parameters
-      setup_headers
-
-      @clip = @klass.new params.slice(*@variables.keys)
-    end
-
-    def load_clip_configuration
-      begin
-        @clip_id   = params[:clip_id]
-        @klass     = "Dataclips::Clip::#{@clip_id.camelize}".constantize
-        @schema    = @klass.schema
-        @variables = @klass.variables
-      rescue
-        raise ActionController::RoutingError.new('Not Found')
-      end
-    end
-
-    def setup_headers
-      @headers = @schema.keys.inject({}) do |memo, key|
-        memo[key] = I18n.t("#{@clip_id}.#{key}", scope: "dataclips", default: key.to_s.humanize)
-        memo
-      end
-    end
 
     def require_parameters
       @variables.keys.map(&:to_sym).each do |variable|
