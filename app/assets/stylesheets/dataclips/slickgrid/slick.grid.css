@@ -52,14 +52,15 @@ classes should alter those!
   float: left;
 }
 
+/*
 .slick-sort-indicator-desc {
-  background: image-url(slickgrid/sort-desc.png);
+  background: url(slickgrid/sort-desc.png);
 }
 
 .slick-sort-indicator-asc {
-  background: image-url(slickgrid/sort-asc.png);
+  background: url(slickgrid/sort-asc.png);
 }
-
+*/
 .slick-resizable-handle {
   position: absolute;
   font-size: 0.1px;
@@ -231,14 +232,6 @@ classes should alter those!
   width: 8px;
   height: 5px;
   margin-left: 4px;
-}
-
-.slick-sort-indicator-desc {
-  background: url(/assets/slickgrid/sort-desc.png);
-}
-
-.slick-sort-indicator-asc {
-  background: url(/assets/slickgrid/sort-asc.png);
 }
 
 .slick-resizable-handle {
