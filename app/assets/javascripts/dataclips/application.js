@@ -17,4 +17,5 @@
 //= require ./underscore
 //= require ./backbone
 //= require ./slickgrid
+//= require ./typeahead
 //= require ./dataclips

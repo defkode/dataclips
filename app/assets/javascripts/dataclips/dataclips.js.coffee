@@ -49,8 +49,17 @@ class Dataclips.Records extends Backbone.Collection
 
 class Dataclips.View extends Backbone.View
   events:
-    "keyup input[type=text]": (event) ->
+    "keyup input.fuzzy[type=text]": (event) ->
       @filterArgs.set(event.target.name, $.trim(event.target.value))
+
+    "typeahead:selected input.typeahead[type=text]": (event) ->
+      @filterArgs.set(event.target.name, event.target.value)
+
+    "typeahead:autocompleted input.typeahead[type=text]": (event) ->
+      @filterArgs.set(event.target.name, event.target.value)
+
+    "typeahead:closed input.typeahead[type=text]": (event) ->
+      # console.log("closed")
 
   render: ->
     @filterArgs = new Backbone.Model
@@ -107,12 +116,21 @@ class Dataclips.View extends Backbone.View
     textFilter = (item, attr, query) ->
       return true unless query
       return true if query.isBlank()
-      item[attr]?.has(query)
+      item[attr]?.toLowerCase().has(query.toLowerCase())
+
+    exactMatcher = (item, attr, query) ->
+      return true unless query
+      return true if query.isBlank()
+      item[attr] is query
 
     dataView.setFilter (item, args) ->
       _.all Dataclips.config.schema, (options, attr) ->
         switch options.type
-          when "text" then textFilter(item, attr, args[attr])
+          when "text"
+            if options.dictionary
+              exactMatcher(item, attr, args[attr])
+            else
+              textFilter(item, attr, args[attr])
           else true
 
     dataView.onRowCountChanged.subscribe (e, args) ->

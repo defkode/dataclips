@@ -40,7 +40,33 @@
             <div class="form-group">
               <% if options[:type] == "text" %>
                 <label class="control-label" for="<%= @clip_id %>_<%= k %>"><%= @headers[k] %></label>
-                <input class="form-control" id="<%= @clip_id %>_<%= k %>" name="<%= k %>" type="text" autocomplete="off" placeholder="<%= k %>" />
+                <div class="input-group">
+                <% if dict = options[:dictionary] %>
+                  <input class="form-control typeahead" id="<%= @clip_id %>_<%= k %>" name="<%= k %>" type="text" autocomplete="off" placeholder="<%= k %>" />
+                  <script>
+                    var <%= dict %> = new Bloodhound({
+                      datumTokenizer: Bloodhound.tokenizers.obj.whitespace('value'),
+                      queryTokenizer: Bloodhound.tokenizers.whitespace,
+                      local: <%= raw Dataclips.dictionaries[dict.to_sym].call(I18n.locale).map{|i| {value: i}}.to_json %>
+                    });
+
+                    <%= dict %>.initialize();
+
+                    $('#<%= @clip_id %>_<%= k %>').typeahead({
+                      hint: true,
+                      highlight: true,
+                      minLength: 1
+                    },
+                    {
+                      name: '<%= dict %>',
+                      displayKey: 'value',
+                      source: <%= dict %>.ttAdapter()
+                    })
+                  </script>
+                <% else %>
+                  <input class="form-control fuzzy" id="<%= @clip_id %>_<%= k %>" name="<%= k %>" type="text" autocomplete="off" placeholder="<%= k %>" />
+                <% end %>
+              </div>
               <% end %>
             </div>
           <% end %>
