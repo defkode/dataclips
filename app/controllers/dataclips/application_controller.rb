@@ -1,11 +1,9 @@
+require "csv"
+
 module Dataclips
   class ApplicationController < ActionController::Base
     include ActionView::Helpers::NumberHelper
     protected
-
-    def load_clips
-      Dataclips.load_clips if Rails.env.development?
-    end
 
     def initialize_clip(clip_id)
       @klass     = "Dataclips::Clip::#{clip_id.camelize}".constantize
@@ -31,24 +29,22 @@ module Dataclips
     end
 
     def process_csv(clip, headers)
-      self.response_body = Enumerator.new do |y|
-        y << CSV.generate(force_quotes: true) do |csv|
-          records = clip.paginate(1)
+      response.headers['Content-Type'] = 'text/event-stream'
+      response.stream.write CSV.generate(force_quotes: true) { |csv| csv << headers.values}
 
-          csv << headers.values
+      records = clip.paginate(1)
 
-          records.each do |r|
-            csv << r.values
-          end
+      response.stream.write CSV.generate(force_quotes: true) { |csv| records.each { |r| csv << r.values } }
 
-          while next_page = records.next_page do
-            records = clip.paginate(next_page)
-            records.each do |r|
-              csv << r.values
-            end
-          end
-        end
+      while next_page = records.next_page do
+        records = clip.paginate(next_page)
+        response.stream.write CSV.generate(force_quotes: true) { |csv| records.each { |r| csv << r.values } }
+        sleep(1)
       end
+    rescue IOError => e
+      puts 'Connection closed'
+    ensure
+      response.stream.close
     end
   end
 end

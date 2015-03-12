@@ -21,20 +21,18 @@ module Dataclips
     end
 
     def type_cast(attributes)
-      # https://github.com/rails/rails/blob/4-1-stable/activerecord/lib/active_record/connection_adapters/column.rb#L91-L109
-      klass = ActiveRecord::ConnectionAdapters::Column
-
       attributes.reduce({}) do |memo, (key, value)|
         if schema_key = self.class.schema[key]
           memo[key] = case schema_key[:type].to_sym
-            when :integer              then klass.value_to_integer(value)
-            when :float                then value.to_f
-            when :decimal              then klass.value_to_decimal(value)
-            when :datetime, :timestamp then klass.string_to_time(value)
-            when :time                 then klass.string_to_dummy_time(value)
-            when :date                 then klass.value_to_date(value)
-            when :binary               then klass.binary_to_string(value)
-            when :boolean              then klass.value_to_boolean(value)
+            when :text, :string        then ActiveRecord::Type::String.new.type_cast_from_database(value)
+            when :integer              then ActiveRecord::Type::Integer.new.type_cast_from_database(value)
+            when :float                then ActiveRecord::Type::Float.new.type_cast_from_database(value)
+            when :decimal              then ActiveRecord::Type::Decimal.new.type_cast_from_database(value)
+            when :datetime             then ActiveRecord::Type::DateTime.new.type_cast_from_database(value)
+            when :time                 then ActiveRecord::Type::Time.new.type_cast_from_database(value)
+            when :date                 then ActiveRecord::Type::Date.new.type_cast_from_database(value)
+            when :binary               then ActiveRecord::Type::Binary.new.type_cast_from_database(value)
+            when :boolean              then ActiveRecord::Type::Boolean.new.type_cast_from_database(value)
             else value
             end
         end

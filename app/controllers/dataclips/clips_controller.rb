@@ -1,7 +1,6 @@
 module Dataclips
   class ClipsController < ApplicationController
     def show
-      load_clips
       @clip_id = params[:clip_id]
 
       begin

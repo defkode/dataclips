@@ -1,9 +1,7 @@
 module Dataclips
   class InsightsController < ApplicationController
     def show
-      load_clips
-
-      @insight = Insight.find_by_hash_id(params[:id])
+      @insight = Insight.find_by_hash_id(params[:id]) or raise ActiveRecord::RecordNotFound
       @clip_id = @insight.clip_id
       initialize_clip(@clip_id)
       @headers  = localize_headers(@clip_id, @schema.keys)
