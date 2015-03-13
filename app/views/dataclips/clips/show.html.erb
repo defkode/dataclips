@@ -47,7 +47,7 @@
                     var <%= dict %> = new Bloodhound({
                       datumTokenizer: Bloodhound.tokenizers.obj.whitespace('value'),
                       queryTokenizer: Bloodhound.tokenizers.whitespace,
-                      local: <%= raw Dataclips.dictionaries[dict.to_sym].call(I18n.locale).map{|i| {value: i}}.to_json %>
+                      local: <%= raw Dataclips::Engine.config.dictionaries[dict.to_sym].call(I18n.locale).map{|i| {value: i}}.to_json %>
                     });
 
                     <%= dict %>.initialize();

@@ -6,7 +6,7 @@ module Dataclips
     protected
 
     def initialize_clip(clip_id)
-      @klass     = "Dataclips::Clip::#{clip_id.camelize}".constantize
+      @klass     = "Dataclips::#{clip_id.camelize}".constantize
       @schema    = @klass.schema
       @variables = @klass.variables
     end

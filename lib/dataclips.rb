@@ -13,13 +13,35 @@ class DateValidator < ActiveModel::EachValidator
 end
 
 module Dataclips
-  def read_sql(clip_id)
-    SQLQuery.new File.read(File.join(path, "#{clip_id}.sql"))
+  def reload!
+    Dir.glob("#{Dataclips::Engine.config.path}/*.sql") do |clip_path|
+      clip_id = clip_path.match(/(\w+).sql/)[1]
+      puts "reloading: #{clip_id}"
+
+      remove_const(clip_id.camelize) if const_defined?(clip_id.camelize)
+
+      sql = SQLQuery.new File.read(clip_path)
+
+      klass = Class.new(Clip) do
+        @template  = sql.template
+        @schema    = sql.schema
+        @per_page  = sql.options["per_page"]
+        @variables = sql.variables
+
+        attr_accessor *sql.variables.keys
+
+        sql.variables.each do |key, options|
+          validates key, date: options[:type] == "date"
+        end
+      end
+
+      const_set(clip_id.camelize, klass)
+    end
   end
 
   def hashids
-    Hashids.new(salt, 8)
+    @hashids ||= Hashids.new(Dataclips::Engine.config.salt, 8)
   end
 
-  module_function :read_sql, :hashids
+  module_function :hashids, :reload!
 end
