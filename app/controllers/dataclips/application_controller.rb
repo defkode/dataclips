@@ -13,7 +13,7 @@ module Dataclips
 
     def localize_headers(clip_id, keys)
       keys.inject({}) do |memo, key|
-        memo[key] = I18n.t("#{clip_id}.#{key}", scope: "dataclips", default: key.to_s.humanize)
+        memo[key] = I18n.t("#{clip_id}.schema.#{key}", scope: "dataclips", default: key.to_s.humanize)
         memo
       end
     end
@@ -26,25 +26,6 @@ module Dataclips
         total_entries: records.total_entries,
         records:       records
       }
-    end
-
-    def process_csv(clip, headers)
-      response.headers['Content-Type'] = 'text/event-stream'
-      response.stream.write CSV.generate(force_quotes: true) { |csv| csv << headers.values}
-
-      records = clip.paginate(1)
-
-      response.stream.write CSV.generate(force_quotes: true) { |csv| records.each { |r| csv << r.values } }
-
-      while next_page = records.next_page do
-        records = clip.paginate(next_page)
-        response.stream.write CSV.generate(force_quotes: true) { |csv| records.each { |r| csv << r.values } }
-        sleep(1)
-      end
-    rescue IOError => e
-      puts 'Connection closed'
-    ensure
-      response.stream.close
     end
   end
 end

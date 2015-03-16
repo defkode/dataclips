@@ -16,7 +16,7 @@ module Dataclips
   def reload!
     Dir.glob("#{Dataclips::Engine.config.path}/*.sql") do |clip_path|
       clip_id = clip_path.match(/(\w+).sql/)[1]
-      puts "reloading: #{clip_id}"
+      Rails.logger.debug "reloading: #{clip_id}"
 
       remove_const(clip_id.camelize) if const_defined?(clip_id.camelize)
 

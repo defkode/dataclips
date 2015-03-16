@@ -7,8 +7,8 @@ Dataclips.Formatters =
   decimal:   (row, cell, value, columnDef, context) -> value
   date:      (row, cell, value, columnDef, context) -> value
   time:      (row, cell, value, columnDef, context) -> value
-  datetime:  (row, cell, value, columnDef, context) -> value
-  timestamp: (row, cell, value, columnDef, context) -> value
+  datetime:  (row, cell, value, columnDef, context) ->
+    value.long()
   binary:    (row, cell, value, columnDef, context) -> value
   boolean:   (row, cell, value, columnDef, context) ->
     if value is true then "&#9679" else "&#9675;"
@@ -18,9 +18,18 @@ Dataclips.Formatters =
 
 class Dataclips.Record extends Backbone.Model
   parse: (options) ->
-    # create a
-    options.id = @cid
-    super(options)
+    attributes = _.reduce options, (memo, value, key) ->
+      memo[key] = switch Dataclips.config.schema[key].type
+        when "datetime", "time", "date"
+          new Date Date.parse(value)
+        else
+          value
+
+      memo
+    , {}
+
+    attributes.id = @cid
+    super(attributes)
 
 
 class Dataclips.Records extends Backbone.Collection
@@ -154,7 +163,7 @@ class Dataclips.View extends Backbone.View
       updateDataView(@collection.toJSON())
 
 Dataclips.run = ->
-  Date.setLocale("pl");
+  Date.setLocale(Dataclips.config.locale);
   collection = new Dataclips.Records
   collection.url = @config.url
 

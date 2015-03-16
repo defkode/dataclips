@@ -1,6 +1,7 @@
 <% content_for :title, @clip_id %>
   <script>
     Dataclips.config = {
+      locale: '<%= I18n.locale %>',
       id: '<%= @clip_id %>',
       url: '<%= clip_path(@clip_id) %>',
       params: <%= raw params.to_json(except: ["action", "controller"]) %>,
@@ -21,7 +22,7 @@
 <div class="panel panel-default" id="dataclip">
   <div class="panel-heading">
     <div class="row">
-      <div class="col-lg-10"><h4><%= @clip_id %></h4></div>
+      <div class="col-lg-10"><h4><%= I18n.t("#{@clip_id}.name", scope: "dataclips", default: @clip_id.humanize) %></h4></div>
       <div class="col-lg-2">
         <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#query">Query</button>
       </div>
