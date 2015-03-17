@@ -71,7 +71,6 @@ class Dataclips.View extends Backbone.View
           when "text"
             textFilter(item, attr, args[attr])
           else
-            console.log item, args
             true
 
     dataView.onRowCountChanged.subscribe (e, args) ->
