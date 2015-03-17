@@ -22,56 +22,75 @@
 <div class="panel panel-default" id="dataclip">
   <div class="panel-heading">
     <div class="row">
-      <div class="col-lg-10"><h4><%= I18n.t("#{@clip_id}.name", scope: "dataclips", default: @clip_id.humanize) %></h4></div>
-      <div class="col-lg-2">
+      <div class="col-lg-9">
+        <h4><%= I18n.t("#{@clip_id}.name", scope: "dataclips", default: @clip_id.humanize) %></h4>
+        <span class="count">0</span> / <span class="total_entries">0</span>
+      </div>
+      <div class="col-lg-3">
         <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#query">Query</button>
       </div>
     </div>
   </div>
   <div class="panel-body">
     <div class="row">
-      <div class="col-lg-10">
+      <div class="col-lg-9">
         <div id="grid"></div>
       </div>
-      <div class="col-lg-2">
-        <span class="count">0</span> / <span class="total_entries">0</span>
+      <div class="col-lg-3">
+        <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+          <% @schema.each do |key, options| %>
+            <% id = "#{@clip_id}_#{key}" %>
 
-        <form>
-          <% @schema.each do |k, options| %>
-            <div class="form-group">
-              <% if options[:type] == "text" %>
-                <label class="control-label" for="<%= @clip_id %>_<%= k %>"><%= @headers[k] %></label>
-                <div class="input-group">
-                <% if dict = options[:dictionary] %>
-                  <input class="form-control typeahead" id="<%= @clip_id %>_<%= k %>" name="<%= k %>" type="text" autocomplete="off" placeholder="<%= k %>" />
-                  <script>
-                    var <%= dict %> = new Bloodhound({
-                      datumTokenizer: Bloodhound.tokenizers.obj.whitespace('value'),
-                      queryTokenizer: Bloodhound.tokenizers.whitespace,
-                      local: <%= raw Dataclips::Engine.config.dictionaries[dict.to_sym].call(I18n.locale).map{|i| {value: i}}.to_json %>
-                    });
-
-                    <%= dict %>.initialize();
-
-                    $('#<%= @clip_id %>_<%= k %>').typeahead({
-                      hint: true,
-                      highlight: true,
-                      minLength: 1
-                    },
-                    {
-                      name: '<%= dict %>',
-                      displayKey: 'value',
-                      source: <%= dict %>.ttAdapter()
-                    })
-                  </script>
-                <% else %>
-                  <input class="form-control fuzzy" id="<%= @clip_id %>_<%= k %>" name="<%= k %>" type="text" autocomplete="off" placeholder="<%= k %>" />
-                <% end %>
+            <div class="panel panel-default">
+              <div class="panel-heading" role="tab" id="headingOne">
+                <h4 class="panel-title">
+                  <a data-toggle="collapse" data-parent="#accordion" href="#collapse_<%= id %>" aria-expanded="true" aria-controls="<%= id %>">
+                    <%= @headers[key] %>
+                  </a>
+                </h4>
               </div>
-              <% end %>
+              <div id="collapse_<%= id %>" class="panel-collapse collapse out" role="tabpanel" aria-labelledby="headingOne">
+                <div class="panel-body">
+                  <div class="form-group">
+                    <% if options[:type] == "text" %>
+                      <%= render "text", key: key, id: id, dictionary: options[:dictionary] %>
+                    <% end %>
+
+                    <% if options[:type] == "datetime" %>
+                      <%= render "datetime", key: key, id: id %>
+                    <% end %>
+
+                    <% if options[:type] == "date" %>
+                      <%= render "date", key: key, id: id %>
+                    <% end %>
+
+                    <% if options[:type] == "time" %>
+                      <%= render "time", key: key, id: id %>
+                    <% end %>
+
+                    <% if options[:type] == "integer" %>
+                      <%= render "integer", key: key, id: id %>
+                    <% end %>
+
+                    <% if options[:type] == "float" %>
+                      <%= render "float", key: key, id: id %>
+                    <% end %>
+
+                    <% if options[:type] == "decimal" %>
+                      <%= render "decimal", key: key, id: id %>
+                    <% end %>
+
+                    <% if options[:type] == "boolean" %>
+                      <%= render "boolean", key: key, id: id %>
+                    <% end %>
+                  </div>
+                </div>
+              </div>
             </div>
+
+
           <% end %>
-        </form>
+        </div>
       </div>
     </div>
   </div>
