@@ -5,10 +5,9 @@ Dataclips.Formatters =
   integer:   (row, cell, value, columnDef, context) -> value
   float:     (row, cell, value, columnDef, context) -> value
   decimal:   (row, cell, value, columnDef, context) -> value
-  date:      (row, cell, value, columnDef, context) -> value
-  time:      (row, cell, value, columnDef, context) -> value
-  datetime:  (row, cell, value, columnDef, context) ->
-    value.long()
+  date:      (row, cell, value, columnDef, context) -> value.format('L')
+  time:      (row, cell, value, columnDef, context) -> value.format('h:mm:ss')
+  datetime:  (row, cell, value, columnDef, context) -> value.format('lll')
   binary:    (row, cell, value, columnDef, context) -> value
   boolean:   (row, cell, value, columnDef, context) ->
     if value is true then "&#9679" else "&#9675;"
@@ -21,7 +20,7 @@ class Dataclips.Record extends Backbone.Model
     attributes = _.reduce options, (memo, value, key) ->
       memo[key] = switch Dataclips.config.schema[key].type
         when "datetime", "time", "date"
-          new Date Date.parse(value)
+          moment(value)
         else
           value
 
@@ -124,12 +123,12 @@ class Dataclips.View extends Backbone.View
 
     textFilter = (item, attr, query) ->
       return true unless query
-      return true if query.isBlank()
-      item[attr]?.toLowerCase().has(query.toLowerCase())
+      return true if _.isEmpty query.trim()
+      item[attr]?.toLowerCase().indexOf(query.toLowerCase()) != -1
 
     exactMatcher = (item, attr, query) ->
       return true unless query
-      return true if query.isBlank()
+      return true if _.isEmpty query.trim()
       item[attr] is query
 
     dataView.setFilter (item, args) ->
@@ -163,7 +162,6 @@ class Dataclips.View extends Backbone.View
       updateDataView(@collection.toJSON())
 
 Dataclips.run = ->
-  Date.setLocale(Dataclips.config.locale);
   collection = new Dataclips.Records
   collection.url = @config.url
 

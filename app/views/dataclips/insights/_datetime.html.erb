@@ -1,0 +1,23 @@
+<div class='input-group' id='<%= id %>_from_datetimepicker'>
+  <input type='text' class="form-control" id='<%= id %>_from' />
+  <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span>
+</div>
+
+<div class='input-group' id='<%= id %>_to_datetimepicker'>
+  <input type='text' class="form-control" id='<%= id %>_to' />
+  <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span>
+</div>
+
+<script>
+  $(document).ready(function(){
+    $('#<%= id %>_from_datetimepicker').datetimepicker({
+      sideBySide: true,
+      locale: '<%= I18n.locale %>'
+    });
+
+    $('#<%= id %>_to_datetimepicker').datetimepicker({
+      sideBySide: true,
+      locale: '<%= I18n.locale %>'
+    });
+  });
+</script>

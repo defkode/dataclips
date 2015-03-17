@@ -13,7 +13,9 @@
 
 //= require jquery
 //= require jquery_ujs
-//= require ./sugarjs
+//= require moment
+//= require moment/de
+//= require bootstrap-datetimepicker
 //= require ./underscore
 //= require ./backbone
 //= require ./slickgrid

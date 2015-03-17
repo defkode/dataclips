@@ -22,6 +22,8 @@ Gem::Specification.new do |s|
   s.add_dependency "will_paginate"
   s.add_dependency "hashids"
   s.add_dependency "twitter-bootstrap-rails"
+  s.add_dependency "momentjs-rails", "~> 2.9"
+  s.add_dependency "bootstrap3-datetimepicker-rails", "~> 4.7.14"
 
   s.add_development_dependency "sqlite3"
   s.add_development_dependency "pry"

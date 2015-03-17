@@ -1,0 +1,27 @@
+<div class="input-group">
+  <% if dictionary %>
+  <input class="form-control typeahead" id="<%= id %>" name="<%= key %>" type="text" autocomplete="off" placeholder="<%= key %>" />
+  <script>
+    var <%= dictionary %> = new Bloodhound({
+      datumTokenizer: Bloodhound.tokenizers.obj.whitespace('value'),
+      queryTokenizer: Bloodhound.tokenizers.whitespace,
+      local: <%= raw Dataclips::Engine.config.dictionaries[dictionary.to_sym].call(I18n.locale).map{|i| {value: i}}.to_json %>
+    });
+
+    <%= dictionary %>.initialize();
+
+    $('#<%= id %>').typeahead({
+      hint: true,
+      highlight: true,
+      minLength: 1
+    },
+    {
+      name: '<%= dictionary %>',
+      displayKey: 'value',
+      source: <%= dictionary %>.ttAdapter()
+    })
+  </script>
+  <% else %>
+  <input class="form-control fuzzy" id="<%= id %>" name="<%= key %>" type="text" autocomplete="off" placeholder="<%= key %>" />
+  <% end %>
+</div>
