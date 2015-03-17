@@ -1,73 +1,7 @@
-window.Dataclips = {}
-
-Dataclips.Formatters =
-  text:      (row, cell, value, columnDef, context) -> value
-  integer:   (row, cell, value, columnDef, context) -> value
-  float:     (row, cell, value, columnDef, context) -> value
-  decimal:   (row, cell, value, columnDef, context) -> value
-  date:      (row, cell, value, columnDef, context) -> value.format('L')
-  time:      (row, cell, value, columnDef, context) -> value.format('h:mm:ss')
-  datetime:  (row, cell, value, columnDef, context) -> value.format('lll')
-  binary:    (row, cell, value, columnDef, context) -> value
-  boolean:   (row, cell, value, columnDef, context) ->
-    if value is true then "&#9679" else "&#9675;"
-
-  email:     (row, cell, value, columnDef, context) ->
-    "<a href='mailto:#{value}'>#{value}</a>"
-
-class Dataclips.Record extends Backbone.Model
-  parse: (options) ->
-    attributes = _.reduce options, (memo, value, key) ->
-      memo[key] = switch Dataclips.config.schema[key].type
-        when "datetime", "time", "date"
-          moment(value)
-        else
-          value
-
-      memo
-    , {}
-
-    attributes.id = @cid
-    super(attributes)
-
-
-class Dataclips.Records extends Backbone.Collection
-  model: Dataclips.Record
-  fetchInBatches: (defaultParams = {}) ->
-
-    fetchNextPage = (collection, current_page, total_pages) ->
-      if current_page < total_pages
-        collection.fetch
-          data: _({page: current_page + 1}).extend(defaultParams),
-          remove: false,
-          success: (collection, data) ->
-            collection.trigger "batchInsert", data.orders
-            fetchNextPage(collection, data.page, data.total_pages)
-
-    @fetch
-      data: defaultParams
-      success: (collection, data) ->
-        $("span.total_entries").text(data.total_entries)
-        collection.trigger "batchInsert", data.records
-        fetchNextPage(collection, data.page, data.total_pages)
-      error: (collection, response) ->
-        alert(response.responseText)
-
-  parse: (data) -> data.records
-
 class Dataclips.View extends Backbone.View
   events:
-    "keyup input.fuzzy[type=text]": (event) ->
+    "input input[type=text]": _.debounce (event) ->
       @filterArgs.set(event.target.name, $.trim(event.target.value))
-
-    "typeahead:selected input.typeahead[type=text]": (event) ->
-      @filterArgs.set(event.target.name, event.target.value)
-
-    "typeahead:autocompleted input.typeahead[type=text]": (event) ->
-      @filterArgs.set(event.target.name, event.target.value)
-
-    "typeahead:closed input.typeahead[type=text]": (event) ->
-      # console.log("closed")
 
   render: ->
     @filterArgs = new Backbone.Model
@@ -135,11 +69,10 @@ class Dataclips.View extends Backbone.View
       _.all Dataclips.config.schema, (options, attr) ->
         switch options.type
           when "text"
-            if options.dictionary
-              exactMatcher(item, attr, args[attr])
-            else
-              textFilter(item, attr, args[attr])
-          else true
+            textFilter(item, attr, args[attr])
+          else
+            console.log item, args
+            true
 
     dataView.onRowCountChanged.subscribe (e, args) ->
       grid.updateRowCount()

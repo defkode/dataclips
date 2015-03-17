@@ -19,5 +19,8 @@
 //= require ./underscore
 //= require ./backbone
 //= require ./slickgrid
-//= require ./typeahead
+
+//= require ./namespace
+//= require ./formatters
+//= require ./record
 //= require ./dataclips
