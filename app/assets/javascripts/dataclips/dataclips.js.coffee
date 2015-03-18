@@ -3,6 +3,28 @@ class Dataclips.View extends Backbone.View
     "input input[type=text]": _.debounce (event) ->
       @filterArgs.set(event.target.name, $.trim(event.target.value))
 
+    "change input.float[type=number]": _.debounce (event) ->
+      value = parseFloat(event.target.value)
+      if _.isNaN(value)
+        @filterArgs.unset(event.target.name)
+      else
+        @filterArgs.set(event.target.name, value)
+
+    "change input.integer[type=number]": _.debounce (event) ->
+      value = parseInt(event.target.value)
+      if _.isNaN(value)
+        @filterArgs.unset(event.target.name)
+      else
+        @filterArgs.set(event.target.name, value)
+
+    "dp.change .input-group": _.debounce (event) ->
+      value = event.date
+      attrName = $(event.target).attr("rel")
+      if value?
+        @filterArgs.set(attrName, value)
+      else
+        @filterArgs.unset(attrName)
+
   render: ->
     @filterArgs = new Backbone.Model
 
@@ -14,7 +36,7 @@ class Dataclips.View extends Backbone.View
     dataView.setFilterArgs(@filterArgs.toJSON())
 
     @listenTo @filterArgs, "change", (model, data) ->
-      dataView.setFilterArgs(model.toJSON())
+      dataView.setFilterArgs(model.attributes)
       dataView.refresh()
 
     columns = []
@@ -34,6 +56,7 @@ class Dataclips.View extends Backbone.View
         cssClass:       options.type
         headerCssClass: options.type
         formatter:      Dataclips.Formatters[formatter]
+        width:          options.width
 
     grid = new Slick.Grid("#grid", dataView, columns, options)
 
@@ -60,6 +83,38 @@ class Dataclips.View extends Backbone.View
       return true if _.isEmpty query.trim()
       item[attr]?.toLowerCase().indexOf(query.toLowerCase()) != -1
 
+    numericFilter = (item, attr, range) ->
+      value = item[attr]
+      return true if value is undefined
+      if range.from? || range.to?
+        gte = (from) ->
+          return true if from is undefined
+          value >= from
+
+        lte = (to) ->
+          return true if to is undefined
+          value <= to
+
+        gte(range.from) && lte(range.to)
+      else
+        true
+
+    dateFilter = (item, attr, range) ->
+      value = item[attr]
+      return true if value is undefined
+      if range.from? || range.to?
+        gte = (from) ->
+          return true if from is undefined
+          value >= from
+
+        lte = (to) ->
+          return true if to is undefined
+          value <= to
+
+        gte(range.from) && lte(range.to)
+      else
+        true
+
     exactMatcher = (item, attr, query) ->
       return true unless query
       return true if _.isEmpty query.trim()
@@ -70,6 +125,16 @@ class Dataclips.View extends Backbone.View
         switch options.type
           when "text"
             textFilter(item, attr, args[attr])
+          when "integer", "float", "decimal"
+            numericFilter(item, attr, {
+              from: args["#{attr}_from"],
+              to:   args["#{attr}_to"]
+            })
+          when "datetime", "date"
+            dateFilter(item, attr, {
+              from: args["#{attr}_from"],
+              to:   args["#{attr}_to"]
+            })
           else
             true
 
