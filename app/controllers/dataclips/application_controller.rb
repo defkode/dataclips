@@ -6,9 +6,14 @@ module Dataclips
     protected
 
     def initialize_clip(clip_id)
-      @klass     = "Dataclips::#{clip_id.camelize}".constantize
-      @schema    = @klass.schema
-      @variables = @klass.variables
+      begin
+        @klass     = "Dataclips::#{clip_id.camelize}".constantize
+        @schema    = @klass.schema
+        @variables = @klass.variables
+      rescue NameError
+        Rails.logger.fatal("Dataclip: #{clip_id} does not exist.")
+        nil
+      end
     end
 
     def localize_headers(clip_id, keys)
@@ -18,7 +23,7 @@ module Dataclips
       end
     end
 
-    def process_json(clip, page = 1)
+    def render_json_records(clip, page = 1)
       records = clip.paginate(params[:page] || 1)
       render json: {
         page:          records.current_page,

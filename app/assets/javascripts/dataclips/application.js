@@ -23,4 +23,5 @@
 //= require ./namespace
 //= require ./formatters
 //= require ./record
+//= require ./records
 //= require ./dataclips
