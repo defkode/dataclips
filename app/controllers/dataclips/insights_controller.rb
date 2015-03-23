@@ -28,7 +28,7 @@ module Dataclips
 
       respond_to do |format|
         format.html
-        format.json { render_josn_records(@clip, params[:page]) }
+        format.json { render_json_records(@clip, params[:page]) }
       end
     end
 
