@@ -25,6 +25,21 @@ class Dataclips.View extends Backbone.View
       else
         @filterArgs.unset(attrName)
 
+    "click button.reset": _.debounce (event) ->
+      key = $(event.currentTarget).data("key")
+      type = Dataclips.config.schema[key]["type"]
+      switch type
+        when "integer", "float", "decimal", "date", "datetime", "time"
+          @$el.find("input[name=#{key}_from]").val("")
+          @$el.find("input[name=#{key}_to]").val("")
+          @filterArgs.unset("#{key}_from")
+          @filterArgs.unset("#{key}_to")
+        when "text"
+          @$el.find("input[name=#{key}]").val("")
+          @filterArgs.unset(key)
+        else
+          @filterArgs.unset(key)
+
   render: ->
     @filterArgs = new Backbone.Model
 
