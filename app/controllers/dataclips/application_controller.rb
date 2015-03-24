@@ -22,7 +22,9 @@ module Dataclips
     end
 
     def render_json_records(clip, page = 1)
-      records = clip.paginate(params[:page] || 1)
+      page = params[:page] || 1
+      records = clip.paginate(page)
+
       render json: {
         page:          records.current_page,
         total_pages:   records.total_pages,
