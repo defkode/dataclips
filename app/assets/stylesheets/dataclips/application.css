@@ -10,8 +10,8 @@
  * defined in the other CSS/SCSS files in this directory. It is generally better to create a new
  * file per style scope.
  *
- += require twitter-bootstrap-static/bootstrap
- += requrie twitter-bootstrap-static/fontawesome
+ *= require twitter-bootstrap-static/bootstrap
+ *= require twitter-bootstrap-static/fontawesome
  *= require bootstrap-datetimepicker
 
  *= require_tree .
