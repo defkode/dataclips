@@ -1,6 +1,9 @@
 module Dataclips
   class Insight < ActiveRecord::Base
     validates :clip_id, presence: true
+    validates :checksum, presence: true, uniqueness: true
+
+    before_validation :calculate_checksum
 
     def to_param
       hash_id
@@ -13,6 +16,10 @@ module Dataclips
     def hash_id
       return unless persisted?
       Dataclips.hashids.encode(id)
+    end
+
+    def calculate_checksum
+      self.checksum = Digest::MD5.hexdigest Marshal.dump(slice(:clip_id, :params))
     end
   end
 end
