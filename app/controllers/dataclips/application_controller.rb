@@ -16,7 +16,7 @@ module Dataclips
 
     def localize_headers(clip_id, keys)
       keys.inject({}) do |memo, key|
-        memo[key] = I18n.t("#{clip_id}.schema.#{key}", scope: "dataclips", default: key.to_s.humanize)
+        memo[key] = I18n.t("#{clip_id}.schema.#{key}", scope: "dataclips", default: key.to_s)
         memo
       end
     end
