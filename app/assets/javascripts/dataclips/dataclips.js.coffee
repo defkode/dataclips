@@ -75,6 +75,8 @@ class Dataclips.View extends Backbone.View
 
     grid = new Slick.Grid("#grid", dataView, columns, options)
 
+    grid.registerPlugin(new Slick.AutoTooltips(enableForHeaderCells: true));
+
     # grid.onSelectedRowsChanged.subscribe (e, args) ->
     #    console.log(grid.getSelectedRows())
 

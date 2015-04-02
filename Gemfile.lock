@@ -3,6 +3,7 @@ PATH
   specs:
     dataclips (0.0.2)
       bootstrap3-datetimepicker-rails (~> 4.7)
+      font-awesome-rails (~> 4.3)
       hashids (~> 1.0)
       jquery-rails (~> 4.0)
       momentjs-rails (~> 2.9)
@@ -55,6 +56,8 @@ GEM
     builder (3.2.2)
     erubis (2.7.0)
     execjs (2.4.0)
+    font-awesome-rails (4.3.0.0)
+      railties (>= 3.2, < 5.0)
     globalid (0.3.3)
       activesupport (>= 4.1.0)
     hashids (1.0.2)
