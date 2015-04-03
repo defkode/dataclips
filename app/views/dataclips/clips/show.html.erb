@@ -23,7 +23,7 @@
   <div class="panel-heading">
     <div class="row">
       <div class="col-lg-9">
-        <h4><%= I18n.t("#{@clip_id}.name", scope: "dataclips", default: @clip_id.humanize) %></h4>
+        <h4><%= clip_title(@clip) %></h4>
         <span class="count">0</span> / <span class="total_entries">0</span>
       </div>
       <div class="col-lg-3">

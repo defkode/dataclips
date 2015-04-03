@@ -39,6 +39,10 @@ module Dataclips
 
     end
 
+    def id
+      self.class.name.demodulize.underscore
+    end
+
     def context
       return {} if invalid?
       self.class.variables.reduce({}) do |memo, (attr, options)|
