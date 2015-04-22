@@ -1,4 +1,4 @@
-<% content_for :title, @clip_id %>
+<% content_for :title, clip_title(@clip) %>
   <script>
     Dataclips.config = {
       locale: '<%= I18n.locale %>',
@@ -18,6 +18,8 @@
       Dataclips.run();
     });
   </script>
+
+
 <div class="panel panel-default" id="dataclip">
   <div class="panel-heading">
     <div class="row">
@@ -101,6 +103,8 @@
     </div>
   </div>
 </div>
+<div id="modal"></div>
+<canvas id="progress" width="240" height="240"></canvas>
 
 <%= javascript_include_tag "twitter/bootstrap" %>
 

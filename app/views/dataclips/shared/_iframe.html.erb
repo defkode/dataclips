@@ -1,0 +1,17 @@
+<span class="entries_count"></span>/<span class="total_entries"></span>
+
+<iframe scrolling='no' sandbox='allow-scripts allow-same-origin' src='<%= src %>' width='100%' height='600' id='<%= id %>'></iframe>
+<script>
+window.addEventListener('message',
+  function (e) {
+    // Sandboxed iframes which lack the 'allow-same-origin'
+    // header have "null" rather than a valid origin. This means you still
+    // have to be careful about accepting data via the messaging API you
+    // create. Check that source, and validate those inputs!
+    var frame = document.getElementById('<%= id %>');
+    if (e.source === frame.contentWindow)
+      $("span.entries_count").text(e.data.entries_count)
+      $("span.total_entries").text(e.data.total_entries);
+
+});
+</script>

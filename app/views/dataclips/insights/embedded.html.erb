@@ -1,0 +1,24 @@
+<script>
+  Dataclips.config = {
+    locale: '<%= I18n.locale %>',
+    id: '<%= @clip_id %>',
+    url: '<%= insight_path(@insight) %>',
+    schema: <%= raw @schema.to_json %>,
+    headers: <%= raw @headers.to_json %>,
+    variables: <%= raw @variables.to_json %>
+  };
+
+  $(window).resize(function(){
+    $("#grid").css("height", $(window).height());
+  });
+
+  $(document).ready(function(){
+    $(window).trigger("resize");
+    Dataclips.run();
+  });
+</script>
+
+<div id="grid"></div>
+<div id="modal"></div>
+
+<canvas id="progress" width="240" height="240"></canvas>

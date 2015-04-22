@@ -1,3 +1,5 @@
+require_dependency File.join(Dataclips::Engine.root, "app/controllers/dataclips", "application_controller")
+
 module Dataclips
   class InsightsController < ApplicationController
     include ActionController::Live
@@ -27,7 +29,11 @@ module Dataclips
       setup_clip
 
       respond_to do |format|
-        format.html
+        format.html {
+          if params[:embedded].present?
+            render :embedded
+          end
+        }
         format.json { render_json_records(@clip, params[:page]) }
       end
     end

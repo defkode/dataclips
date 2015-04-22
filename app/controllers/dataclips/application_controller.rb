@@ -34,3 +34,6 @@ module Dataclips
     end
   end
 end
+
+# require_dependency File.join(Dataclips::Engine.root, "app/controllers/dataclips", "clips_controller")
+# require_dependency File.join(Dataclips::Engine.root, "app/controllers/dataclips", "insights_controller")
