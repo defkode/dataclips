@@ -4,7 +4,9 @@
   <title><%= yield :title %></title>
   <%= stylesheet_link_tag    "dataclips/application", media: "all" %>
   <%= javascript_include_tag "dataclips/application" %>
-  <%= csrf_meta_tags %>
+  <% if Dataclips::Engine.config.include_js.present? %>
+    <%= javascript_include_tag Dataclips::Engine.config.include_js %>
+  <% end %>
 </head>
 <body>
 

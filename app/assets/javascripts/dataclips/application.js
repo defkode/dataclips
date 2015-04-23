@@ -24,4 +24,6 @@
 //= require ./formatters
 //= require ./record
 //= require ./records
+//= require ./view
+
 //= require ./dataclips

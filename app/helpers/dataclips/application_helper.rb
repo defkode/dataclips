@@ -1,7 +1,15 @@
 module Dataclips
   module ApplicationHelper
-    def insight(insight)
-      render "dataclips/shared/iframe", id: dom_id(insight), src: dataclips.insight_path(insight, embedded: 1)
+    def insight_url(insight, locale = I18n.locale)
+      dataclips.insight_path(insight, locale: locale)
+    end
+
+    def download_insight_url(insight)
+      dataclips.export_insight_path(insight, format: :csv)
+    end
+
+    def insight(insight, options = {})
+      render "dataclips/shared/iframe", id: dom_id(insight), width: options[:width] || "100%", height: options[:height] || "500", src: dataclips.insight_path(insight, embedded: 1, locale: I18n.locale)
     end
 
     def clip_title(clip)
