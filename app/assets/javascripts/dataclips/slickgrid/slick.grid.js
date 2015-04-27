@@ -1437,6 +1437,9 @@ if (typeof Slick === "undefined") {
         }
       }
 
+      if (!item[m.id]) {
+        cellCss += (" empty")
+      }
       stringArray.push("<div class='" + cellCss + "'>");
 
       // if there is a corresponding row (if not, this is the Add New row or this data hasn't been loaded yet)

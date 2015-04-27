@@ -1,21 +1,18 @@
-<div class='input-group datetime' id='<%= id %>_from' rel="<%= key %>_from" >
-  <input class="form-control datetime" name="<%= key %>_from" />
-  <span class="input-group-addon">
-    <i class="fa fa-calendar"></i>
-  </span>
+<% %w(from to).each do |suffix| %>
+<div class="col-md-6">
+  <div class='input-group datetime' id='<%= id %>_<%= suffix %>_picker' rel="<%= key %>_<%= suffix %>" >
+    <input id='<%= id %>_<%= suffix %>' class="form-control datetime" placeholder="<%= suffix %>" name="<%= key %>_<%= suffix %>" />
+    <span class="input-group-addon">
+      <i class="fa fa-calendar"></i>
+    </span>
+  </div>
 </div>
-
-<div class='input-group datetime' id='<%= id %>_to' rel="<%= key %>_to">
-  <input class="form-control datetime" name="<%= key %>_to" />
-  <span class="input-group-addon">
-    <i class="fa fa-calendar"></i>
-  </span>
-</div>
+<% end %>
 
 <script>
   $(document).ready(function(){
     var options = {
-      sideBySide: true,
+      sideBySide: false,
       locale: '<%= I18n.locale %>',
       format: "L HH:mm:ss",
       icons: {
@@ -28,7 +25,7 @@
       }
     }
 
-    var fromPicker = $('#<%= id %>_from').datetimepicker(options);
-    var toPicker = $('#<%= id %>_to').datetimepicker(options);
+    var fromPicker = $('#<%= id %>_from_picker').datetimepicker(options);
+    var toPicker = $('#<%= id %>_to_picker').datetimepicker(options);
   });
 </script>

@@ -1,12 +1,12 @@
-<div class='input-group date' id='<%= id %>_from' rel="<%= key %>_from" >
-  <input class="form-control date" name="<%= key %>_from" />
-  <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+<% %w(from to).each do |suffix| %>
+<div class="col-md-6">
+  <div class='input-group date' id='<%= id %>_<%= suffix %>_picker' rel="<%= key %>_<%= suffix %>" >
+    <input id='<%= id %>_<%= suffix %>' class="form-control date" placeholder="<%= suffix %>"  name="<%= key %>_<%= suffix %>" />
+    <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+  </div>
 </div>
+<% end %>
 
-<div class='input-group date' id='<%= id %>_to' rel="<%= key %>_to">
-  <input class="form-control date" name="<%= key %>_to" />
-  <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
-</div>
 <script>
   $(document).ready(function(){
     var options = {
@@ -23,7 +23,7 @@
       }
     }
 
-    $('#<%= id %>_from').datetimepicker(options);
-    $('#<%= id %>_to').datetimepicker(options);
+    $('#<%= id %>_from_picker').datetimepicker(options);
+    $('#<%= id %>_to_picker').datetimepicker(options);
   });
 </script>

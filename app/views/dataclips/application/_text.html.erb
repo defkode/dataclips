@@ -1,10 +1,13 @@
-<div class="input-group">
-  <input class="form-control" list="dictionary_<%= id %>" id="<%= id %>" name="<%= key %>" type="text" placeholder="<%= key %>" />
-  <% if dictionary %>
-  <datalist id="dictionary_<%= id %>">
-    <% Dataclips::Engine.config.dictionaries[dictionary.to_sym].call(I18n.locale).each do |item| %>
-      <option value="<%= item %>"><%= item %></option>
+<div class="col-md-6">
+  <div class="input-group">
+    <input class="form-control" list="dictionary_<%= id %>" id="<%= id %>" name="<%= key %>" type="text" placeholder="<%= key %>" />
+    <% if dictionary %>
+    <datalist id="dictionary_<%= id %>">
+      <% items = dictionary.is_a?(Array) ? dictionary : Dataclips::Engine.config.dictionaries[dictionary.to_sym].call(I18n.locale) %>
+      <% items.each do |item| %>
+        <option value="<%= item %>"><%= item %></option>
+      <% end %>
+    </datalist>
     <% end %>
-  </datalist>
-  <% end %>
+  </div>
 </div>

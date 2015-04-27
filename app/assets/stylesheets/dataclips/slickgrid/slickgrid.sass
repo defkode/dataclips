@@ -1,343 +1,133 @@
-.slick-header.ui-state-default, .slick-headerrow.ui-state-default
-  width: 100%
-  overflow: hidden
-  border-left: 0px
-
-.slick-header-columns, .slick-headerrow-columns
-  position: relative
-  white-space: nowrap
-  cursor: default
-  overflow: hidden
-
-
-.slick-header-column.ui-state-default
-  position: relative
-  display: inline-block
-  overflow: hidden
-  -o-text-overflow: ellipsis
-  text-overflow: ellipsis
-  height: 16px
-  line-height: 16px
-  margin: 0
-  padding: 4px
-  border-right: 1px solid silver
-  border-left: 0px
-  border-top: 0px
-  border-bottom: 0px
-  float: left
-
-
-.slick-headerrow-column.ui-state-default
-  padding: 4px
-
-
-.slick-header-column-sorted
-  font-style: italic
-
-
-.slick-sort-indicator
-  display: inline-block
-  width: 8px
-  height: 5px
-  margin-left: 4px
-  margin-top: 6px
-  float: left
-
-
-.slick-sort-indicator-desc
-  background: image-url('dataclips/slickgrid/sort-desc.png')
-
-
-.slick-sort-indicator-asc
-  background: image-url('dataclips/slickgrid/sort-asc.png')
-
-.slick-resizable-handle
-  position: absolute
-  font-size: 0.1px
-  display: block
-  cursor: col-resize
-  width: 4px
-  right: 0px
-  top: 0
-  height: 100%
-
-
-.grid-canvas
-  position: relative
-  outline: 0
-
-
-.slick-row.ui-widget-content, .slick-row.ui-state-active
-  position: absolute
-  border: 0px
-  width: 100%
-
-
-.slick-cell, .slick-headerrow-column
-  position: absolute
-  border: 1px solid transparent
-  border-right: 1px dotted silver
-  border-bottom-color: silver
-  overflow: hidden
-  -o-text-overflow: ellipsis
-  text-overflow: ellipsis
-  vertical-align: middle
-  z-index: 1
-  padding: 1px 2px 2px 1px
-  margin: 0
-  white-space: nowrap
-  cursor: default
-
-
-.slick-group
-
-
-.slick-group-toggle
-  display: inline-block
-
-
-.slick-cell.highlighted
-  background: lightskyblue
-  background: rgba(0, 0, 255, 0.2)
-  -webkit-transition: all 0.5s
-  -moz-transition: all 0.5s
-  -o-transition: all 0.5s
-  transition: all 0.5s
-
-
-.slick-cell.flashing
-  border: 1px solid red !important
-
-
-.slick-cell.editable
-  z-index: 11
-  overflow: visible
-  background: white
-  border-color: black
-  border-style: solid
-
-
-.slick-cell:focus
-  outline: none
-
-
-.slick-reorder-proxy
-  display: inline-block
-  background: blue
-  opacity: 0.15
-  filter: alpha(opacity = 15)
-  cursor: move
-
-
-.slick-reorder-guide
-  display: inline-block
-  height: 2px
-  background: blue
-  opacity: 0.7
-  filter: alpha(opacity = 70)
-
-
-.slick-selection
-  z-index: 10
-  position: absolute
-  border: 2px dashed black
-
-
-
-
-[class*="slickgrid"]
-  margin-bottom: 20px
-
-
 [class*="slickgrid"] *
-  -webkit-box-sizing: content-box
   -moz-box-sizing: content-box
   box-sizing: content-box
 
+.slick-header
 
-.slick-header.ui-state-default, .slick-headerrow.ui-state-default
-  width: 100%
-  overflow: hidden
-  color: #505050
-  font-weight: bold
-  text-shadow: white 0 1px 0
-  background: gainsboro
-  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #f2f2f2), color-stop(100%, #dcdcdc))
-  background-image: -webkit-linear-gradient(#f2f2f2, #dcdcdc)
-  background-image: -moz-linear-gradient(#f2f2f2, #dcdcdc)
-  background-image: -o-linear-gradient(#f2f2f2, #dcdcdc)
-  background-image: linear-gradient(#f2f2f2, #dcdcdc)
-  -webkit-box-shadow: rgba(255, 255, 255, 0.8) 0 1px 0 inset, rgba(0, 0, 0, 0.2) 0 1px 0
-  -moz-box-shadow: rgba(255, 255, 255, 0.8) 0 1px 0 inset, rgba(0, 0, 0, 0.2) 0 1px 0
-  box-shadow: rgba(255, 255, 255, 0.8) 0 1px 0 inset, rgba(0, 0, 0, 0.2) 0 1px 0
+  .slick-header-columns
+    position: relative
+    cursor: default
+
+    .slick-header-column
+      position: relative
+      overflow: hidden
+      text-overflow: ellipsis
+      float: left
+      background: #E0E0E0
+      padding: 8px
+      font-size: 12px
+      border-right: 1px solid silver
+
+      &:last-child
+        border-color: transparent
+
+      .slick-resizable-handle
+        position: absolute
+        width: 4px
+        right: 0
+        top: 0
+        display: block
+        cursor: col-resize
+        height: 100%
+
+      span.slick-column-name
+        font-weight: bold
+        text-shadow: white 0 1px 0
+
+      span.slick-sort-indicator
+        position: absolute
+        top: 8px
+        right: 5px
+        font-family: FontAwesome
+        font-weight: normal
+        font-style: normal
+
+      &.slick-header-sorted
+
+      &.slick-header-sortable
+        background: #d0d0d0
+        cursor: pointer
+
+        &.boolean, &.date, &.time, &.datetime
+          // sort-amount-asc
+          .slick-sort-indicator-asc:after
+            content: '\f160'
+
+          // sort-amount-desc
+          .slick-sort-indicator-desc:after
+            content: '\f161'
+
+        &.text
+          // sort-alpha-asc
+          .slick-sort-indicator-asc:after
+            content: '\f15d'
+
+          // sort-amount-desc
+          .slick-sort-indicator-desc:after
+            content: '\f15e'
+
+        &.integer, &.float
+          // sort-numeric-asc
+          .slick-sort-indicator-asc:after
+            content: '\f162'
+
+          // sort-numeric-desc
+          .slick-sort-indicator-desc:after
+            content: '\f163'
+
+.slick-cell
+  position: absolute
   font-size: 11px
   font-family: Menlo
-
-
-.slick-header-columns, .slick-headerrow-columns
-  position: relative
-  white-space: nowrap
-  cursor: default
-  overflow: hidden
-
-
-.slick-header-column.ui-state-default
-  position: relative
-  display: inline-block
+  padding: 5px
   overflow: hidden
   text-overflow: ellipsis
-  height: 16px
-  line-height: 16px
-  margin: 0
-  padding: 10px
-  border-right: 1px solid silver
-  border-left: 0px
-  border-top: 0px
-  border-bottom: 0px
-  float: left
+  vertical-align: middle
+  white-space: nowrap
+  text-align: left
+  border-right: 1px solid #DFD7EC
+  border-bottom: 1px solid #DFD7EC
+  cursor: default
+
+  a
+    color: #6F5498
+    text-decoration: underline
+
+  &:last-child
+    border-right: none
+
+  &.integer, &.float
+    text-align: right
+    color: darkblue
+
+  &.date, &.time, &.datetime
+    text-align: right
+    color: darkblue
+
+  &.boolean
+    text-align: center
+
+  &.empty
 
 
-.slick-headerrow-column.ui-state-default
-  padding: 4px
 
-
-.slick-header-column-sorted
-  background: #f2f2f2
-  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #dcdcdc), color-stop(100%, #f2f2f2))
-  background-image: -webkit-linear-gradient(#dcdcdc, #f2f2f2)
-  background-image: -moz-linear-gradient(#dcdcdc, #f2f2f2)
-  background-image: -o-linear-gradient(#dcdcdc, #f2f2f2)
-  background-image: linear-gradient(#dcdcdc, #f2f2f2)
-  -webkit-box-shadow: rgba(0, 0, 0, 0.2) 0 1px 1px inset
-  -moz-box-shadow: rgba(0, 0, 0, 0.2) 0 1px 1px inset
-  box-shadow: rgba(0, 0, 0, 0.2) 0 1px 1px inset
-
-
-.slick-sort-indicator
-  display: inline-block
-  width: 8px
-  height: 5px
-  margin-left: 4px
-
-
-.slick-resizable-handle
+.slick-row
   position: absolute
-  font-size: 0.1px
-  display: block
-  cursor: col-resize
-  width: 4px
-  right: 0px
-  top: 0
-  height: 100%
+  width: 100%
+
+  &.odd
+    background-color: #F8F6FB
+  &.even
+    background-color: #ffffff
+  &.active
+    background-color: #DFD7EC
 
 
-.slick-header-sortable
-  background: gainsboro
-  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #f2f2f2), color-stop(100%, #c0c0c0))
-  background-image: -webkit-linear-gradient(#f2f2f2, #c0c0c0)
-  background-image: -moz-linear-gradient(#f2f2f2, #c0c0c0)
-  background-image: -o-linear-gradient(#f2f2f2, #c0c0c0)
-  background-image: linear-gradient(#f2f2f2, #c0c0c0)
-
+.slick-viewport
+  background-color: #f0f0f0
+  margin: 0
+  padding: 0
 
 .grid-canvas
   position: relative
   outline: 0
-
-
-.slick-row.ui-widget-content, .slick-row.ui-state-active
-  position: absolute
-  border: 0px
-  width: 100%
-
-.slick-row.odd
-  background-color: #f5f5f5
-
-.slick-row.active, .slick-row.selected
-  background-color: #e3e3e3
-
-
-.slick-cell, .slick-headerrow-column
-  position: absolute
-  border: 1px solid transparent
-  border-right: 1px dotted silver
-  border-bottom-color: silver
-  overflow: hidden
-  text-overflow: ellipsis
-  white-space: nowrap
-  vertical-align: middle
-  z-index: 1
-  padding: 5px
-  margin: 0
-  cursor: default
-  background-color: white
-  background-color: rgba(255, 255, 255, 0.5)
-
-
-.slick-group-toggle
-  display: inline-block
-
-
-.slick-cell
-  font-size: 11px
-  font-family: Menlo
-
-.slick-cell.highlighted
-  background: lightskyblue
-  background: rgba(0, 0, 255, 0.2)
-  -webkit-transition: all 0.5s
-  -moz-transition: all 0.5s
-  transition: all 0.5s
-
-.slick-cell.flashing
-  border: 1px solid red !important
-
-.slick-cell:focus
-  outline: none
-
-.slick-cell.integer, .slick-cell.float, .slick-cell.email
-  text-align: right
-  color: darkblue
-
-
-.slick-cell.date, .slick-cell.time, .slick-cell.datetime
-  text-align: right
-  color: darkgreen
-
-
-.slick-cell.boolean
-  text-align: center
-
-
-.slick-reorder-proxy
-  display: inline-block
-  background: blue
-  opacity: 0.15
-  filter: alpha(opacity=15)
-  cursor: move
-
-
-.slick-reorder-guide
-  display: inline-block
-  height: 2px
-  background: blue
-  opacity: 0.7
-  filter: alpha(opacity=70)
-
-
-.slick-selection
-  z-index: 10
-  position: absolute
-  border: 2px dashed black
-
-
-#grid
-  background-color: #fff
-  border: 1px solid #c0c0c0
-  margin: 0
-  padding: 0
-
-
-
-
-

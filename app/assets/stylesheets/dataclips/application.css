@@ -18,6 +18,15 @@
  *= require_self
  */
 
+body:-webkit-full-screen {
+  width: 100%;
+}
+
+#grid {
+  border: 1px solid silver;
+  margin-right: 40px;
+}
+
 #modal {
   position: fixed;
   top: 0;
@@ -37,16 +46,89 @@
 
 
 #filters {
-  overflow: auto;
-  z-index: 1;
   position: fixed;
   top: 0;
-  right: 0;
-  width: 100%;
+  right: -440px;
+  width: 480px;
+  height: 100%;
+  background-color: rgba(255, 255,255,1);
+  transition: all 0.5s ease;
+  box-shadow: -5px 0 20px 0 rgba(0,0,0,0.3);
 }
 
-#sidebar {
-  border: 1px solid #ccc;
-  background: #fff;
-  width: 300px;
+
+#toggle {
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40px;
+  background: #6F5498;
+  border-right: 1px solid silver;
 }
+
+
+#toggle a {
+  font-size: 20px;
+  color: #fff;
+  text-decoration: none;
+  text-align: center;
+  display: block;
+  margin-top: 10px;
+}
+
+
+#sidebar {
+  position: relative;
+  margin-left: 40px;
+  width: 450px;
+  overflow: auto;
+}
+
+
+#filters:target {
+  right: 0;
+}
+
+
+#filters a.hide-filters {
+  display: none;
+}
+
+#filters:target a.show-filters {
+  display: none;
+}
+
+#filters:target a.hide-filters {
+
+  display: block;
+}
+
+.actions {
+  text-align: center;
+  width: 40px;
+  position: absolute;
+  bottom: 10px;
+}
+
+.input-group {
+  margin: 10px 0;
+}
+
+label.main {
+  display: block;
+  padding: 5px;
+  text-overflow: ellipsis;
+  text-shadow: white 0 1px 0;
+  background: #d0d0d0;
+  padding: 8px;
+  font-size: 12px;
+}
+
+.row {
+  margin: 0;
+}
+
+.form-group {
+}
+

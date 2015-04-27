@@ -30,11 +30,7 @@ module Dataclips
       setup_clip
 
       respond_to do |format|
-        format.html {
-          if params[:embedded].present?
-            render :embedded
-          end
-        }
+        format.html
         format.json { render_json_records(@clip, params[:page]) }
       end
     end

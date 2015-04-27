@@ -67,20 +67,26 @@ class Dataclips.View extends Backbone.View
       else
         options.type
 
-      columns.push
-        focusable:      true
-        field:          attr
-        id:             attr
-        name:           Dataclips.config.headers[attr]
-        sortable:       options.sortable?
-        cssClass:       options.type
-        headerCssClass: options.type
-        formatter:      Dataclips.Formatters[formatter]
-        width:          options.width
+      unless options.hidden?
+        columns.push
+          focusable:      true
+          field:          attr
+          id:             attr
+          name:           Dataclips.config.headers[attr]
+          selectable:     false
+          sortable:       options.sortable?
+          cssClass:       options.type
+          headerCssClass: options.type
+          formatter:      Dataclips.Formatters[formatter]
+          width:          options.width
 
     grid = new Slick.Grid("#grid", dataView, columns, options)
 
     grid.registerPlugin(new Slick.AutoTooltips(enableForHeaderCells: true));
+
+
+    $(window).resize ->
+      grid.resizeCanvas()
 
     # grid.onSelectedRowsChanged.subscribe (e, args) ->
     #    console.log(grid.getSelectedRows())
@@ -103,7 +109,11 @@ class Dataclips.View extends Backbone.View
     textFilter = (item, attr, query) ->
       return true unless query
       return true if _.isEmpty query.trim()
-      item[attr]?.toLowerCase().indexOf(query.toLowerCase()) != -1
+      value = item[attr]
+
+      return false unless value?
+
+      value.toLowerCase().indexOf(query.toLowerCase()) != -1
 
     numericFilter = (item, attr, range) ->
       value = item[attr]
@@ -168,9 +178,8 @@ class Dataclips.View extends Backbone.View
       grid.invalidateRows(args.rows)
       grid.render()
 
-
     dataView.onPagingInfoChanged.subscribe (e, args) ->
-      $("span.count").text(args.totalRows)
+      Dataclips.proxy.set(grid_entries_count: args.totalRows)
 
     updateDataView = (data) ->
       dataView.beginUpdate()

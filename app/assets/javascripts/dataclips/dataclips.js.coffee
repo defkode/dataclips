@@ -1,8 +1,4 @@
 Dataclips.run = ->
-  window.addEventListener 'message', (event) ->
-    mainWindow = event.source
-
-
   bg = $('#progress').get(0)
   ctx = bg.getContext('2d')
   imd = null;
@@ -10,7 +6,7 @@ Dataclips.run = ->
   quart = Math.PI / 2
 
   ctx.beginPath()
-  ctx.strokeStyle = '#999'
+  ctx.strokeStyle = '#6F5498'
   ctx.closePath()
   ctx.fill()
   ctx.lineWidth = 10.0
@@ -29,7 +25,7 @@ Dataclips.run = ->
 
   view = new Dataclips.View(collection: collection)
 
-  collection.on "batchInsert", (data) ->
+  collection.on "batchInsert", (data) =>
     total_entries = data.total_entries
     entries_count = collection.size()
     percent_loaded = if entries_count > 0 then Math.round((entries_count / total_entries) * 100) else 0
@@ -37,12 +33,10 @@ Dataclips.run = ->
     view.moveProgressBar(percent_loaded)
     draw(percent_loaded / 100)
 
-    window.parent.postMessage
+    Dataclips.proxy.set
       total_entries: total_entries
-      entries_count: entries_count,
+      entries_count: entries_count
       percent_loaded: percent_loaded
-    , "*"
-
 
   collection.fetchInBatches(@config.params)
   view.render()
