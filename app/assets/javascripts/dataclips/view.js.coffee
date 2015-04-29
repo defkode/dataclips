@@ -1,6 +1,9 @@
 class Dataclips.View extends Backbone.View
   el: "body"
   events:
+    "click a.fullscreen": ->
+      @requestFullScreen(document.body)
+
     "input input[type=text]": _.debounce (event) ->
       @filterArgs.set(event.target.name, $.trim(event.target.value))
 
@@ -44,6 +47,16 @@ class Dataclips.View extends Backbone.View
 
   moveProgressBar: (percentLoaded) ->
     $("#modal, #progress").toggle percentLoaded isnt 100
+
+
+  requestFullScreen: (element) ->
+    if (document.fullscreenEnabled || document.mozFullScreenEnabled || document.documentElement.webkitRequestFullScreen)
+      if element.requestFullscreen
+        element.requestFullscreen()
+      else if element.mozRequestFullScreen
+        element.mozRequestFullScreen()
+      else if element.webkitRequestFullScreen
+        element.webkitRequestFullScreen()
 
   render: ->
     @filterArgs = new Backbone.Model

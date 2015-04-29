@@ -28,7 +28,13 @@ Dataclips.run = ->
   collection.on "batchInsert", (data) =>
     total_entries = data.total_entries
     entries_count = collection.size()
-    percent_loaded = if entries_count > 0 then Math.round((entries_count / total_entries) * 100) else 0
+    percent_loaded = if entries_count > 0
+      Math.round((entries_count / total_entries) * 100)
+    else
+      if total_entries is 0
+        100
+      else
+        0
 
     view.moveProgressBar(percent_loaded)
     draw(percent_loaded / 100)

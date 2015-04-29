@@ -2,8 +2,7 @@ class CreateDataclipsInsights < ActiveRecord::Migration
   def change
     create_table :dataclips_insights do |t|
       t.string  :clip_id, null: false
-      t.json    :schema, default: {}
-      t.json    :params, default: {}
+      t.json    :params
       t.timestamps
     end
 
