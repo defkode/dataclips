@@ -3,7 +3,7 @@ class Dataclips.Record extends Backbone.Model
     attributes = _.reduce options, (memo, value, key) ->
       memo[key] = switch Dataclips.config.schema[key].type
         when "datetime", "time", "date"
-          moment(value)
+          moment(value) if value?
         else
           value
 

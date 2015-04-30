@@ -9,15 +9,16 @@ module Dataclips
 
       response.headers['Content-Type']        = "text/csv"
       response.headers['Content-Disposition'] = "attachment; filename='#{@clip_id}.csv'"
-      response.stream.write CSV.generate(force_quotes: true) { |csv| csv << @headers.values}
+
+      csv_options = {encoding: "WINDOWS-1252", force_quotes: true}
+      response.stream.write CSV.generate(csv_options) { |csv| csv << @headers.values}
 
       records = @clip.paginate(1)
-
-      response.stream.write CSV.generate(force_quotes: true) { |csv| records.each { |r| csv << r.values } }
+      stream_records(records, csv_options)
 
       while next_page = records.next_page do
         records = @clip.paginate(next_page)
-        response.stream.write CSV.generate(force_quotes: true) { |csv| records.each { |r| csv << r.values } }
+        stream_records(records, csv_options)
       end
     rescue IOError => e
       puts 'Connection closed'
@@ -36,6 +37,14 @@ module Dataclips
     end
 
     protected
+
+    def stream_records(records, csv_options)
+      response.stream.write CSV.generate(csv_options) { |csv|
+        records.each do |r|
+          csv << r.values.map {|v| v.is_a?(Time) ? v.to_s(:db) : v }
+        end
+      }
+    end
 
     def setup_clip
       @insight = Insight.find_by_hash_id(params[:id]) or raise ActiveRecord::RecordNotFound
