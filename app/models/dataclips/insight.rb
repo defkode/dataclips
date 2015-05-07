@@ -9,6 +9,16 @@ module Dataclips
       hash_id
     end
 
+    def self.get(clip_id, params = nil)
+      find_by(clip_id: clip_id)
+    end
+
+    def self.get!(clip_id, params = nil)
+      Dataclips::Insight.where(clip_id: clip_id).detect do |i|
+        di.params == params
+      end || Dataclips::Insight.create!(clip_id: clip_id, params: params)
+    end
+
     def self.find_by_hash_id(hash_id)
       find_by(id: Dataclips.hashids.decode(hash_id))
     end

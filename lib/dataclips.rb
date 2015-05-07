@@ -14,28 +14,38 @@ end
 
 module Dataclips
   def reload!
-    Dir.glob("#{Dataclips::Engine.config.path}/*.sql") do |clip_path|
-      clip_id = clip_path.match(/(\w+).sql/)[1]
-      Rails.logger.debug "reloading: #{clip_id}"
+    Dir.chdir(Dataclips::Engine.config.path) do
+      Dir.glob("**/*.sql") do |path|
+        # staff/payment/orders.sql
+        namespaces = path.split("/")
 
-      remove_const(clip_id.camelize) if const_defined?(clip_id.camelize)
+        clip_id = namespaces.pop.sub(".sql", "") # orders.sql => orders
+        Rails.logger.debug "reloading: #{clip_id}"
 
-      sql = SQLQuery.new File.read(clip_path)
+        # scope: Staff::Payment
+        make_namespaces namespaces do
+          clip_class_name = clip_id.camelize
 
-      klass = Class.new(Clip) do
-        @template  = sql.template
-        @schema    = sql.schema
-        @per_page  = sql.options["per_page"]
-        @variables = sql.variables
+          remove_const(clip_class_name) if const_defined?(clip_class_name)
 
-        attr_accessor *sql.variables.keys
+          sql = SQLQuery.new File.read(path)
 
-        sql.variables.each do |key, options|
-          validates key, date: options[:type] == "date"
+          klass = Class.new(Clip) do
+            @template  = sql.template
+            @schema    = sql.schema
+            @per_page  = sql.options["per_page"]
+            @variables = sql.variables
+
+            attr_accessor *sql.variables.keys
+
+            sql.variables.each do |key, options|
+              validates key, date: options[:type] == "date"
+            end
+          end
+
+          const_set(clip_class_name, klass)
         end
       end
-
-      const_set(clip_id.camelize, klass)
     end
   end
 
@@ -43,5 +53,14 @@ module Dataclips
     @hashids ||= Hashids.new(Dataclips::Engine.config.salt, 8)
   end
 
-  module_function :hashids, :reload!
+  def make_namespaces(namespaces, &block)
+    modules = namespaces.each_with_object([self]) do |namespace, modules|
+      obj = modules.last
+      str = namespace.camelize
+      modules << (obj.const_defined?(str) ? obj.const_get(str) : obj.const_set(str, Module.new))
+    end
+    modules.last.module_exec(&block)
+  end
+
+  module_function :hashids, :reload!, :make_namespaces
 end
