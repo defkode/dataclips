@@ -18,8 +18,6 @@
  *= require_self
  */
 
-@import url(http://fonts.googleapis.com/css?family=Inconsolata&subset=latin,latin-ext);
-
 body:-webkit-full-screen {
   width: 100%;
 }
