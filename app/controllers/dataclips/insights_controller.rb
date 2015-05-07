@@ -10,7 +10,7 @@ module Dataclips
       response.headers['Content-Type']        = "text/csv"
       response.headers['Content-Disposition'] = "attachment; filename='#{@clip_id}.csv'"
 
-      csv_options = {encoding: "WINDOWS-1252", force_quotes: true}
+      csv_options = {force_quotes: true}
       response.stream.write CSV.generate(csv_options) { |csv| csv << @headers.values}
 
       records = @clip.paginate(1)
