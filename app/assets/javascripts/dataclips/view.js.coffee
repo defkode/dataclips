@@ -72,6 +72,12 @@ class Dataclips.View extends Backbone.View
       dataView.setFilterArgs(model.attributes)
       dataView.refresh()
 
+    @listenTo Dataclips.proxy, "change", (model) ->
+      @$el.find("span.total_entries").text(model.get("total_entries"))
+      @$el.find("span.entries_count").text(model.get("entries_count"))
+      @$el.find("span.percent_loaded").text(model.get("percent_loaded"))
+      @$el.find("span.grid_entries_count").text(model.get("grid_entries_count"))
+
     columns = []
 
     _.each Dataclips.config.schema, (options, attr) ->
