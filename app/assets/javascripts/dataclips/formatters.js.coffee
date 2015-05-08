@@ -9,6 +9,7 @@ Dataclips.Formatters =
   binary:    (row, cell, value, columnDef, context) -> value
   boolean:   (row, cell, value, columnDef, context) ->
     if value is true then "&#9679" else "&#9675;"
-
   email:     (row, cell, value, columnDef, context) ->
     "<a href='mailto:#{value}'>#{value}</a>"
+  price:     (row, cell, value, columnDef, context) ->
+    value.toFixed(2)

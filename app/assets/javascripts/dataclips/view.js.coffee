@@ -21,6 +21,13 @@ class Dataclips.View extends Backbone.View
       else
         @filterArgs.set(event.target.name, value)
 
+    "change select.boolean": _.debounce (event) ->
+      value = event.target.value
+      if value is ""
+        @filterArgs.unset(event.target.name)
+      else
+        @filterArgs.set(event.target.name, value is "1")
+
     "dp.change .input-group": _.debounce (event) ->
       value = event.date
       attrName = $(event.target).attr("rel")
@@ -134,6 +141,10 @@ class Dataclips.View extends Backbone.View
 
       value.toLowerCase().indexOf(query.toLowerCase()) != -1
 
+    booleanFilter = (item, attr, selector) ->
+      return true if selector is undefined # all
+      selector is item[attr]
+
     numericFilter = (item, attr, range) ->
       value = item[attr]
       return true if value is undefined
@@ -186,6 +197,8 @@ class Dataclips.View extends Backbone.View
               from: args["#{attr}_from"],
               to:   args["#{attr}_to"]
             })
+          when "boolean"
+            booleanFilter(item, attr, args[attr])
           else
             true
 
