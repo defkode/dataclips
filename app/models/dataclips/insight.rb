@@ -14,7 +14,7 @@ module Dataclips
     end
 
     def self.get!(clip_id, params = nil)
-      Dataclips::Insight.where(clip_id: clip_id).detect do |i|
+      Dataclips::Insight.where(clip_id: clip_id).detect do |di|
         di.params == params
       end || Dataclips::Insight.create!(clip_id: clip_id, params: params)
     end
