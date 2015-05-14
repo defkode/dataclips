@@ -14,11 +14,11 @@ module Dataclips
       response.stream.write CSV.generate(csv_options) { |csv| csv << @headers.values}
 
       records = @clip.paginate(1)
-      stream_records(records, csv_options)
+      stream_records(records, csv_options, @time_zone)
 
       while next_page = records.next_page do
         records = @clip.paginate(next_page)
-        stream_records(records, csv_options)
+        stream_records(records, csv_options, @time_zone)
       end
     rescue IOError => e
       puts 'Connection closed'
@@ -38,20 +38,21 @@ module Dataclips
 
     protected
 
-    def stream_records(records, csv_options)
+    def stream_records(records, csv_options, time_zone)
       response.stream.write CSV.generate(csv_options) { |csv|
         records.each do |r|
-          csv << r.values.map {|v| v.is_a?(Time) ? v.to_s(:db) : v }
+          csv << r.values.map {|v| v.is_a?(Time) ? v.in_time_zone(time_zone).strftime(Time::DATE_FORMATS[:db]) : v }
         end
       }
     end
 
     def setup_clip
-      @insight = Insight.find_by_hash_id(params[:id]) or raise ActiveRecord::RecordNotFound
-      @clip_id = @insight.clip_id
+      @insight   = Insight.find_by_hash_id(params[:id]) or raise ActiveRecord::RecordNotFound
+      @clip_id   = @insight.clip_id
+      @time_zone = @insight.time_zone
       initialize_clip(@clip_id)
-      @headers  = localize_headers(@clip_id, @schema.keys)
-      @clip = @klass.new @insight.params
+      @headers   = localize_headers(@clip_id, @schema.keys)
+      @clip      = @klass.new @insight.params
     end
   end
 end

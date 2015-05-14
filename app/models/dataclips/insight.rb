@@ -28,6 +28,10 @@ module Dataclips
       Dataclips.hashids.encode(id)
     end
 
+    def time_zone
+      read_attribute(:time_zone) || Rails.configuration.time_zone
+    end
+
     def calculate_checksum
       self.checksum = Digest::MD5.hexdigest Marshal.dump(slice(:clip_id, :params))
     end

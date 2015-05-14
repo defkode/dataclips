@@ -61,20 +61,28 @@ module Dataclips
     end
 
     def paginate(page = 1)
-      WillPaginate::Collection.create(page, self.class.per_page) do |pager|
-        sql_with_total_entries = %{WITH _q AS (#{query}) SELECT COUNT(*) OVER () AS _total_entries, * FROM _q LIMIT #{pager.per_page} OFFSET #{pager.offset};}
+      ActiveRecord::Base::transaction do
+        WillPaginate::Collection.create(page, self.class.per_page) do |pager|
+          results = ActiveRecord::Base.connection.execute %{
+            BEGIN READ ONLY;
+            WITH insight AS (#{query})
+              SELECT
+                COUNT(*) OVER () AS _total_entries,
+                *
+              FROM insight
+              LIMIT #{pager.per_page} OFFSET #{pager.offset};
+          }
 
-        results = ActiveRecord::Base.connection.execute(sql_with_total_entries)
+          if pager.total_entries.nil?
+            pager.total_entries = results.none? ? 0 : results.first["_total_entries"].to_i
+          end
 
-        if pager.total_entries.nil?
-          pager.total_entries = results.none? ? 0 : results.first["_total_entries"].to_i
+          records = results.map do |record|
+            type_cast record.except("_total_entries").symbolize_keys
+          end
+
+          pager.replace records
         end
-
-        records = results.map do |record|
-          type_cast record.except("_total_entries").symbolize_keys
-        end
-
-        pager.replace records
       end
     end
   end
