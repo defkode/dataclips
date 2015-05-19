@@ -23,7 +23,6 @@ body:-webkit-full-screen {
 }
 
 #grid {
-  border: 1px solid silver;
   margin-right: 40px;
   font-family: 'Inconsolata';
 }
@@ -78,7 +77,6 @@ body:-webkit-full-screen {
   top: 0;
   left: 0;
   width: 40px;
-  background: #6F5498;
   border-right: 1px solid silver;
 }
 

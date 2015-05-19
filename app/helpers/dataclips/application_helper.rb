@@ -9,7 +9,7 @@ module Dataclips
     end
 
     def insight(insight, options = {})
-      render "dataclips/shared/iframe", id: dom_id(insight), width: options[:width] || "100%", height: options[:height] || "500", src: dataclips.insight_path(insight, locale: I18n.locale)
+      render "dataclips/shared/iframe", id: dom_id(insight), width: options[:width] || "100%", height: options[:height] || "500", src: dataclips.insight_path(insight, locale: I18n.locale, theme: options[:theme] || "default")
     end
 
     def clip_title(clip)

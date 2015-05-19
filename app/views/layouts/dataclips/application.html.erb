@@ -9,9 +9,7 @@
     <%= javascript_include_tag Dataclips::Engine.config.include_js %>
   <% end %>
 </head>
-<body>
-
+<body class="theme-<%= @theme %>">
 <%= yield %>
-
 </body>
 </html>

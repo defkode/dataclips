@@ -31,8 +31,13 @@ module Dataclips
       setup_clip
 
       respond_to do |format|
-        format.html
-        format.json { render_json_records(@clip, params[:page]) }
+        format.html do
+          @theme = params[:theme] || "default"
+        end
+
+        format.json do
+          render_json_records(@clip, params[:page])
+        end
       end
     end
 

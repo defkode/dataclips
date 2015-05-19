@@ -13,7 +13,6 @@
       overflow: hidden
       text-overflow: ellipsis
       float: left
-      background: #E0E0E0
       padding: 8px
       font-size: 12px
       border-right: 1px solid silver
@@ -46,7 +45,6 @@
       &.slick-header-sorted
 
       &.slick-header-sortable
-        background: #d0d0d0
         cursor: pointer
 
         &.boolean, &.date, &.time, &.datetime
@@ -90,17 +88,12 @@
   cursor: default
 
   a
-    color: #6F5498
     text-decoration: underline
 
   &:last-child
     border-right: none
 
-  &.integer, &.float
-    text-align: right
-    color: darkblue
-
-  &.date, &.time, &.datetime
+  &.integer, &.float,  &.date, &.time, &.datetime
     text-align: right
     color: darkblue
 
@@ -113,15 +106,7 @@
   position: absolute
   width: 100%
 
-  &.odd
-    background-color: #F8F6FB
-  &.even
-    background-color: #ffffff
-  &.active
-    background-color: #DFD7EC
-
 .slick-viewport
-  background-color: #f0f0f0
   margin: 0
   padding: 0
 
