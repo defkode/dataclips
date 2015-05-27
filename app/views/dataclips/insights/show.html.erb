@@ -18,9 +18,9 @@
 
     Dataclips.proxy = new Backbone.Model({total_entries: 0, entries_count: 0, percent_loaded: 0, grid_entries_count: undefined})
 
-    Dataclips.proxy.on("change", function (model){
+    Dataclips.proxy.on("change", _.debounce(function(model){
       window.parent.postMessage(model.toJSON(), "*")
-    });
+    }));
     Dataclips.run();
   });
 </script>

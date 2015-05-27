@@ -68,6 +68,34 @@ class Dataclips.View extends Backbone.View
   render: ->
     @filterArgs = new Backbone.Model
 
+    window.addEventListener 'message', (e) =>
+      _.each e.data, (value, key) =>
+        if Dataclips.config.schema[key]?
+          type = Dataclips.config.schema[key]["type"]
+
+          switch type
+            when "text"
+              if value?
+                $("[name=#{key}]").val(value)
+                @filterArgs.set(key, value)
+            when "float", "integer", "decimal"
+              if value.from?
+                $("[name=#{key}_from]").val(value.from)
+                @filterArgs.set("#{key}_from", value.from)
+              if value.to?
+                $("[name=#{key}_to]").val(value.to)
+                @filterArgs.set("#{key}_to", value.from)
+            when "date", "datetime", "time"
+              if value.from?
+                fromPicker = $("[rel=#{key}_from")
+                fromPicker.data('DateTimePicker').date(moment(value.from))
+                @filterArgs.set("#{key}_from", moment(value.from).toDate())
+
+              if value.to?
+                toPicker = $("[rel=#{key}_to")
+                toPicker.data('DateTimePicker').date(moment(value.to))
+                @filterArgs.set("#{key}_to", moment(value.to).toDate())
+
     options =
       enableColumnReorder: false
       forceFitColumns: true
@@ -75,11 +103,14 @@ class Dataclips.View extends Backbone.View
     dataView = new Slick.Data.DataView()
     dataView.setFilterArgs(@filterArgs.toJSON())
 
+
+
+
     @listenTo @filterArgs, "change", (model, data) ->
       dataView.setFilterArgs(model.attributes)
       dataView.refresh()
 
-    @listenTo Dataclips.proxy, "change", (model) ->
+    @listenTo Dataclips.proxy, "change", _.debounce (model) ->
       @$el.find("span.total_entries").text(model.get("total_entries"))
       @$el.find("span.entries_count").text(model.get("entries_count"))
       @$el.find("span.percent_loaded").text(model.get("percent_loaded"))

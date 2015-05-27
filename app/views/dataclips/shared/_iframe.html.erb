@@ -1,6 +1,9 @@
 <iframe scrolling='no' frameborder="no" allowfullscreen src='<%= src %>' width='<%= width %> ' height='<%= height %>' id='<%= id %>'></iframe>
 
 <script>
+var insightFilters = <%= filters.to_json.html_safe %>;
+var filtersSet = false;
+
 window.addEventListener('message',
   function (e) {
     // Sandboxed iframes which lack the 'allow-same-origin'
@@ -12,5 +15,11 @@ window.addEventListener('message',
       $("span.dataclips.entries_count").text(e.data.entries_count)
       $("span.dataclips.total_entries").text(e.data.total_entries);
       $("span.dataclips.grid_entries_count").text(e.data.grid_entries_count);
+      $("span.dataclips.percent_loaded").text(e.data.percent_loaded);
+
+      if (e.data.percent_loaded === 100 && filtersSet === false) {
+        frame.contentWindow.postMessage(insightFilters, "*");
+        filtersSet = true;
+      };
 });
 </script>
