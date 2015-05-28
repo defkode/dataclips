@@ -25,9 +25,16 @@ Dataclips.run = ->
 
   view = new Dataclips.View(collection: collection)
 
+  collection.on "reset", =>
+    Dataclips.proxy.set
+      total_entries: 0
+      entries_count: 0
+      percent_loaded: 0
+
   collection.on "batchInsert", (data) =>
     total_entries = data.total_entries
     entries_count = collection.size()
+
     percent_loaded = if entries_count > 0
       Math.round((entries_count / total_entries) * 100)
     else
@@ -44,5 +51,6 @@ Dataclips.run = ->
       entries_count: entries_count
       percent_loaded: percent_loaded
 
+  console.log @config
   collection.fetchInBatches(@config.params)
   view.render()

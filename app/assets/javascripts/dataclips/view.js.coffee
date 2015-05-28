@@ -3,6 +3,12 @@ class Dataclips.View extends Backbone.View
   events:
     "click a.fullscreen": ->
       @requestFullScreen(document.body)
+      false
+
+    "click a.reload": ->
+      @collection.reset()
+      @collection.fetchInBatches()
+      false
 
     "input input[type=text]": _.debounce (event) ->
       @filterArgs.set(event.target.name, $.trim(event.target.value))
@@ -76,34 +82,33 @@ class Dataclips.View extends Backbone.View
           switch type
             when "text"
               if value?
-                $("[name=#{key}]").val(value)
+                $("[name='#{key}']").val(value)
                 @filterArgs.set(key, value)
             when "float", "integer", "decimal"
               if value.from?
-                $("[name=#{key}_from]").val(value.from)
+                $("[name='#{key}_from']").val(value.from)
                 @filterArgs.set("#{key}_from", value.from)
               if value.to?
-                $("[name=#{key}_to]").val(value.to)
+                $("[name='#{key}_to']").val(value.to)
                 @filterArgs.set("#{key}_to", value.from)
             when "date", "datetime", "time"
               if value.from?
-                fromPicker = $("[rel=#{key}_from")
+                fromPicker = $("[rel='#{key}_from']")
                 fromPicker.data('DateTimePicker').date(moment(value.from))
                 @filterArgs.set("#{key}_from", moment(value.from).toDate())
 
               if value.to?
-                toPicker = $("[rel=#{key}_to")
+                toPicker = $("[rel='#{key}_to']")
                 toPicker.data('DateTimePicker').date(moment(value.to))
                 @filterArgs.set("#{key}_to", moment(value.to).toDate())
 
     options =
-      enableColumnReorder: false
-      forceFitColumns: true
+      enableColumnReorder:        false
+      forceFitColumns:            true
+      enableTextSelectionOnCells: true
 
     dataView = new Slick.Data.DataView()
     dataView.setFilterArgs(@filterArgs.toJSON())
-
-
 
 
     @listenTo @filterArgs, "change", (model, data) ->
@@ -249,5 +254,5 @@ class Dataclips.View extends Backbone.View
       dataView.setItems(data)
       dataView.endUpdate()
 
-    @listenTo @collection, "batchInsert", ->
+    @listenTo @collection, "reset batchInsert", ->
       updateDataView(@collection.toJSON())
