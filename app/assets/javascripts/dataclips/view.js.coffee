@@ -80,6 +80,10 @@ class Dataclips.View extends Backbone.View
           type = Dataclips.config.schema[key]["type"]
 
           switch type
+            when "boolean"
+              if value?
+                $("[name='#{key}']").val(if value is true then "1" else "0")
+                @filterArgs.set(key, value)
             when "text"
               if value?
                 $("[name='#{key}']").val(value)
