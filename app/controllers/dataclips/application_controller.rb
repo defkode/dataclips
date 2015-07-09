@@ -3,17 +3,6 @@ module Dataclips
     include ActionView::Helpers::NumberHelper
     protected
 
-    def initialize_clip(clip_id)
-      begin
-        @klass     = "Dataclips::#{clip_id.camelize}".constantize
-        @schema    = @klass.schema
-        @variables = @klass.variables
-      rescue NameError
-        Rails.logger.fatal("Dataclip: #{clip_id} does not exist.")
-        nil
-      end
-    end
-
     def localize_headers(clip_id, keys)
       keys.inject({}) do |memo, key|
         memo[key] = I18n.t("#{clip_id}.schema.#{key}", scope: "dataclips", default: key.to_s)

@@ -20,8 +20,17 @@ module Dataclips
       end
     end
 
+    def exclude!(fields = [])
+      @excludes = fields.map(&:to_sym)
+    end
+
+    def schema
+      excluded = @excludes || []
+      self.class.schema.except(*@excludes)
+    end
+
     def type_cast(attributes)
-      self.class.schema.reduce({}) do |memo, (key, schema_key)|
+      schema.reduce({}) do |memo, (key, schema_key)|
         value = attributes[key]
         memo[key] = case schema_key[:type].to_sym
           when :text     then ActiveRecord::Type::String.new.type_cast_from_database(value)

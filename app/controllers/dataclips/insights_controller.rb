@@ -55,9 +55,20 @@ module Dataclips
       @insight   = Insight.find_by_hash_id(params[:id]) or raise ActiveRecord::RecordNotFound
       @clip_id   = @insight.clip_id
       @time_zone = @insight.time_zone
-      initialize_clip(@clip_id)
+
+      begin
+        @klass     = "Dataclips::#{@clip_id.camelize}".constantize
+      rescue NameError
+        Rails.logger.fatal("Dataclip: #{@clip_id} does not exist.")
+        nil
+      end
+
+      @variables = @klass.variables
+      @clip          = @klass.new @insight.params
+      @clip.exclude!(@insight.excludes) if @insight.excludes.any?
+
+      @schema = @clip.schema
       @headers   = localize_headers(@clip_id, @schema.keys)
-      @clip      = @klass.new @insight.params
     end
   end
 end
