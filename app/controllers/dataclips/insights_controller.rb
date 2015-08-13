@@ -57,7 +57,7 @@ module Dataclips
       @time_zone = @insight.time_zone
 
       begin
-        @klass     = "Dataclips::#{@clip_id.camelize}".constantize
+        @klass     = "::Dataclips::#{@clip_id.gsub('/', '_').camelize}Clip".constantize
       rescue NameError
         Rails.logger.fatal("Dataclip: #{@clip_id} does not exist.")
         nil
