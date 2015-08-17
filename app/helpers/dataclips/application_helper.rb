@@ -4,8 +4,8 @@ module Dataclips
       dataclips.insight_path(insight, locale: locale)
     end
 
-    def download_insight_url(insight)
-      dataclips.export_insight_path(insight, format: :csv)
+    def download_insight_url(insight, locale = I18n.locale)
+      dataclips.export_insight_path(insight, locale: locale, format: :csv)
     end
 
     def insight(insight, options = {})

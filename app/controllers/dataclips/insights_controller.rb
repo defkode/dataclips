@@ -10,7 +10,12 @@ module Dataclips
       response.headers['Content-Type']        = "text/csv"
       response.headers['Content-Disposition'] = "attachment; filename='#{@clip_id}.csv'"
 
-      csv_options = {force_quotes: true}
+      international_csv_options = {force_quotes: true}
+      continental_csv_options   = {force_quotes: true, col_sep: ";"}
+
+      locale = params[:locale] || I18n.default_locale
+      csv_options = locale == "de" ? continental_csv_options : international_csv_options
+
       response.stream.write CSV.generate(csv_options) { |csv| csv << @headers.values}
 
       records = @clip.paginate(1)
