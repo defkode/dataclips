@@ -17,15 +17,5 @@ module Dataclips
         src:     dataclips.insight_path(insight, locale: I18n.locale, theme: options[:theme] || "default")
       }
     end
-
-    def clip_title(clip)
-      context = if title = Dataclips::Engine.config.titles[clip.id.to_sym]
-        title.call(clip.context)
-      else
-        clip.context
-      end
-
-      t("#{clip.id}.title", context.merge(default: clip.id.titleize, scope: :dataclips))
-    end
   end
 end

@@ -16,7 +16,7 @@ module Dataclips
     def self.get!(clip_id, params = nil, excludes = [])
       Dataclips::Insight.where(clip_id: clip_id).detect do |di|
         di.params == params
-      end || Dataclips::Insight.create!(clip_id: clip_id, params: params, excludes: excludes || [])
+      end || Dataclips::Insight.create!(clip_id: clip_id, name: "#{params.to_s.parameterize}", params: params, excludes: excludes || [])
     end
 
     def self.find_by_hash_id(hash_id)
