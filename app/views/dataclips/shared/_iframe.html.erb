@@ -4,21 +4,24 @@
 var insightFilters = <%= filters.to_json.html_safe %>;
 var filtersSet = false;
 
+var frame = document.getElementById('<%= id %>');
+
+$(frame).on("dataclips-refresh", function(){
+  frame.contentWindow.postMessage({refresh: true}, "*");
+});
+
+$(frame).on("dataclips-fullscreen", function(){
+  frame.contentWindow.postMessage({fullscreen: true}, "*");
+});
+
 window.addEventListener('message',
   function (e) {
-    // Sandboxed iframes which lack the 'allow-same-origin'
-    // header have "null" rather than a valid origin. This means you still
-    // have to be careful about accepting data via the messaging API you
-    // create. Check that source, and validate those inputs!
-    var frame = document.getElementById('<%= id %>');
+
     if (e.source === frame.contentWindow)
-      $("span.dataclips.entries_count").text(e.data.entries_count)
-      $("span.dataclips.total_entries").text(e.data.total_entries);
-      $("span.dataclips.grid_entries_count").text(e.data.grid_entries_count);
-      $("span.dataclips.percent_loaded").text(e.data.percent_loaded);
+      $(frame).trigger("dataclips", e.data)
 
       if (e.data.percent_loaded === 100 && filtersSet === false) {
-        frame.contentWindow.postMessage(insightFilters, "*");
+        frame.contentWindow.postMessage({filters: insightFilters}, "*");
         filtersSet = true;
       };
 });

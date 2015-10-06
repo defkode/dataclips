@@ -6,8 +6,7 @@ class Dataclips.View extends Backbone.View
       false
 
     "click a.reload": ->
-      @collection.reset()
-      @collection.fetchInBatches()
+      @reload()
       false
 
     "input input[type=text]": _.debounce (event) ->
@@ -57,6 +56,10 @@ class Dataclips.View extends Backbone.View
         else
           @filterArgs.unset(key)
 
+  reload: ->
+    @collection.reset()
+    @collection.fetchInBatches()
+
 
   moveProgressBar: (percentLoaded) ->
     $("#modal, #progress").toggle percentLoaded isnt 100
@@ -75,36 +78,41 @@ class Dataclips.View extends Backbone.View
     @filterArgs = new Backbone.Model
 
     window.addEventListener 'message', (e) =>
-      _.each e.data, (value, key) =>
-        if Dataclips.config.schema[key]?
-          type = Dataclips.config.schema[key]["type"]
+      @reload() if e.data.refresh is true
 
-          switch type
-            when "boolean"
-              if value?
-                $("[name='#{key}']").val(if value is true then "1" else "0")
-                @filterArgs.set(key, value)
-            when "text"
-              if value?
-                $("[name='#{key}']").val(value)
-                @filterArgs.set(key, value)
-            when "float", "integer", "decimal"
-              if value.from?
-                $("[name='#{key}_from']").val(value.from)
-                @filterArgs.set("#{key}_from", value.from)
-              if value.to?
-                $("[name='#{key}_to']").val(value.to)
-                @filterArgs.set("#{key}_to", value.from)
-            when "date", "datetime", "time"
-              if value.from?
-                fromPicker = $("[rel='#{key}_from']")
-                fromPicker.data('DateTimePicker').date(moment(value.from))
-                @filterArgs.set("#{key}_from", moment(value.from).toDate())
+      @requestFullScreen(document.body) if e.data.fullscreen is true
 
-              if value.to?
-                toPicker = $("[rel='#{key}_to']")
-                toPicker.data('DateTimePicker').date(moment(value.to))
-                @filterArgs.set("#{key}_to", moment(value.to).toDate())
+      if e.data.filters?
+        _.each e.data.filters, (value, key) =>
+          if Dataclips.config.schema[key]?
+            type = Dataclips.config.schema[key]["type"]
+
+            switch type
+              when "boolean"
+                if value?
+                  $("[name='#{key}']").val(if value is true then "1" else "0")
+                  @filterArgs.set(key, value)
+              when "text"
+                if value?
+                  $("[name='#{key}']").val(value)
+                  @filterArgs.set(key, value)
+              when "float", "integer", "decimal"
+                if value.from?
+                  $("[name='#{key}_from']").val(value.from)
+                  @filterArgs.set("#{key}_from", value.from)
+                if value.to?
+                  $("[name='#{key}_to']").val(value.to)
+                  @filterArgs.set("#{key}_to", value.from)
+              when "date", "datetime", "time"
+                if value.from?
+                  fromPicker = $("[rel='#{key}_from']")
+                  fromPicker.data('DateTimePicker').date(moment(value.from))
+                  @filterArgs.set("#{key}_from", moment(value.from).toDate())
+
+                if value.to?
+                  toPicker = $("[rel='#{key}_to']")
+                  toPicker.data('DateTimePicker').date(moment(value.to))
+                  @filterArgs.set("#{key}_to", moment(value.to).toDate())
 
     options =
       enableColumnReorder:        false
@@ -250,8 +258,14 @@ class Dataclips.View extends Backbone.View
       grid.invalidateRows(args.rows)
       grid.render()
 
+
     dataView.onPagingInfoChanged.subscribe (e, args) ->
-      Dataclips.proxy.set(grid_entries_count: args.totalRows)
+      length = dataView.getLength() - 1
+
+      Dataclips.proxy.set
+        grid_entries_count: args.totalRows
+        grid_entries: _.map [0..length], (id) -> dataView.getItem(id)
+
 
     updateDataView = (data) ->
       dataView.beginUpdate()
