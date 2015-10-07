@@ -141,7 +141,7 @@ class Dataclips.View extends Backbone.View
       else
         options.type
 
-      unless options.hidden?
+      if options.grid is true
         columns.push
           focusable:      true
           field:          attr

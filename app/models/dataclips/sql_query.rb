@@ -8,7 +8,11 @@ module Dataclips
     end
 
     def schema
-      configuration["schema"] || {}
+      _schema = {}
+      (configuration["schema"] || {}).each do |attribute, options|
+        _schema[attribute] = options.reverse_merge({grid: true, filter: true})
+      end
+      _schema
     end
 
     def variables

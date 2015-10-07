@@ -30,7 +30,7 @@
 <div id="filters">
   <div id="sidebar">
       <% @schema.each do |key, options| %>
-        <% next if options[:hidden] %>
+        <% next unless options[:filter] %>
         <% id = "#{@clip_id}_#{key}".parameterize %>
 
         <label class="main" for="<%= id %>">
