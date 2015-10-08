@@ -1,4 +1,7 @@
-<%= select_tag "#{id}_filter", options_for_select(options_for_select, default_filter) %>
+<div class="filters" style="padding: 10px 0; text-align: right">
+  <%= select_tag "#{id}_filter", options_for_select(options_for_select, default_filter) %>
+</div>
+
 <script>
   var frameID     = '<%= id %>'
   var frame       = document.getElementById(frameID);
@@ -8,7 +11,6 @@
 
   $('#<%= "#{id}_filter" %>').on("change", function(e){
     var filter = e.target.value;
-    console.log(filterSets[filter])
     jFrame.trigger("dataclips-filters", filterSets[filter])
   });
 

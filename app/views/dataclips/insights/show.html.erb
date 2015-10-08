@@ -16,10 +16,10 @@
   $(document).ready(function(){
     $(window).trigger("resize");
 
-    Dataclips.proxy = new Backbone.Model({total_entries_count: 0, entries_count: 0, percent_loaded: 0, grid_entries_count: undefined})
+    Dataclips.proxy = new Backbone.Model({total_entries_count: 0, percent_loaded: 0, entries: [], entries_count: 0, grid_entries: [], grid_entries_count: 0})
 
     Dataclips.proxy.on("change", _.debounce(function(model){
-      window.parent.postMessage(model.toJSON(), "*")
+      try { window.parent.postMessage(model.toJSON(), "*") } catch(err) { debugger }
     }));
     Dataclips.run();
   });

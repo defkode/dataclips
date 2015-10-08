@@ -49,12 +49,11 @@ Dataclips.run = ->
     view.moveProgressBar(percent_loaded)
     draw(percent_loaded / 100)
 
+
     Dataclips.proxy.set
       total_entries_count: total_entries_count
       entries_count:       entries_count
       percent_loaded:      percent_loaded
-      entries:             collection.toJSON()
-      grid_entries:        collection.toJSON()
       batch:               data.records
 
   collection.fetchInBatches(@config.params)

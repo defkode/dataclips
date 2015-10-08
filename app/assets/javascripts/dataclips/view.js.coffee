@@ -142,7 +142,7 @@ class Dataclips.View extends Backbone.View
     dataView = new Slick.Data.DataView()
     dataView.setFilterArgs(@filterArgs.toJSON())
 
-    @listenTo @filterArgs, "change", (model, data) ->
+    @listenTo @filterArgs, "change", _.debounce (model, data) ->
       dataView.setFilterArgs(model.attributes)
       dataView.refresh()
 
@@ -229,11 +229,11 @@ class Dataclips.View extends Backbone.View
       if range.from? || range.to?
         gte = (from) ->
           return true if from is undefined
-          moment(value) >= moment(from)
+          value >= from
 
         lte = (to) ->
           return true if to is undefined
-          moment(value) <= moment(to)
+          value <= to
 
         gte(range.from) && lte(range.to)
       else
@@ -266,15 +266,12 @@ class Dataclips.View extends Backbone.View
 
     # pageSize, pageNum, totalRows, totalPages
     dataView.onPagingInfoChanged.subscribe (e, args) ->
-
       Dataclips.proxy.set
-        grid_entries: _.map [0..(args.totalRows - 1)], (id) -> dataView.getItem(id)
+        grid_entries_count: args.totalRows
+        # grid_entries: _.map [0..(args.totalRows - 1)], (id) -> dataView.getItem(id) # not safe
 
     # previous, current
     dataView.onRowCountChanged.subscribe (e, args) ->
-      Dataclips.proxy.set
-        grid_entries_count: args.current
-
       grid.updateRowCount()
       grid.render()
 
@@ -289,5 +286,5 @@ class Dataclips.View extends Backbone.View
       dataView.endUpdate()
 
     @listenTo @collection, "reset batchInsert", ->
-      updateDataView(@collection.toJSON())
+      updateDataView @collection.toJSON()
 
