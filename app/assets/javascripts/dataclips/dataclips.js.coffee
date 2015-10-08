@@ -27,18 +27,21 @@ Dataclips.run = ->
 
   collection.on "reset", =>
     Dataclips.proxy.set
-      total_entries: 0
+      total_entries_count: 0
+      entries: []
+      grid_entries: []
       entries_count: 0
+      grid_entries_count: 0
       percent_loaded: 0
 
   collection.on "batchInsert", (data) =>
-    total_entries = data.total_entries
+    total_entries_count = data.total_entries_count
     entries_count = collection.size()
 
     percent_loaded = if entries_count > 0
-      Math.round((entries_count / total_entries) * 100)
+      Math.round((entries_count / total_entries_count) * 100)
     else
-      if total_entries is 0
+      if total_entries_count is 0
         100
       else
         0
@@ -47,13 +50,12 @@ Dataclips.run = ->
     draw(percent_loaded / 100)
 
     Dataclips.proxy.set
-      total_entries:      total_entries
-      entries_count:      entries_count
-      grid_entries_count: entries_count
-      percent_loaded:     percent_loaded
-      entries:            collection.toJSON()
-      grid_entries:       collection.toJSON()
-      batch:              data.records
+      total_entries_count: total_entries_count
+      entries_count:       entries_count
+      percent_loaded:      percent_loaded
+      entries:             collection.toJSON()
+      grid_entries:        collection.toJSON()
+      batch:               data.records
 
   collection.fetchInBatches(@config.params)
   view.render()

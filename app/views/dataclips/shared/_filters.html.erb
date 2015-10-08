@@ -1,0 +1,18 @@
+<%= select_tag "#{id}_filter", options_for_select(options_for_select, default_filter) %>
+<script>
+  var frameID     = '<%= id %>'
+  var frame       = document.getElementById(frameID);
+  var jFrame      = $(frame)
+
+  var filterSets    = <%= raw filters_sets.to_json %>;
+
+  $('#<%= "#{id}_filter" %>').on("change", function(e){
+    var filter = e.target.value;
+    console.log(filterSets[filter])
+    jFrame.trigger("dataclips-filters", filterSets[filter])
+  });
+
+  setTimeout(function(){
+    $('#<%= "#{id}_filter" %>').trigger("change");
+  }, 1000);
+</script>

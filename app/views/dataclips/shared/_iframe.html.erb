@@ -1,28 +1,30 @@
-<iframe scrolling='no' frameborder="no" allowfullscreen src='<%= src %>' width='<%= width %> ' height='<%= height %>' id='<%= id %>'></iframe>
+<iframe scrolling='no' frameborder="no" src='<%= src %>' width='<%= width %>' height='<%= height %>' id='<%= id %>' allowfullscreen></iframe>
 
 <script>
-var insightFilters = <%= filters.to_json.html_safe %>;
-var filtersSet = false;
+  var frameID     = '<%= id %>'
+  var frame       = document.getElementById(frameID);
+  var jFrame      = $(frame)
+  var frameWindow = frame.contentWindow;
 
-var frame = document.getElementById('<%= id %>');
+  // total_entries_count
+  // entries
+  // entries_count
+  // grid_entries
+  // grid_entries_count
+  // percent_loaded
+  // batch
+  window.addEventListener('message', function (e) {
+    if (e.source === frameWindow) { jFrame.trigger("dataclips-proxy", e.data) }
+  });
 
-$(frame).on("dataclips-refresh", function(){
-  frame.contentWindow.postMessage({refresh: true}, "*");
-});
+  var sendMessage = function (message) { frameWindow.postMessage(message, '*') };
 
-$(frame).on("dataclips-fullscreen", function(){
-  frame.contentWindow.postMessage({fullscreen: true}, "*");
-});
+  // use jquery custom events to make it easier for developers, because we can have multiple dataclips on one page
+  // we could use postMessage API directly, but it would be tricky to distinguish who is sender
+  jFrame.on("dataclips-refresh",    function(){  sendMessage({refresh:    true}) });
+  jFrame.on("dataclips-fullscreen", function(){  sendMessage({fullscreen: true}) });
 
-window.addEventListener('message',
-  function (e) {
-
-    if (e.source === frame.contentWindow)
-      $(frame).trigger("dataclips", e.data)
-
-      if (e.data.percent_loaded === 100 && filtersSet === false) {
-        frame.contentWindow.postMessage({filters: insightFilters}, "*");
-        filtersSet = true;
-      };
-});
+  jFrame.on("dataclips-filters", function(e, filters){
+    sendMessage({filters: filters});
+  });
 </script>

@@ -43,18 +43,29 @@ class Dataclips.View extends Backbone.View
 
     "click button.reset": _.debounce (event) ->
       key = $(event.currentTarget).data("key")
-      type = Dataclips.config.schema[key]["type"]
-      switch type
-        when "integer", "float", "decimal", "date", "datetime", "time"
-          @$el.find("input[name=#{key}_from]").val("")
-          @$el.find("input[name=#{key}_to]").val("")
-          @filterArgs.unset("#{key}_from")
-          @filterArgs.unset("#{key}_to")
-        when "text"
-          @$el.find("input[name=#{key}]").val("")
-          @filterArgs.unset(key)
-        else
-          @filterArgs.unset(key)
+      @resetFilter(key)
+
+
+  resetFilter: (key) ->
+    type = Dataclips.config.schema[key]["type"]
+    switch type
+      when "integer", "float", "decimal", "date", "datetime", "time"
+        @$el.find("input[name=#{key}_from]").val("")
+        @$el.find("input[name=#{key}_to]").val("")
+        @filterArgs.unset("#{key}_from")
+        @filterArgs.unset("#{key}_to")
+      when "text"
+        @$el.find("input[name=#{key}]").val("")
+        @filterArgs.unset(key)
+      when "boolean"
+        @$el.find("select[name=#{key}]").val("")
+        @filterArgs.unset(key)
+      else
+        @filterArgs.unset(key)
+
+  resetAllFilters: ->
+    _.each Dataclips.config.schema, (options, key) =>
+      @resetFilter(key)
 
   reload: ->
     @collection.reset()
@@ -77,12 +88,21 @@ class Dataclips.View extends Backbone.View
   render: ->
     @filterArgs = new Backbone.Model
 
+    @listenTo Dataclips.proxy, "change", _.debounce (model) ->
+      @$el.find("span.total_entries_count").text(model.get("total_entries_count"))
+      @$el.find("span.entries_count").text(model.get("entries_count"))
+      @$el.find("span.percent_loaded").text(model.get("percent_loaded"))
+      @$el.find("span.grid_entries_count").text(model.get("grid_entries_count"))
+
+
     window.addEventListener 'message', (e) =>
       @reload() if e.data.refresh is true
 
       @requestFullScreen(document.body) if e.data.fullscreen is true
 
-      if e.data.filters?
+      if e.data.filters
+        @resetAllFilters()
+
         _.each e.data.filters, (value, key) =>
           if Dataclips.config.schema[key]?
             type = Dataclips.config.schema[key]["type"]
@@ -122,16 +142,10 @@ class Dataclips.View extends Backbone.View
     dataView = new Slick.Data.DataView()
     dataView.setFilterArgs(@filterArgs.toJSON())
 
-
     @listenTo @filterArgs, "change", (model, data) ->
       dataView.setFilterArgs(model.attributes)
       dataView.refresh()
 
-    @listenTo Dataclips.proxy, "change", _.debounce (model) ->
-      @$el.find("span.total_entries").text(model.get("total_entries"))
-      @$el.find("span.entries_count").text(model.get("entries_count"))
-      @$el.find("span.percent_loaded").text(model.get("percent_loaded"))
-      @$el.find("span.grid_entries_count").text(model.get("grid_entries_count"))
 
     columns = []
 
@@ -215,11 +229,11 @@ class Dataclips.View extends Backbone.View
       if range.from? || range.to?
         gte = (from) ->
           return true if from is undefined
-          value >= from
+          moment(value) >= moment(from)
 
         lte = (to) ->
           return true if to is undefined
-          value <= to
+          moment(value) <= moment(to)
 
         gte(range.from) && lte(range.to)
       else
@@ -250,22 +264,24 @@ class Dataclips.View extends Backbone.View
           else
             true
 
+    # pageSize, pageNum, totalRows, totalPages
+    dataView.onPagingInfoChanged.subscribe (e, args) ->
+
+      Dataclips.proxy.set
+        grid_entries: _.map [0..(args.totalRows - 1)], (id) -> dataView.getItem(id)
+
+    # previous, current
     dataView.onRowCountChanged.subscribe (e, args) ->
+      Dataclips.proxy.set
+        grid_entries_count: args.current
+
       grid.updateRowCount()
       grid.render()
 
+    # rows
     dataView.onRowsChanged.subscribe (e, args) ->
       grid.invalidateRows(args.rows)
       grid.render()
-
-
-    dataView.onPagingInfoChanged.subscribe (e, args) ->
-      length = dataView.getLength() - 1
-
-      Dataclips.proxy.set
-        grid_entries_count: args.totalRows
-        grid_entries: _.map [0..length], (id) -> dataView.getItem(id)
-
 
     updateDataView = (data) ->
       dataView.beginUpdate()
@@ -274,3 +290,4 @@ class Dataclips.View extends Backbone.View
 
     @listenTo @collection, "reset batchInsert", ->
       updateDataView(@collection.toJSON())
+
