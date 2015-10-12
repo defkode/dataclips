@@ -14,7 +14,7 @@ module Dataclips
         id:             dom_id(insight),
         filters_sets:   filters_sets,
         default_filter: default_filter,
-        options_for_select: filters_sets.keys.map{|k| [k.to_s.humanize, k]}
+        options_for_select: filters_sets.keys.map{|k| [k.to_s, k]}
       }
     end
 

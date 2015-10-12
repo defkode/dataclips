@@ -268,7 +268,7 @@ class Dataclips.View extends Backbone.View
     dataView.onPagingInfoChanged.subscribe (e, args) ->
       Dataclips.proxy.set
         grid_entries_count: args.totalRows
-        # grid_entries: _.map [0..(args.totalRows - 1)], (id) -> dataView.getItem(id) # not safe
+        grid_entries: _.map [0..(args.totalRows - 1)], (id) -> dataView.getItem(id) # not safe
 
     # previous, current
     dataView.onRowCountChanged.subscribe (e, args) ->
