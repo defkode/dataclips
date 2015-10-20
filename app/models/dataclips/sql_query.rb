@@ -34,7 +34,7 @@ module Dataclips
     end
 
     def parse_template(sqlfile)
-      sqlfile.match(/(SELECT.+)/m)[1]
+      sqlfile.match(/-- QUERY(.+)/m)[1]
     end
   end
 end
