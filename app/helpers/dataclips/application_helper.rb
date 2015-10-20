@@ -14,7 +14,12 @@ module Dataclips
         id:             dom_id(insight),
         filters_sets:   filters_sets,
         default_filter: default_filter,
-        options_for_select: filters_sets.keys.map{|k| [k.to_s, k]}
+        options_for_select: filters_sets.keys.map do |k|
+          [
+            I18n.t(k, scope: "dataclips.#{insight.clip_id}.filters", default: k.to_s),
+            k
+          ]
+        end
       }
     end
 
