@@ -25,7 +25,8 @@ Dataclips.run = ->
 
   view = new Dataclips.View(collection: collection)
 
-  collection.on "reset", Dataclips.proxy.clear
+  collection.on "reset", ->
+    Dataclips.proxy.clear()
 
   collection.on "batchInsert", (data) =>
     total_entries_count = data.total_entries_count
