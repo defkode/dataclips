@@ -1,5 +1,5 @@
-<div class="dataclips-filters" style="text-align: right">
-  <%= select_tag "#{id}_filter", options_for_select(options_for_select, default_filter) %>
+<div class="dataclips-filters form-group" style="text-align: right">
+  <%= select_tag "#{id}_filter", options_for_select(options_for_select, default_filter), class: "form-control" %>
 </div>
 
 <script>
