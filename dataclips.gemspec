@@ -19,6 +19,7 @@ Gem::Specification.new do |s|
   s.add_dependency "rails",                           "~> 4.2"
   s.add_dependency "pg",                              "~> 0.18"
   s.add_dependency "jquery-rails",                    "~> 4.0"
+  s.add_dependency "jquery-ui-rails"
   s.add_dependency "will_paginate",                   "~> 3.0"
   s.add_dependency "hashids",                         "~> 1.0"
   s.add_dependency "twitter-bootstrap-rails",         "~> 3.2"

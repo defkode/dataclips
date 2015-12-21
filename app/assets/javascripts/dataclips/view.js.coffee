@@ -288,3 +288,16 @@ class Dataclips.View extends Backbone.View
     @listenTo @collection, "reset batchInsert", ->
       updateDataView @collection.toJSON()
 
+
+    unless Modernizr.input.list
+      $('input[list]').each ->
+        datalistID = $(this).attr("list")
+        tags = _.map $("datalist[id=#{datalistID}] option"), (option) ->
+          {label: option.text, value: option.value}
+        $(@).autocomplete
+          source: tags
+          close: (event, ui) ->
+            $(event.target).trigger("input")
+
+
+

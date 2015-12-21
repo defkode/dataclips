@@ -12,7 +12,9 @@
 //
 
 //= require jquery
+//= require jquery-ui
 //= require jquery_ujs
+//= require ./modernizr
 //= require moment
 //= require moment/de
 //= require bootstrap-datetimepicker

@@ -5,7 +5,11 @@
     <datalist id="dictionary_<%= id %>">
       <% items = dictionary.is_a?(Array) ? dictionary : Dataclips::Engine.config.dictionaries[dictionary.to_sym].call(I18n.locale) %>
       <% items.each do |item| %>
-        <option value="<%= item %>"><%= item %></option>
+        <% if item.is_a?(Array) %>
+          <option value="<%= item[0] %>"><%= item[1] %></option>
+        <% else %>
+          <option value="<%= item %>"><%= item %></option>
+        <% end %>
       <% end %>
     </datalist>
     <% end %>

@@ -14,6 +14,8 @@
  *= require twitter-bootstrap-static/fontawesome
  *= require bootstrap-datetimepicker
 
+ *= require jquery-ui/core
+
  *= require_tree .
  *= require_self
  */
