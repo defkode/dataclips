@@ -152,13 +152,14 @@ ul.datalist {
   list-style: none;
   display: none;
   background: white;
-  box-shadow: 0 2px 2px #999;
+  border: 1px solid `;
   position: absolute;
   top: 0;
   left: 0;
   max-height: 300px;
   z-index: 10;
   overflow-y: auto;
+  width: 300px;
   padding: 0;
 }
 .datalist:empty {
@@ -168,6 +169,25 @@ ul.datalist {
   padding: 3px;
   font: 13px "Lucida Grande", Sans-Serif;
 }
+
+.datalist li small {
+  color: gray;
+  right: 0;
+  position: absolute;
+  top: auto;
+  padding-right: 5px;
+  width: 120px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.datalist li span {
+  width: 180px;
+  left: 0;
+  top: auto;
+  text-overflow: ellipsis;
+}
+
 .datalist li.active {
   background: #3875d7;
   color: white;

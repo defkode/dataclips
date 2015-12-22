@@ -4,7 +4,7 @@
   // Changed the name to prevent overriding original functionality
   $.expr[":"].RD_contains = $.expr.createPseudo(function(arg) {
       return function( elem ) {
-          return $(elem).text().toUpperCase().indexOf(arg.toUpperCase()) >= 0;
+          return $(elem).attr("value").toUpperCase().indexOf(arg.toUpperCase()) >= 0;
       };
   });
 
@@ -45,10 +45,13 @@
 
           // Fill new fake datalist
           datalistItems.each(function() {
+            value = $(this).attr("value")
+            label = $(this).text()
             temp_item = $("<li />", {
             // .val is required here, not .text or .html
             // HTML *needs* to be <option value="xxx"> not <option>xxx</option>  (IE)
-              "text": $(this).val()
+              "html": (value !== label) ? ("<span>" + value + "</span>" + "<small>" + label + "</small>") : "<span>" + value + "</span>",
+              "value": value
             })[0];
             temp_items.appendChild(temp_item);
           });
@@ -70,7 +73,7 @@
           setTimeout(function() {
             $datalist.fadeOut(options.fadeOutSpeed);
             datalistItems.removeClass("active");
-          }, 11111500);
+          }, 500);
         })
         .on("keyup focus", function(e) {
           searchPosition = $input.position();
@@ -79,8 +82,7 @@
             .show()
             .css({
               top: searchPosition.top + $(this).outerHeight(),
-              left: searchPosition.left,
-              width: $input.outerWidth()
+              left: searchPosition.left
             });
 
           datalistItems.hide();
@@ -103,8 +105,7 @@
         $datalist
           .css({
             top: searchPosition.top + $(this).outerHeight(),
-            left: searchPosition.left,
-            width: $input.outerWidth()
+            left: searchPosition.left
           });
       });
 
@@ -153,8 +154,8 @@
         // return or tab key
         if ( e.keyCode == 13 || e.keyCode == 9 ){
           if (active.length) {
-            $input.val(active.text());
-            item_selected(active.text());
+            $input.val($(active).attr('value'));
+            $input.trigger("input");
           }
           $datalist.fadeOut(options.fadeOutSpeed);
           datalistItems.removeClass("active");
@@ -177,18 +178,12 @@
       datalistItems.on("click", function() {
         var active = $("li.active");
         if (active.length) {
-          $input.val($(this).text());
+          $input.val($(this).attr('value'));
         }
         $datalist.fadeOut(options.fadeOutSpeed);
         datalistItems.removeClass("active");
-        item_selected($(this).text());
-      });
-
-      function item_selected(new_text) {
         $input.trigger("input");
-        if( typeof options.change === 'function' )
-          options.change.call(this, new_text);
-      }
+      });
 
     });
   };
