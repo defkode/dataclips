@@ -12,9 +12,9 @@
 //
 
 //= require jquery
-//= require jquery-ui
 //= require jquery_ujs
 //= require ./modernizr
+//= require ./polyfills/datalist
 //= require moment
 //= require moment/de
 //= require bootstrap-datetimepicker

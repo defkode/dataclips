@@ -1,6 +1,6 @@
 <div class="col-md-6">
   <div class="input-group">
-    <input class="form-control" list="dictionary_<%= id %>" id="<%= id %>" name="<%= key %>" type="text" placeholder="<%= key %>" />
+    <input class="form-control" list="dictionary_<%= id %>" id="<%= id %>" name="<%= key %>" type="text" placeholder="<%= key %>" autocomplete="off" />
     <% if dictionary %>
     <datalist id="dictionary_<%= id %>">
       <% items = dictionary.is_a?(Array) ? dictionary : Dataclips::Engine.config.dictionaries[dictionary.to_sym].call(I18n.locale) %>

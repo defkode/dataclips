@@ -14,8 +14,6 @@
  *= require twitter-bootstrap-static/fontawesome
  *= require bootstrap-datetimepicker
 
- *= require jquery-ui/core
-
  *= require_tree .
  *= require_self
  */
@@ -144,5 +142,34 @@ label.main {
 }
 
 .form-group {
+}
+
+datalist {
+  position: relative;
+}
+
+ul.datalist {
+  list-style: none;
+  display: none;
+  background: white;
+  box-shadow: 0 2px 2px #999;
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-height: 300px;
+  z-index: 10;
+  overflow-y: auto;
+  padding: 0;
+}
+.datalist:empty {
+  display: none !important;
+}
+.datalist li {
+  padding: 3px;
+  font: 13px "Lucida Grande", Sans-Serif;
+}
+.datalist li.active {
+  background: #3875d7;
+  color: white;
 }
 
