@@ -1,4 +1,6 @@
-<% content_for :title, @insight.name %>
+<%- content_for :title do %>
+ <%= @insight.clip_id %> / <%= @insight.name %>
+<% end %>
 <script>
   Dataclips.config = {
     locale:       '<%= I18n.locale %>',
