@@ -1,5 +1,7 @@
 module Dataclips
   class Insight < ActiveRecord::Base
+    class FileNotFound < ArgumentError; end
+
     validates :clip_id, presence: true
     validates :checksum, presence: true, uniqueness: true
 
@@ -14,9 +16,14 @@ module Dataclips
     end
 
     def self.get!(clip_id, params = nil, excludes = [])
-      Dataclips::Insight.where(clip_id: clip_id).detect do |di|
-        di.params == params
-      end || Dataclips::Insight.create!(clip_id: clip_id, name: "#{params.to_s.parameterize}", params: params, excludes: excludes || [])
+      clip_path = File.join(Dataclips::Engine.config.path, "#{clip_id}.sql")
+      if File.exists?(clip_path)
+        Dataclips::Insight.where(clip_id: clip_id).detect do |di|
+          di.params == params
+        end || Dataclips::Insight.create!(clip_id: clip_id, name: "#{params.to_s.parameterize}", params: params, excludes: excludes || [])
+      else
+        raise FileNotFound.new(clip_path)
+      end
     end
 
     def self.find_by_hash_id(hash_id)

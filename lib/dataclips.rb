@@ -20,8 +20,6 @@ module Dataclips
         clip_id = path.gsub("/", "_").sub(".sql", "_clip") # orders.sql => orders
         Rails.logger.debug "reloading: #{clip_id}"
 
-        # scope: Staff::Payment
-
         clip_class_name = clip_id.camelize
 
         remove_const(clip_class_name) if const_defined?(clip_class_name)
