@@ -1,3 +1,5 @@
+require "csv"
+
 require_dependency File.join(Dataclips::Engine.root, "app/controllers/dataclips", "application_controller")
 
 module Dataclips
