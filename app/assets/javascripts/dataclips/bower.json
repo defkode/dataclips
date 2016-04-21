@@ -1,0 +1,22 @@
+{
+  "name": "dataclips",
+  "homepage": "https://github.com/defkode/dataclips",
+  "authors": [
+    "Tomasz Mazur <defkode@gmail.com>"
+  ],
+  "description": "",
+  "main": "",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "backbone": "^1.3.3",
+    "excel-builder-js": "stephenliberty/excel-builder.js#^2.0.2",
+    "jquery": "^2.2.3"
+  }
+}

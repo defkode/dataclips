@@ -4,7 +4,7 @@
   <title><%= yield :title %></title>
   <link href="//fonts.googleapis.com/css?family=Inconsolata:400,700&subset=latin,latin-ext" rel="stylesheet" type="text/css">
   <%= stylesheet_link_tag    "dataclips/application", media: "all" %>
-  <%= javascript_include_tag "dataclips/application" %>
+  <%= javascript_include_tag "//ajax.googleapis.com/ajax/libs/jquery/2.2.2/jquery.min.js", "//cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js", "vendor/modernizr-pack", "vendor/backbone-pack", "vendor/slickgrid-pack", "vendor/moment-pack", "vendor/datetimepicker", "dataclips/application" %>
   <% if Dataclips::Engine.config.include_js.present? %>
     <%= javascript_include_tag Dataclips::Engine.config.include_js %>
   <% end %>
