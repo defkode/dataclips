@@ -10,22 +10,22 @@
 <% end %>
 
 <script>
-  $(document).ready(function(){
-    var options = {
-      sideBySide: false,
-      locale: '<%= I18n.locale %>',
-      format: "L HH:mm:ss",
-      icons: {
-        time:     "fa fa-clock-o",
-        date:     "fa fa-calendar",
-        next:     "fa fa-chevron-right",
-        previous: "fa fa-chevron-left",
-        up:       "fa fa-chevron-up",
-        down:     "fa fa-chevron-down"
-      }
-    }
+  // $(document).ready(function(){
+  //   var options = {
+  //     sideBySide: false,
+  //     locale: '<%= I18n.locale %>',
+  //     format: "L HH:mm:ss",
+  //     icons: {
+  //       time:     "fa fa-clock-o",
+  //       date:     "fa fa-calendar",
+  //       next:     "fa fa-chevron-right",
+  //       previous: "fa fa-chevron-left",
+  //       up:       "fa fa-chevron-up",
+  //       down:     "fa fa-chevron-down"
+  //     }
+  //   }
 
-    var fromPicker = $('#<%= id %>_from_picker').datetimepicker(options);
-    var toPicker = $('#<%= id %>_to_picker').datetimepicker(options);
-  });
+  //   var fromPicker = $('#<%= id %>_from_picker').datetimepicker(options);
+  //   var toPicker = $('#<%= id %>_to_picker').datetimepicker(options);
+  // });
 </script>
