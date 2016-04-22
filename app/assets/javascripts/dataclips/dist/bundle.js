@@ -64,34 +64,34 @@ Dataclips.View    = require('./view')
 ExcelBuilder      = require("excel-builder");
 
 Dataclips.run = function(){
-  // $(".form-control.time").datetimepicker({
-  //   sideBySide: true,
-  //   locale: 'en',
-  //   format: "LT",
-  //   icons: {
-  //     time:     "fa fa-clock-o",
-  //     date:     "fa fa-calendar",
-  //     next:     "fa fa-chevron-right",
-  //     previous: "fa fa-chevron-left",
-  //     up:       "fa fa-chevron-up",
-  //     down:     "fa fa-chevron-down"
-  //   }
-  // });
+  $(".form-control.time").datetimepicker({
+    sideBySide: true,
+    locale: 'en',
+    format: "LT",
+    icons: {
+      time:     "fa fa-clock-o",
+      date:     "fa fa-calendar",
+      next:     "fa fa-chevron-right",
+      previous: "fa fa-chevron-left",
+      up:       "fa fa-chevron-up",
+      down:     "fa fa-chevron-down"
+    }
+  });
 
 
-  // $(".form-control.datetime").datetimepicker({
-  //   sideBySide: true,
-  //   locale: 'en',
-  //   format: "L HH:mm:ss",
-  //   icons: {
-  //     time:     "fa fa-clock-o",
-  //     date:     "fa fa-calendar",
-  //     next:     "fa fa-chevron-right",
-  //     previous: "fa fa-chevron-left",
-  //     up:       "fa fa-chevron-up",
-  //     down:     "fa fa-chevron-down"
-  //   }
-  // });
+  $(".form-control.datetime").datetimepicker({
+    sideBySide: true,
+    locale: 'en',
+    format: "L HH:mm:ss",
+    icons: {
+      time:     "fa fa-clock-o",
+      date:     "fa fa-calendar",
+      next:     "fa fa-chevron-right",
+      previous: "fa fa-chevron-left",
+      up:       "fa fa-chevron-up",
+      down:     "fa fa-chevron-down"
+    }
+  });
 
   var bg, circ, collection, ctx, draw, imd, quart, view;
   bg = $('#progress').get(0);
@@ -140,6 +140,7 @@ Dataclips.run = function(){
   collection.fetchInBatches(this.config.params);
   return view.render();
 };
+
 },{"../vendor/modernizr":6,"../vendor/polyfills/datalist":7,"./dataclips":1,"./records":4,"./view":5,"backbone":8,"excel-builder":44,"jquery":46,"underscore":93}],3:[function(require,module,exports){
 moment = require("moment");
 
