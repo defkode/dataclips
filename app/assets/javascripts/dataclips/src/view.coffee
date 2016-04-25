@@ -5,6 +5,11 @@ require('bd-slickgrid/lib/jquery.event.drag-2.2');
 require('bd-slickgrid/plugins/slick.autotooltips');
 require('bd-slickgrid/plugins/slick.rowselectionmodel');
 
+ExcelBuilder     = require("excel-builder");
+
+downloader = require("downloadjs")
+
+
 moment = require("moment");
 require("moment/locale/de");
 
@@ -20,8 +25,49 @@ module.exports = Backbone.View.extend
       false
 
     "click a.download": ->
-      alert("download!")
+      workbook = ExcelBuilder.Builder.createWorkbook()
+
+      stylesheet = workbook.getStyleSheet()
+
+      sheet = workbook.createWorksheet(name: "Results")
+
+
+      # http://closedxml.codeplex.com/wikipage?title=NumberFormatId%20Lookup%20Table
+      date_formatter     = {id: 1, numFmtId: 14}
+      datetime_formatter = {id: 2, numFmtId: 22}
+
+      stylesheet.masterCellFormats.push(date_formatter)
+      stylesheet.masterCellFormats.push(datetime_formatter)
+
+      keys = _.keys Dataclips.config.schema
+      data = []
+
+      data.push keys # headers
+
+      @collection.each (r) ->
+        values = _.map r.pick(keys), (v, k) ->
+          type = Dataclips.config.schema[k].type
+
+          switch type
+            when "date"
+              value: v.format('x'), metadata: {type: "date", style: date_formatter.id}
+            when "datetime"
+              value: v.format('x'), metadata: {type: "date", style: datetime_formatter.id}
+            else
+              value: v
+
+        data.push values
+
+      sheet.setData data
+
+      workbook.addWorksheet(sheet)
+
+      ExcelBuilder.Builder.createFile(workbook, {type: "blob"}).then (file) ->
+        filename = prompt("Save results as: ", "#{_.last Dataclips.config.id.split("/")}.xlsx")
+        downloader(file, filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
       false
+
 
     "input input[type=text]": _.debounce (event) ->
       @filterArgs.set(event.target.name, $.trim(event.target.value))

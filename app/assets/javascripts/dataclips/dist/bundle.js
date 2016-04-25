@@ -61,37 +61,8 @@ Backbone.$ = $;
 Dataclips         = require('./dataclips');
 Records           = require('./records');
 Dataclips.View    = require('./view')
-ExcelBuilder      = require("excel-builder");
 
 Dataclips.run = function(){
-  $(".form-control.time").datetimepicker({
-    sideBySide: true,
-    locale: 'en',
-    format: "LT",
-    icons: {
-      time:     "fa fa-clock-o",
-      date:     "fa fa-calendar",
-      next:     "fa fa-chevron-right",
-      previous: "fa fa-chevron-left",
-      up:       "fa fa-chevron-up",
-      down:     "fa fa-chevron-down"
-    }
-  });
-
-
-  $(".form-control.datetime").datetimepicker({
-    sideBySide: true,
-    locale: 'en',
-    format: "L HH:mm:ss",
-    icons: {
-      time:     "fa fa-clock-o",
-      date:     "fa fa-calendar",
-      next:     "fa fa-chevron-right",
-      previous: "fa fa-chevron-left",
-      up:       "fa fa-chevron-up",
-      down:     "fa fa-chevron-down"
-    }
-  });
 
   var bg, circ, collection, ctx, draw, imd, quart, view;
   bg = $('#progress').get(0);
@@ -141,7 +112,7 @@ Dataclips.run = function(){
   return view.render();
 };
 
-},{"../vendor/modernizr":6,"../vendor/polyfills/datalist":7,"./dataclips":1,"./records":4,"./view":5,"backbone":8,"excel-builder":44,"jquery":46,"underscore":93}],3:[function(require,module,exports){
+},{"../vendor/modernizr":6,"../vendor/polyfills/datalist":7,"./dataclips":1,"./records":4,"./view":5,"backbone":8,"jquery":47,"underscore":94}],3:[function(require,module,exports){
 moment = require("moment");
 
 module.exports = Backbone.Model.extend({
@@ -162,7 +133,7 @@ module.exports = Backbone.Model.extend({
     return attributes
   }
 });
-},{"moment":73}],4:[function(require,module,exports){
+},{"moment":74}],4:[function(require,module,exports){
 Record  = require('./record');
 
 module.exports = Backbone.Collection.extend({
@@ -199,7 +170,7 @@ module.exports = Backbone.Collection.extend({
   }
 });
 },{"./record":3}],5:[function(require,module,exports){
-var moment;
+var ExcelBuilder, downloader, moment;
 
 require('bd-slickgrid/core');
 
@@ -212,6 +183,10 @@ require('bd-slickgrid/lib/jquery.event.drag-2.2');
 require('bd-slickgrid/plugins/slick.autotooltips');
 
 require('bd-slickgrid/plugins/slick.rowselectionmodel');
+
+ExcelBuilder = require("excel-builder");
+
+downloader = require("downloadjs");
 
 moment = require("moment");
 
@@ -229,7 +204,64 @@ module.exports = Backbone.View.extend({
       return false;
     },
     "click a.download": function() {
-      alert("download!");
+      var data, date_formatter, datetime_formatter, keys, sheet, stylesheet, workbook;
+      workbook = ExcelBuilder.Builder.createWorkbook();
+      stylesheet = workbook.getStyleSheet();
+      sheet = workbook.createWorksheet({
+        name: "Results"
+      });
+      date_formatter = {
+        id: 1,
+        numFmtId: 14
+      };
+      datetime_formatter = {
+        id: 2,
+        numFmtId: 22
+      };
+      stylesheet.masterCellFormats.push(date_formatter);
+      stylesheet.masterCellFormats.push(datetime_formatter);
+      keys = _.keys(Dataclips.config.schema);
+      data = [];
+      data.push(keys);
+      this.collection.each(function(r) {
+        var values;
+        values = _.map(r.pick(keys), function(v, k) {
+          var type;
+          type = Dataclips.config.schema[k].type;
+          switch (type) {
+            case "date":
+              return {
+                value: v.format('x'),
+                metadata: {
+                  type: "date",
+                  style: date_formatter.id
+                }
+              };
+            case "datetime":
+              return {
+                value: v.format('x'),
+                metadata: {
+                  type: "date",
+                  style: datetime_formatter.id
+                }
+              };
+            default:
+              return {
+                value: v
+              };
+          }
+        });
+        return data.push(values);
+      });
+      sheet.setData(data);
+      workbook.addWorksheet(sheet);
+      ExcelBuilder.Builder.createFile(workbook, {
+        type: "blob"
+      }).then(function(file) {
+        var filename;
+        filename = prompt("Save results as: ", (_.last(Dataclips.config.id.split("/"))) + ".xlsx");
+        return downloader(file, filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      });
       return false;
     },
     "input input[type=text]": _.debounce(function(event) {
@@ -590,7 +622,7 @@ module.exports = Backbone.View.extend({
 });
 
 
-},{"bd-slickgrid/core":10,"bd-slickgrid/dataview":11,"bd-slickgrid/grid":12,"bd-slickgrid/lib/jquery.event.drag-2.2":14,"bd-slickgrid/plugins/slick.autotooltips":15,"bd-slickgrid/plugins/slick.rowselectionmodel":16,"moment":73,"moment/locale/de":72}],6:[function(require,module,exports){
+},{"bd-slickgrid/core":10,"bd-slickgrid/dataview":11,"bd-slickgrid/grid":12,"bd-slickgrid/lib/jquery.event.drag-2.2":14,"bd-slickgrid/plugins/slick.autotooltips":15,"bd-slickgrid/plugins/slick.rowselectionmodel":16,"downloadjs":19,"excel-builder":45,"moment":74,"moment/locale/de":73}],6:[function(require,module,exports){
 /*! modernizr 3.2.0 (Custom Build) | MIT *
  * http://modernizr.com/download/?-datalistelem-setclasses !*/
 !function(e,n,t){function s(e,n){return typeof e===n}function a(){var e,n,t,a,o,i,f;for(var u in r)if(r.hasOwnProperty(u)){if(e=[],n=r[u],n.name&&(e.push(n.name.toLowerCase()),n.options&&n.options.aliases&&n.options.aliases.length))for(t=0;t<n.options.aliases.length;t++)e.push(n.options.aliases[t].toLowerCase());for(a=s(n.fn,"function")?n.fn():n.fn,o=0;o<e.length;o++)i=e[o],f=i.split("."),1===f.length?Modernizr[f[0]]=a:(!Modernizr[f[0]]||Modernizr[f[0]]instanceof Boolean||(Modernizr[f[0]]=new Boolean(Modernizr[f[0]])),Modernizr[f[0]][f[1]]=a),l.push((a?"":"no-")+f.join("-"))}}function o(e){var n=u.className,t=Modernizr._config.classPrefix||"";if(c&&(n=n.baseVal),Modernizr._config.enableJSClass){var s=new RegExp("(^|\\s)"+t+"no-js(\\s|$)");n=n.replace(s,"$1"+t+"js$2")}Modernizr._config.enableClasses&&(n+=" "+t+e.join(" "+t),c?u.className.baseVal=n:u.className=n)}function i(){return"function"!=typeof n.createElement?n.createElement(arguments[0]):c?n.createElementNS.call(n,"http://www.w3.org/2000/svg",arguments[0]):n.createElement.apply(n,arguments)}var l=[],r=[],f={_version:"3.2.0",_config:{classPrefix:"",enableClasses:!0,enableJSClass:!0,usePrefixes:!0},_q:[],on:function(e,n){var t=this;setTimeout(function(){n(t[e])},0)},addTest:function(e,n,t){r.push({name:e,fn:n,options:t})},addAsyncTest:function(e){r.push({name:null,fn:e})}},Modernizr=function(){};Modernizr.prototype=f,Modernizr=new Modernizr;var u=n.documentElement,c="svg"===u.nodeName.toLowerCase(),p=i("input"),m="autocomplete autofocus list placeholder max min multiple pattern required step".split(" "),d={};Modernizr.input=function(n){for(var t=0,s=n.length;s>t;t++)d[n[t]]=!!(n[t]in p);return d.list&&(d.list=!(!i("datalist")||!e.HTMLDataListElement)),d}(m),Modernizr.addTest("datalistelem",Modernizr.input.list),a(),o(l),delete f.addTest,delete f.addAsyncTest;for(var g=0;g<Modernizr._q.length;g++)Modernizr._q[g]();e.Modernizr=Modernizr}(window,document);
@@ -2711,7 +2743,7 @@ module.exports = Backbone.View.extend({
 });
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"jquery":46,"underscore":93}],9:[function(require,module,exports){
+},{"jquery":47,"underscore":94}],9:[function(require,module,exports){
 'use strict'
 
 exports.toByteArray = toByteArray
@@ -12105,7 +12137,7 @@ function isnan (val) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"base64-js":9,"ieee754":45,"isarray":18}],18:[function(require,module,exports){
+},{"base64-js":9,"ieee754":46,"isarray":18}],18:[function(require,module,exports){
 var toString = {}.toString;
 
 module.exports = Array.isArray || function (arr) {
@@ -12113,6 +12145,166 @@ module.exports = Array.isArray || function (arr) {
 };
 
 },{}],19:[function(require,module,exports){
+
+//download.js v4.1, by dandavis; 2008-2015. [CCBY2] see http://danml.com/download.html for tests/usage
+// v1 landed a FF+Chrome compat way of downloading strings to local un-named files, upgraded to use a hidden frame and optional mime
+// v2 added named files via a[download], msSaveBlob, IE (10+) support, and window.URL support for larger+faster saves than dataURLs
+// v3 added dataURL and Blob Input, bind-toggle arity, and legacy dataURL fallback was improved with force-download mime and base64 support. 3.1 improved safari handling.
+// v4 adds AMD/UMD, commonJS, and plain browser support
+// v4.1 adds url download capability via solo URL argument (same domain/CORS only)
+// https://github.com/rndme/download
+
+(function (root, factory) {
+	if (typeof define === 'function' && define.amd) {
+		// AMD. Register as an anonymous module.
+		define([], factory);
+	} else if (typeof exports === 'object') {
+		// Node. Does not work with strict CommonJS, but
+		// only CommonJS-like environments that support module.exports,
+		// like Node.
+		module.exports = factory();
+	} else {
+		// Browser globals (root is window)
+		root.download = factory();
+  }
+}(this, function () {
+
+	return function download(data, strFileName, strMimeType) {
+
+		var self = window, // this script is only for browsers anyway...
+			u = "application/octet-stream", // this default mime also triggers iframe downloads
+			m = strMimeType || u,
+			x = data,
+			url = !strFileName && !strMimeType && x,
+			D = document,
+			a = D.createElement("a"),
+			z = function(a){return String(a);},
+			B = (self.Blob || self.MozBlob || self.WebKitBlob || z),
+			fn = strFileName || "download",
+			blob,
+			fr,
+			ajax;
+			B= B.call ? B.bind(self) : Blob ;
+	  
+
+		if(String(this)==="true"){ //reverse arguments, allowing download.bind(true, "text/xml", "export.xml") to act as a callback
+			x=[x, m];
+			m=x[0];
+			x=x[1];
+		}
+
+
+		if(url && url.length< 2048){ 
+			fn = url.split("/").pop().split("?")[0];
+			a.href = url; // assign href prop to temp anchor
+		  	if(a.href.indexOf(url) !== -1){ // if the browser determines that it's a potentially valid url path:
+        		var ajax=new XMLHttpRequest();
+        		ajax.open( "GET", url, true);
+        		ajax.responseType = 'blob';
+        		ajax.onload= function(e){ 
+				  download(e.target.response, fn, u);
+				};
+        		ajax.send();
+			    return ajax;
+			} // end if valid url?
+		} // end if url?
+
+
+
+		//go ahead and download dataURLs right away
+		if(/^data\:[\w+\-]+\/[\w+\-]+[,;]/.test(x)){
+			return navigator.msSaveBlob ?  // IE10 can't do a[download], only Blobs:
+				navigator.msSaveBlob(d2b(x), fn) :
+				saver(x) ; // everyone else can save dataURLs un-processed
+		}//end if dataURL passed?
+
+		blob = x instanceof B ?
+			x :
+			new B([x], {type: m}) ;
+
+
+		function d2b(u) {
+			var p= u.split(/[:;,]/),
+			t= p[1],
+			dec= p[2] == "base64" ? atob : decodeURIComponent,
+			bin= dec(p.pop()),
+			mx= bin.length,
+			i= 0,
+			uia= new Uint8Array(mx);
+
+			for(i;i<mx;++i) uia[i]= bin.charCodeAt(i);
+
+			return new B([uia], {type: t});
+		 }
+
+		function saver(url, winMode){
+
+			if ('download' in a) { //html5 A[download]
+				a.href = url;
+				a.setAttribute("download", fn);
+				a.className = "download-js-link";
+				a.innerHTML = "downloading...";
+				D.body.appendChild(a);
+				setTimeout(function() {
+					a.click();
+					D.body.removeChild(a);
+					if(winMode===true){setTimeout(function(){ self.URL.revokeObjectURL(a.href);}, 250 );}
+				}, 66);
+				return true;
+			}
+
+			// handle non-a[download] safari as best we can:
+			if(/(Version)\/(\d+)\.(\d+)(?:\.(\d+))?.*Safari\//.test(navigator.userAgent)) {
+				url=url.replace(/^data:([\w\/\-\+]+)/, u);
+				if(!window.open(url)){ // popup blocked, offer direct download:
+					if(confirm("Displaying New Document\n\nUse Save As... to download, then click back to return to this page.")){ location.href=url; }
+				}
+				return true;
+			}
+
+			//do iframe dataURL download (old ch+FF):
+			var f = D.createElement("iframe");
+			D.body.appendChild(f);
+
+			if(!winMode){ // force a mime that will download:
+				url="data:"+url.replace(/^data:([\w\/\-\+]+)/, u);
+			}
+			f.src=url;
+			setTimeout(function(){ D.body.removeChild(f); }, 333);
+
+		}//end saver
+
+
+
+
+		if (navigator.msSaveBlob) { // IE10+ : (has Blob, but not a[download] or URL)
+			return navigator.msSaveBlob(blob, fn);
+		}
+
+		if(self.URL){ // simple fast and modern way using Blob and URL:
+			saver(self.URL.createObjectURL(blob), true);
+		}else{
+			// handle non-Blob()+non-URL browsers:
+			if(typeof blob === "string" || blob.constructor===z ){
+				try{
+					return saver( "data:" +  m   + ";base64,"  +  self.btoa(blob)  );
+				}catch(y){
+					return saver( "data:" +  m   + "," + encodeURIComponent(blob)  );
+				}
+			}
+
+			// Blob but not URL:
+			fr=new FileReader();
+			fr.onload=function(e){
+				saver(this.result);
+			};
+			fr.readAsDataURL(blob);
+		}
+		return true;
+	}; /* end download() */
+}));
+
+},{}],20:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 var util = require('../util');
@@ -12178,7 +12370,7 @@ _.extend(AbsoluteAnchor.prototype, {
     }
 });
 module.exports = AbsoluteAnchor;
-},{"../util":40,"lodash":71}],20:[function(require,module,exports){
+},{"../util":41,"lodash":72}],21:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 //var util = require('../util');
@@ -12189,7 +12381,7 @@ _.extend(Chart.prototype, {
 
 });
 module.exports = Chart;
-},{"lodash":71}],21:[function(require,module,exports){
+},{"lodash":72}],22:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 var util = require('../util');
@@ -12260,7 +12452,7 @@ _.extend(OneCellAnchor.prototype, {
     }
 });
 module.exports = OneCellAnchor;
-},{"../util":40,"lodash":71}],22:[function(require,module,exports){
+},{"../util":41,"lodash":72}],23:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 var util = require('../util');
@@ -12368,7 +12560,7 @@ _.extend(Picture.prototype, {
 
 module.exports = Picture;
 
-},{"../util":40,"./index":24,"lodash":71}],23:[function(require,module,exports){
+},{"../util":41,"./index":25,"lodash":72}],24:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 var util = require('../util');
@@ -12447,7 +12639,7 @@ _.extend(TwoCellAnchor.prototype, {
 });
 module.exports = TwoCellAnchor;
 
-},{"../util":40,"lodash":71}],24:[function(require,module,exports){
+},{"../util":41,"lodash":72}],25:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 var AbsoluteAnchor = require('./AbsoluteAnchor');
@@ -12498,7 +12690,7 @@ Object.defineProperties(Drawing, {
 
 module.exports = Drawing;
 
-},{"./AbsoluteAnchor":19,"./Chart":20,"./OneCellAnchor":21,"./Picture":22,"./TwoCellAnchor":23,"lodash":71}],25:[function(require,module,exports){
+},{"./AbsoluteAnchor":20,"./Chart":21,"./OneCellAnchor":22,"./Picture":23,"./TwoCellAnchor":24,"lodash":72}],26:[function(require,module,exports){
 /**
  * @module Excel/Drawings
  */
@@ -12547,7 +12739,7 @@ _.extend(Drawings.prototype, {
 });
 
 module.exports = Drawings;
-},{"./RelationshipManager":29,"./util":40,"lodash":71}],26:[function(require,module,exports){
+},{"./RelationshipManager":30,"./util":41,"lodash":72}],27:[function(require,module,exports){
 "use strict";
 
 /**
@@ -12596,14 +12788,14 @@ _.extend(Pane.prototype, {
 });
 
 module.exports = Pane;
-},{"lodash":71}],27:[function(require,module,exports){
+},{"lodash":72}],28:[function(require,module,exports){
 /**
  * This is mostly a global spot where all of the relationship managers can get and set
  * path information from/to. 
  * @module Excel/Paths
  */
 module.exports = {};
-},{}],28:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 "use strict";
 
 module.exports = {
@@ -12621,7 +12813,7 @@ module.exports = {
     }
 };
 
-},{}],29:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 var util = require('./util');
@@ -12682,7 +12874,7 @@ _.extend(RelationshipManager.prototype, {
 });
     
 module.exports = RelationshipManager;
-},{"./Paths":27,"./util":40,"lodash":71}],30:[function(require,module,exports){
+},{"./Paths":28,"./util":41,"lodash":72}],31:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 var util = require('./util');
@@ -12738,7 +12930,7 @@ _.extend(sharedStrings.prototype, {
     }
 });
 module.exports = sharedStrings;
-},{"./util":40,"lodash":71}],31:[function(require,module,exports){
+},{"./util":41,"lodash":72}],32:[function(require,module,exports){
 (function (Buffer){
 "use strict";
 
@@ -12835,7 +13027,7 @@ SheetProtection.algorithms = {MD5: 'md5', SHA1: 'sha1', SHA256: 'sha256', SHA384
 
 module.exports = SheetProtection;
 }).call(this,require("buffer").Buffer)
-},{"./util":40,"buffer":17,"lodash":71,"node-forge":74}],32:[function(require,module,exports){
+},{"./util":41,"buffer":17,"lodash":72,"node-forge":75}],33:[function(require,module,exports){
 /**
  * @module Excel/SheetView
  *
@@ -12922,7 +13114,7 @@ _.extend(SheetView.prototype, {
 });
 
 module.exports = SheetView;
-},{"./Pane":26,"./util":40,"lodash":71}],33:[function(require,module,exports){
+},{"./Pane":27,"./util":41,"lodash":72}],34:[function(require,module,exports){
 /**
  * @module Excel/StyleSheet
  */
@@ -12954,12 +13146,7 @@ var StyleSheet = function () {
     }];
     this.fonts = [{}];
     this.numberFormatters = [];
-    this.fills = [{}, {
-        type: 'pattern',
-        patternType: 'gray125',
-        fgColor: 'FF333333',
-        bgColor: 'FF333333'
-    }];
+    this.fills = [{}];
     this.borders = [{
         top: {},
         left: {},
@@ -13617,7 +13804,7 @@ _.extend(StyleSheet.prototype, {
 });
 module.exports = StyleSheet;
 
-},{"./util":40,"lodash":71}],34:[function(require,module,exports){
+},{"./util":41,"lodash":72}],35:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 var util = require('./util');
@@ -13792,7 +13979,7 @@ _.extend(Table.prototype, {
     }
 });
 module.exports = Table;
-},{"./util":40,"lodash":71}],35:[function(require,module,exports){
+},{"./util":41,"lodash":72}],36:[function(require,module,exports){
 "use strict";
 var Q = require('q');
 var _ = require('lodash');
@@ -14056,7 +14243,7 @@ _.extend(Workbook.prototype, {
     }
 });
 module.exports = Workbook;
-},{"./Paths":27,"./RelationshipManager":29,"./SharedStrings":30,"./StyleSheet":33,"./Worksheet":36,"./XMLDOM":38,"./util":40,"lodash":71,"q":92}],36:[function(require,module,exports){
+},{"./Paths":28,"./RelationshipManager":30,"./SharedStrings":31,"./StyleSheet":34,"./Worksheet":37,"./XMLDOM":39,"./util":41,"lodash":72,"q":93}],37:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 var util = require('./util');
@@ -14632,7 +14819,7 @@ var SheetView = require('./SheetView');
     });
     module.exports = Worksheet;
 
-},{"./RelationshipManager":29,"./SheetView":32,"./util":40,"lodash":71}],37:[function(require,module,exports){
+},{"./RelationshipManager":30,"./SheetView":33,"./util":41,"lodash":72}],38:[function(require,module,exports){
 /* jshint strict: false, node: true */
 /* globals  onmessage: true, importScripts, postMessage */
 "use strict";
@@ -14673,7 +14860,7 @@ var onmessage = function(event) {
 
 
 
-},{}],38:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 'use strict';
 var _ = require('lodash');
 
@@ -14798,7 +14985,7 @@ _.extend(XMLDOM.XMLNode.prototype, {
 });
 
 module.exports = XMLDOM;
-},{"lodash":71}],39:[function(require,module,exports){
+},{"lodash":72}],40:[function(require,module,exports){
 /* jshint unused: false */
 /* globals  importScripts, JSZip, postMessage */
 
@@ -14831,7 +15018,7 @@ var onmessage = function(event) {
 
 
 
-},{}],40:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 "use strict";
 var XMLDOM = require('./XMLDOM');
 var _ = require('lodash');
@@ -14958,7 +15145,7 @@ var util = {
 };
 
 module.exports = util;
-},{"./XMLDOM":38,"lodash":71}],41:[function(require,module,exports){
+},{"./XMLDOM":39,"lodash":72}],42:[function(require,module,exports){
 'use strict';
 
 var Workbook = require('../Excel/Workbook');
@@ -15029,11 +15216,11 @@ _.extend(Template.prototype, {
 
 module.exports = Template;
 
-},{"../Excel/Table":34,"../Excel/Workbook":35,"lodash":71}],42:[function(require,module,exports){
+},{"../Excel/Table":35,"../Excel/Workbook":36,"lodash":72}],43:[function(require,module,exports){
 module.exports = {
     BasicReport: require('./BasicReport')
 };
-},{"./BasicReport":41}],43:[function(require,module,exports){
+},{"./BasicReport":42}],44:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 var Workbook = require('./Excel/Workbook');
@@ -15120,7 +15307,7 @@ var Factory = {
 
 
 module.exports = Factory;
-},{"./Excel/Workbook":35,"jszip":56,"lodash":71}],44:[function(require,module,exports){
+},{"./Excel/Workbook":36,"jszip":57,"lodash":72}],45:[function(require,module,exports){
 var _ = require('lodash');
 var EBExport = module.exports = {
     Drawings: require('./Excel/Drawings'),
@@ -15152,7 +15339,7 @@ try {
     //Silently ignore?
     console.info("Not attaching EB to window");
 }
-},{"./Excel/Drawing/index":24,"./Excel/Drawings":25,"./Excel/Pane":26,"./Excel/Paths":27,"./Excel/Positioning":28,"./Excel/RelationshipManager":29,"./Excel/SharedStrings":30,"./Excel/SheetProtection":31,"./Excel/SheetView":32,"./Excel/StyleSheet":33,"./Excel/Table":34,"./Excel/Workbook":35,"./Excel/Worksheet":36,"./Excel/WorksheetExportWorker":37,"./Excel/XMLDOM":38,"./Excel/ZipWorker":39,"./Excel/util":40,"./Template":42,"./excel-builder":43,"lodash":71}],45:[function(require,module,exports){
+},{"./Excel/Drawing/index":25,"./Excel/Drawings":26,"./Excel/Pane":27,"./Excel/Paths":28,"./Excel/Positioning":29,"./Excel/RelationshipManager":30,"./Excel/SharedStrings":31,"./Excel/SheetProtection":32,"./Excel/SheetView":33,"./Excel/StyleSheet":34,"./Excel/Table":35,"./Excel/Workbook":36,"./Excel/Worksheet":37,"./Excel/WorksheetExportWorker":38,"./Excel/XMLDOM":39,"./Excel/ZipWorker":40,"./Excel/util":41,"./Template":43,"./excel-builder":44,"lodash":72}],46:[function(require,module,exports){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = nBytes * 8 - mLen - 1
@@ -15238,7 +15425,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],46:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v2.2.3
  * http://jquery.com/
@@ -25082,7 +25269,7 @@ if ( !noGlobal ) {
 return jQuery;
 }));
 
-},{}],47:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 'use strict';
 var DataReader = require('./dataReader');
 
@@ -25135,7 +25322,7 @@ ArrayReader.prototype.readData = function(size) {
 };
 module.exports = ArrayReader;
 
-},{"./dataReader":52}],48:[function(require,module,exports){
+},{"./dataReader":53}],49:[function(require,module,exports){
 'use strict';
 // private property
 var _keyStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
@@ -25207,7 +25394,7 @@ exports.decode = function(input, utf8) {
 
 };
 
-},{}],49:[function(require,module,exports){
+},{}],50:[function(require,module,exports){
 'use strict';
 function CompressedObject() {
     this.compressedSize = 0;
@@ -25237,7 +25424,7 @@ CompressedObject.prototype = {
 };
 module.exports = CompressedObject;
 
-},{}],50:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 'use strict';
 exports.STORE = {
     magic: "\x00\x00",
@@ -25252,7 +25439,7 @@ exports.STORE = {
 };
 exports.DEFLATE = require('./flate');
 
-},{"./flate":55}],51:[function(require,module,exports){
+},{"./flate":56}],52:[function(require,module,exports){
 'use strict';
 
 var utils = require('./utils');
@@ -25356,7 +25543,7 @@ module.exports = function crc32(input, crc) {
 };
 // vim: set shiftwidth=4 softtabstop=4:
 
-},{"./utils":68}],52:[function(require,module,exports){
+},{"./utils":69}],53:[function(require,module,exports){
 'use strict';
 var utils = require('./utils');
 
@@ -25466,7 +25653,7 @@ DataReader.prototype = {
 };
 module.exports = DataReader;
 
-},{"./utils":68}],53:[function(require,module,exports){
+},{"./utils":69}],54:[function(require,module,exports){
 'use strict';
 exports.base64 = false;
 exports.binary = false;
@@ -25479,7 +25666,7 @@ exports.comment = null;
 exports.unixPermissions = null;
 exports.dosPermissions = null;
 
-},{}],54:[function(require,module,exports){
+},{}],55:[function(require,module,exports){
 'use strict';
 var utils = require('./utils');
 
@@ -25586,7 +25773,7 @@ exports.isRegExp = function (object) {
 };
 
 
-},{"./utils":68}],55:[function(require,module,exports){
+},{"./utils":69}],56:[function(require,module,exports){
 'use strict';
 var USE_TYPEDARRAY = (typeof Uint8Array !== 'undefined') && (typeof Uint16Array !== 'undefined') && (typeof Uint32Array !== 'undefined');
 
@@ -25604,7 +25791,7 @@ exports.uncompress =  function(input) {
     return pako.inflateRaw(input);
 };
 
-},{"pako":75}],56:[function(require,module,exports){
+},{"pako":76}],57:[function(require,module,exports){
 'use strict';
 
 var base64 = require('./base64');
@@ -25685,7 +25872,7 @@ JSZip.base64 = {
 JSZip.compressions = require('./compressions');
 module.exports = JSZip;
 
-},{"./base64":48,"./compressions":50,"./defaults":53,"./deprecatedPublicUtils":54,"./load":57,"./object":60,"./support":64}],57:[function(require,module,exports){
+},{"./base64":49,"./compressions":51,"./defaults":54,"./deprecatedPublicUtils":55,"./load":58,"./object":61,"./support":65}],58:[function(require,module,exports){
 'use strict';
 var base64 = require('./base64');
 var utf8 = require('./utf8');
@@ -25726,7 +25913,7 @@ module.exports = function(data, options) {
     return this;
 };
 
-},{"./base64":48,"./utf8":67,"./utils":68,"./zipEntries":69}],58:[function(require,module,exports){
+},{"./base64":49,"./utf8":68,"./utils":69,"./zipEntries":70}],59:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 module.exports = function(data, encoding){
@@ -25737,7 +25924,7 @@ module.exports.test = function(b){
 };
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":17}],59:[function(require,module,exports){
+},{"buffer":17}],60:[function(require,module,exports){
 'use strict';
 var Uint8ArrayReader = require('./uint8ArrayReader');
 
@@ -25760,7 +25947,7 @@ NodeBufferReader.prototype.readData = function(size) {
 };
 module.exports = NodeBufferReader;
 
-},{"./uint8ArrayReader":65}],60:[function(require,module,exports){
+},{"./uint8ArrayReader":66}],61:[function(require,module,exports){
 'use strict';
 var support = require('./support');
 var utils = require('./utils');
@@ -26632,7 +26819,7 @@ var out = {
 };
 module.exports = out;
 
-},{"./base64":48,"./compressedObject":49,"./compressions":50,"./crc32":51,"./defaults":53,"./nodeBuffer":58,"./signature":61,"./stringWriter":63,"./support":64,"./uint8ArrayWriter":66,"./utf8":67,"./utils":68}],61:[function(require,module,exports){
+},{"./base64":49,"./compressedObject":50,"./compressions":51,"./crc32":52,"./defaults":54,"./nodeBuffer":59,"./signature":62,"./stringWriter":64,"./support":65,"./uint8ArrayWriter":67,"./utf8":68,"./utils":69}],62:[function(require,module,exports){
 'use strict';
 exports.LOCAL_FILE_HEADER = "PK\x03\x04";
 exports.CENTRAL_FILE_HEADER = "PK\x01\x02";
@@ -26641,7 +26828,7 @@ exports.ZIP64_CENTRAL_DIRECTORY_LOCATOR = "PK\x06\x07";
 exports.ZIP64_CENTRAL_DIRECTORY_END = "PK\x06\x06";
 exports.DATA_DESCRIPTOR = "PK\x07\x08";
 
-},{}],62:[function(require,module,exports){
+},{}],63:[function(require,module,exports){
 'use strict';
 var DataReader = require('./dataReader');
 var utils = require('./utils');
@@ -26680,7 +26867,7 @@ StringReader.prototype.readData = function(size) {
 };
 module.exports = StringReader;
 
-},{"./dataReader":52,"./utils":68}],63:[function(require,module,exports){
+},{"./dataReader":53,"./utils":69}],64:[function(require,module,exports){
 'use strict';
 
 var utils = require('./utils');
@@ -26712,7 +26899,7 @@ StringWriter.prototype = {
 
 module.exports = StringWriter;
 
-},{"./utils":68}],64:[function(require,module,exports){
+},{"./utils":69}],65:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 exports.base64 = true;
@@ -26750,7 +26937,7 @@ else {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":17}],65:[function(require,module,exports){
+},{"buffer":17}],66:[function(require,module,exports){
 'use strict';
 var ArrayReader = require('./arrayReader');
 
@@ -26778,7 +26965,7 @@ Uint8ArrayReader.prototype.readData = function(size) {
 };
 module.exports = Uint8ArrayReader;
 
-},{"./arrayReader":47}],66:[function(require,module,exports){
+},{"./arrayReader":48}],67:[function(require,module,exports){
 'use strict';
 
 var utils = require('./utils');
@@ -26816,7 +27003,7 @@ Uint8ArrayWriter.prototype = {
 
 module.exports = Uint8ArrayWriter;
 
-},{"./utils":68}],67:[function(require,module,exports){
+},{"./utils":69}],68:[function(require,module,exports){
 'use strict';
 
 var utils = require('./utils');
@@ -27025,7 +27212,7 @@ exports.utf8decode = function utf8decode(buf) {
 };
 // vim: set shiftwidth=4 softtabstop=4:
 
-},{"./nodeBuffer":58,"./support":64,"./utils":68}],68:[function(require,module,exports){
+},{"./nodeBuffer":59,"./support":65,"./utils":69}],69:[function(require,module,exports){
 'use strict';
 var support = require('./support');
 var compressions = require('./compressions');
@@ -27371,7 +27558,7 @@ exports.extend = function() {
 };
 
 
-},{"./compressions":50,"./nodeBuffer":58,"./support":64}],69:[function(require,module,exports){
+},{"./compressions":51,"./nodeBuffer":59,"./support":65}],70:[function(require,module,exports){
 'use strict';
 var StringReader = require('./stringReader');
 var NodeBufferReader = require('./nodeBufferReader');
@@ -27653,7 +27840,7 @@ ZipEntries.prototype = {
 // }}} end of ZipEntries
 module.exports = ZipEntries;
 
-},{"./arrayReader":47,"./nodeBufferReader":59,"./object":60,"./signature":61,"./stringReader":62,"./support":64,"./uint8ArrayReader":65,"./utils":68,"./zipEntry":70}],70:[function(require,module,exports){
+},{"./arrayReader":48,"./nodeBufferReader":60,"./object":61,"./signature":62,"./stringReader":63,"./support":65,"./uint8ArrayReader":66,"./utils":69,"./zipEntry":71}],71:[function(require,module,exports){
 'use strict';
 var StringReader = require('./stringReader');
 var utils = require('./utils');
@@ -27974,7 +28161,7 @@ ZipEntry.prototype = {
 };
 module.exports = ZipEntry;
 
-},{"./compressedObject":49,"./object":60,"./stringReader":62,"./support":64,"./utils":68}],71:[function(require,module,exports){
+},{"./compressedObject":50,"./object":61,"./stringReader":63,"./support":65,"./utils":69}],72:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -40329,7 +40516,7 @@ module.exports = ZipEntry;
 }.call(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],72:[function(require,module,exports){
+},{}],73:[function(require,module,exports){
 //! moment.js locale configuration
 //! locale : german (de)
 //! author : lluchs : https://github.com/lluchs
@@ -40408,7 +40595,7 @@ module.exports = ZipEntry;
     return de;
 
 }));
-},{"../moment":73}],73:[function(require,module,exports){
+},{"../moment":74}],74:[function(require,module,exports){
 //! moment.js
 //! version : 2.13.0
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
@@ -44449,7 +44636,7 @@ module.exports = ZipEntry;
     return _moment;
 
 }));
-},{}],74:[function(require,module,exports){
+},{}],75:[function(require,module,exports){
 /**
  * Node.js module for Forge.
  *
@@ -44543,7 +44730,7 @@ define([
 });
 })();
 
-},{}],75:[function(require,module,exports){
+},{}],76:[function(require,module,exports){
 // Top level file is just a mixin of submodules & constants
 'use strict';
 
@@ -44559,7 +44746,7 @@ assign(pako, deflate, inflate, constants);
 
 module.exports = pako;
 
-},{"./lib/deflate":76,"./lib/inflate":77,"./lib/utils/common":78,"./lib/zlib/constants":81}],76:[function(require,module,exports){
+},{"./lib/deflate":77,"./lib/inflate":78,"./lib/utils/common":79,"./lib/zlib/constants":82}],77:[function(require,module,exports){
 'use strict';
 
 
@@ -44961,7 +45148,7 @@ exports.deflate = deflate;
 exports.deflateRaw = deflateRaw;
 exports.gzip = gzip;
 
-},{"./utils/common":78,"./utils/strings":79,"./zlib/deflate":83,"./zlib/messages":88,"./zlib/zstream":90}],77:[function(require,module,exports){
+},{"./utils/common":79,"./utils/strings":80,"./zlib/deflate":84,"./zlib/messages":89,"./zlib/zstream":91}],78:[function(require,module,exports){
 'use strict';
 
 
@@ -45381,7 +45568,7 @@ exports.inflate = inflate;
 exports.inflateRaw = inflateRaw;
 exports.ungzip  = inflate;
 
-},{"./utils/common":78,"./utils/strings":79,"./zlib/constants":81,"./zlib/gzheader":84,"./zlib/inflate":86,"./zlib/messages":88,"./zlib/zstream":90}],78:[function(require,module,exports){
+},{"./utils/common":79,"./utils/strings":80,"./zlib/constants":82,"./zlib/gzheader":85,"./zlib/inflate":87,"./zlib/messages":89,"./zlib/zstream":91}],79:[function(require,module,exports){
 'use strict';
 
 
@@ -45485,7 +45672,7 @@ exports.setTyped = function (on) {
 
 exports.setTyped(TYPED_OK);
 
-},{}],79:[function(require,module,exports){
+},{}],80:[function(require,module,exports){
 // String encode/decode helpers
 'use strict';
 
@@ -45672,7 +45859,7 @@ exports.utf8border = function (buf, max) {
   return (pos + _utf8len[buf[pos]] > max) ? pos : max;
 };
 
-},{"./common":78}],80:[function(require,module,exports){
+},{"./common":79}],81:[function(require,module,exports){
 'use strict';
 
 // Note: adler32 takes 12% for level 0 and 2% for level 6.
@@ -45706,7 +45893,7 @@ function adler32(adler, buf, len, pos) {
 
 module.exports = adler32;
 
-},{}],81:[function(require,module,exports){
+},{}],82:[function(require,module,exports){
 'use strict';
 
 
@@ -45758,7 +45945,7 @@ module.exports = {
   //Z_NULL:                 null // Use -1 or null inline, depending on var type
 };
 
-},{}],82:[function(require,module,exports){
+},{}],83:[function(require,module,exports){
 'use strict';
 
 // Note: we can't get significant speed boost here.
@@ -45801,7 +45988,7 @@ function crc32(crc, buf, len, pos) {
 
 module.exports = crc32;
 
-},{}],83:[function(require,module,exports){
+},{}],84:[function(require,module,exports){
 'use strict';
 
 var utils   = require('../utils/common');
@@ -47651,7 +47838,7 @@ exports.deflatePrime = deflatePrime;
 exports.deflateTune = deflateTune;
 */
 
-},{"../utils/common":78,"./adler32":80,"./crc32":82,"./messages":88,"./trees":89}],84:[function(require,module,exports){
+},{"../utils/common":79,"./adler32":81,"./crc32":83,"./messages":89,"./trees":90}],85:[function(require,module,exports){
 'use strict';
 
 
@@ -47693,7 +47880,7 @@ function GZheader() {
 
 module.exports = GZheader;
 
-},{}],85:[function(require,module,exports){
+},{}],86:[function(require,module,exports){
 'use strict';
 
 // See state defs from inflate.js
@@ -48021,7 +48208,7 @@ module.exports = function inflate_fast(strm, start) {
   return;
 };
 
-},{}],86:[function(require,module,exports){
+},{}],87:[function(require,module,exports){
 'use strict';
 
 
@@ -49561,7 +49748,7 @@ exports.inflateSyncPoint = inflateSyncPoint;
 exports.inflateUndermine = inflateUndermine;
 */
 
-},{"../utils/common":78,"./adler32":80,"./crc32":82,"./inffast":85,"./inftrees":87}],87:[function(require,module,exports){
+},{"../utils/common":79,"./adler32":81,"./crc32":83,"./inffast":86,"./inftrees":88}],88:[function(require,module,exports){
 'use strict';
 
 
@@ -49890,7 +50077,7 @@ module.exports = function inflate_table(type, lens, lens_index, codes, table, ta
   return 0;
 };
 
-},{"../utils/common":78}],88:[function(require,module,exports){
+},{"../utils/common":79}],89:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -49905,7 +50092,7 @@ module.exports = {
   '-6':   'incompatible version' /* Z_VERSION_ERROR (-6) */
 };
 
-},{}],89:[function(require,module,exports){
+},{}],90:[function(require,module,exports){
 'use strict';
 
 
@@ -51109,7 +51296,7 @@ exports._tr_flush_block  = _tr_flush_block;
 exports._tr_tally = _tr_tally;
 exports._tr_align = _tr_align;
 
-},{"../utils/common":78}],90:[function(require,module,exports){
+},{"../utils/common":79}],91:[function(require,module,exports){
 'use strict';
 
 
@@ -51140,7 +51327,7 @@ function ZStream() {
 
 module.exports = ZStream;
 
-},{}],91:[function(require,module,exports){
+},{}],92:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -51233,7 +51420,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],92:[function(require,module,exports){
+},{}],93:[function(require,module,exports){
 (function (process){
 // vim:ts=4:sts=4:sw=4:
 /*!
@@ -53285,7 +53472,7 @@ return Q;
 });
 
 }).call(this,require('_process'))
-},{"_process":91}],93:[function(require,module,exports){
+},{"_process":92}],94:[function(require,module,exports){
 //     Underscore.js 1.8.3
 //     http://underscorejs.org
 //     (c) 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors

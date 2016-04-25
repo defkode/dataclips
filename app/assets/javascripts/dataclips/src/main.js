@@ -12,9 +12,9 @@ Backbone.$ = $;
 Dataclips         = require('./dataclips');
 Records           = require('./records');
 Dataclips.View    = require('./view')
-ExcelBuilder      = require("excel-builder");
 
 Dataclips.run = function(){
+
   var bg, circ, collection, ctx, draw, imd, quart, view;
   bg = $('#progress').get(0);
   ctx = bg.getContext('2d');
