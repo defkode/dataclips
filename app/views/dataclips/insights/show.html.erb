@@ -5,6 +5,7 @@
   Dataclips.config = {
     locale:       '<%= I18n.locale %>',
     id:           '<%= @clip_id %>',
+    name:         '<%= @insight.name %>',
     url:          '<%= insight_path(@insight) %>',
     schema:       <%= raw @schema.to_json %>,
     headers:      <%= raw @headers.to_json %>,

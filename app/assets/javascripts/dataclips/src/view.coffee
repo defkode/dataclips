@@ -1,9 +1,11 @@
-require('bd-slickgrid/core');
-require('bd-slickgrid/grid');
-require('bd-slickgrid/dataview');
-require('bd-slickgrid/lib/jquery.event.drag-2.2');
-require('bd-slickgrid/plugins/slick.autotooltips');
-require('bd-slickgrid/plugins/slick.rowselectionmodel');
+require('../vendor/slickgrid/lib/jquery.event.drag-2.2');
+
+require('../vendor/slickgrid/slick.core');
+require('../vendor/slickgrid/slick.grid');
+require('../vendor/slickgrid/slick.dataview');
+
+require('../vendor/slickgrid/plugins/slick.autotooltips');
+require('../vendor/slickgrid/plugins/slick.rowselectionmodel');
 
 ExcelBuilder     = require("excel-builder");
 
@@ -28,15 +30,17 @@ module.exports = Backbone.View.extend
       workbook = ExcelBuilder.Builder.createWorkbook()
 
       stylesheet = workbook.getStyleSheet()
+      stylesheet.fills = [] # override gray default, reduces file size
 
-      sheet = workbook.createWorksheet(name: "Results")
-
+      sheet = workbook.createWorksheet(name: Dataclips.config.name)
 
       # http://closedxml.codeplex.com/wikipage?title=NumberFormatId%20Lookup%20Table
       date_formatter     = {id: 1, numFmtId: 14}
-      datetime_formatter = {id: 2, numFmtId: 22}
+      time_formatter     = {id: 2, numFmtId: 21}
+      datetime_formatter = {id: 3, numFmtId: 22}
 
       stylesheet.masterCellFormats.push(date_formatter)
+      stylesheet.masterCellFormats.push(time_formatter)
       stylesheet.masterCellFormats.push(datetime_formatter)
 
       keys = _.keys Dataclips.config.schema
@@ -51,6 +55,8 @@ module.exports = Backbone.View.extend
           switch type
             when "date"
               value: v.format('x'), metadata: {type: "date", style: date_formatter.id}
+            when "time"
+              value: v.format('x'), metadata: {type: "date", style: time_formatter.id}
             when "datetime"
               value: v.format('x'), metadata: {type: "date", style: datetime_formatter.id}
             else
@@ -63,7 +69,7 @@ module.exports = Backbone.View.extend
       workbook.addWorksheet(sheet)
 
       ExcelBuilder.Builder.createFile(workbook, {type: "blob"}).then (file) ->
-        filename = prompt("Save results as: ", "#{_.last Dataclips.config.id.split("/")}.xlsx")
+        filename = "#{Dataclips.config.name}.xlsx"
         downloader(file, filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
       false
