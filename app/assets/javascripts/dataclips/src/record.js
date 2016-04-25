@@ -6,7 +6,7 @@ module.exports = Backbone.Model.extend({
       var type = Dataclips.config.schema[key].type;
       if (type === "date" || type === "time" || type === "datetime") {
         if (value != null) {
-          memo[key] = moment(value);
+          memo[key] = parseInt(moment(value).format('x'));
         }
       } else {
         memo[key] = value;

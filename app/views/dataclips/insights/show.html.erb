@@ -6,6 +6,7 @@
     locale:       '<%= I18n.locale %>',
     id:           '<%= @clip_id %>',
     name:         '<%= @insight.name %>',
+    filename:     '<%= (@insight.name.present? ? @insight.name : @insight.clip_id).parameterize %>',
     url:          '<%= insight_path(@insight) %>',
     schema:       <%= raw @schema.to_json %>,
     headers:      <%= raw @headers.to_json %>,
@@ -24,7 +25,7 @@
 
     Dataclips.proxy.on("change", _.debounce(function(model){
       try { window.parent.postMessage(model.toJSON(), "*") } catch(err) {
-        // debugger
+        debugger
       }
     }));
     Dataclips.run();
@@ -75,7 +76,7 @@
         <i class="fa fa-expand"></i>
       </a>
 
-      <a href="#" class="download">
+      <a href="<%= download_insight_url(@insight, I18n.locale) %>" class="download">
         <i class="fa fa-download"></i>
       </a>
     </div>

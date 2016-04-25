@@ -11,7 +11,6 @@ ExcelBuilder     = require("excel-builder");
 
 downloader = require("downloadjs")
 
-
 moment = require("moment");
 require("moment/locale/de");
 
@@ -26,53 +25,13 @@ module.exports = Backbone.View.extend
       @reload()
       false
 
-    "click a.download": ->
-      workbook = ExcelBuilder.Builder.createWorkbook()
+    "click a.download": (e) ->
+      if Modernizr.adownload
+        e.preventDefault()
+        @buildXLSX().then (file) ->
+          filename = "#{Dataclips.config.filename}.xlsx"
+          downloader(file, filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
-      stylesheet = workbook.getStyleSheet()
-      stylesheet.fills = [] # override gray default, reduces file size
-
-      sheet = workbook.createWorksheet(name: Dataclips.config.name)
-
-      # http://closedxml.codeplex.com/wikipage?title=NumberFormatId%20Lookup%20Table
-      date_formatter     = {id: 1, numFmtId: 14}
-      time_formatter     = {id: 2, numFmtId: 21}
-      datetime_formatter = {id: 3, numFmtId: 22}
-
-      stylesheet.masterCellFormats.push(date_formatter)
-      stylesheet.masterCellFormats.push(time_formatter)
-      stylesheet.masterCellFormats.push(datetime_formatter)
-
-      keys = _.keys Dataclips.config.schema
-      data = []
-
-      data.push keys # headers
-
-      @collection.each (r) ->
-        values = _.map r.pick(keys), (v, k) ->
-          type = Dataclips.config.schema[k].type
-
-          switch type
-            when "date"
-              value: v.format('x'), metadata: {type: "date", style: date_formatter.id}
-            when "time"
-              value: v.format('x'), metadata: {type: "date", style: time_formatter.id}
-            when "datetime"
-              value: v.format('x'), metadata: {type: "date", style: datetime_formatter.id}
-            else
-              value: v
-
-        data.push values
-
-      sheet.setData data
-
-      workbook.addWorksheet(sheet)
-
-      ExcelBuilder.Builder.createFile(workbook, {type: "blob"}).then (file) ->
-        filename = "#{Dataclips.config.name}.xlsx"
-        downloader(file, filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-
-      false
 
 
     "input input[type=text]": _.debounce (event) ->
@@ -290,22 +249,6 @@ module.exports = Backbone.View.extend
       else
         true
 
-    dateFilter = (item, attr, range) ->
-      value = item[attr]
-      return true if value is undefined
-      if range.from? || range.to?
-        gte = (from) ->
-          return true if from is undefined
-          value >= from
-
-        lte = (to) ->
-          return true if to is undefined
-          value <= to
-
-        gte(range.from) && lte(range.to)
-      else
-        true
-
     exactMatcher = (item, attr, query) ->
       return true unless query
       return true if _.isEmpty query.trim()
@@ -316,13 +259,8 @@ module.exports = Backbone.View.extend
         switch options.type
           when "text"
             textFilter(item, attr, args[attr])
-          when "integer", "float", "decimal"
+          when "integer", "float", "decimal", "datetime", "date"
             numericFilter(item, attr, {
-              from: args["#{attr}_from"],
-              to:   args["#{attr}_to"]
-            })
-          when "datetime", "date"
-            dateFilter(item, attr, {
               from: args["#{attr}_from"],
               to:   args["#{attr}_to"]
             })
@@ -335,7 +273,7 @@ module.exports = Backbone.View.extend
     dataView.onPagingInfoChanged.subscribe (e, args) ->
       Dataclips.proxy.set
         grid_entries_count: args.totalRows
-        grid_entries: _.map [0..(args.totalRows - 1)], (id) -> dataView.getItem(id) # not safe
+        grid_entries: _.map [0..(args.totalRows - 1)], (id) -> _.omit dataView.getItem(id), "id" # not safe
 
     # previous, current
     dataView.onRowCountChanged.subscribe (e, args) ->
@@ -360,6 +298,49 @@ module.exports = Backbone.View.extend
       $('input[list]').relevantDropdown({
         fadeOutSpeed: 0
       })
+
+  buildXLSX: ->
+    workbook = ExcelBuilder.Builder.createWorkbook()
+    stylesheet = workbook.getStyleSheet()
+    stylesheet.fills = [{}, {}] # override gray default, reduces file size
+
+    sheet = workbook.createWorksheet()
+
+    # http://closedxml.codeplex.com/wikipage?title=NumberFormatId%20Lookup%20Table
+    date_formatter     = {id: 1, numFmtId: 14}
+    time_formatter     = {id: 2, numFmtId: 21}
+    datetime_formatter = {id: 3, numFmtId: 22}
+
+    stylesheet.masterCellFormats.push(date_formatter)
+    stylesheet.masterCellFormats.push(time_formatter)
+    stylesheet.masterCellFormats.push(datetime_formatter)
+
+    keys = _.keys Dataclips.config.schema
+    data = []
+
+    data.push _.map keys, (k) -> Dataclips.config.headers[k] # localized headers
+
+    _.each Dataclips.proxy.get("grid_entries"), (record) ->
+      values = _.map record, (v, k) ->
+        type = Dataclips.config.schema[k].type
+
+        switch type
+          when "date"
+            value: v, metadata: {type: "date", style: date_formatter.id}
+          when "time"
+            value: v, metadata: {type: "date", style: time_formatter.id}
+          when "datetime"
+            value: v, metadata: {type: "date", style: datetime_formatter.id}
+          else
+            value: v
+
+      data.push values
+
+    sheet.setData data
+
+    workbook.addWorksheet(sheet)
+
+    ExcelBuilder.Builder.createFile(workbook, {type: "blob"})
 
 
 

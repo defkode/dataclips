@@ -11,6 +11,10 @@ module Dataclips
       hash_id
     end
 
+    def name
+      read_attribute(:name) || clip_id
+    end
+
     def self.get(clip_id, params = nil)
       find_by(clip_id: clip_id)
     end

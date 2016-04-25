@@ -15,13 +15,13 @@ module.exports = {
       return value;
     },
     date: function(row, cell, value, columnDef, context) {
-      return value != null ? value.format('L') : void 0;
+      return value != null ? moment(value).format('L') : void 0;
     },
     time: function(row, cell, value, columnDef, context) {
-      return value != null ? value.format('h:mm:ss') : void 0;
+      return value != null ? moment(value).format('h:mm:ss') : void 0;
     },
     datetime: function(row, cell, value, columnDef, context) {
-      return value != null ? value.format('L HH:mm:ss') : void 0;
+      return value != null ? moment(value).format('L HH:mm:ss') : void 0;
     },
     binary: function(row, cell, value, columnDef, context) {
       return value;
@@ -121,7 +121,7 @@ module.exports = Backbone.Model.extend({
       var type = Dataclips.config.schema[key].type;
       if (type === "date" || type === "time" || type === "datetime") {
         if (value != null) {
-          memo[key] = moment(value);
+          memo[key] = parseInt(moment(value).format('x'));
         }
       } else {
         memo[key] = value;
@@ -203,80 +203,15 @@ module.exports = Backbone.View.extend({
       this.reload();
       return false;
     },
-    "click a.download": function() {
-      var data, date_formatter, datetime_formatter, keys, sheet, stylesheet, time_formatter, workbook;
-      workbook = ExcelBuilder.Builder.createWorkbook();
-      stylesheet = workbook.getStyleSheet();
-      stylesheet.fills = [];
-      sheet = workbook.createWorksheet({
-        name: Dataclips.config.name
-      });
-      date_formatter = {
-        id: 1,
-        numFmtId: 14
-      };
-      time_formatter = {
-        id: 2,
-        numFmtId: 21
-      };
-      datetime_formatter = {
-        id: 3,
-        numFmtId: 22
-      };
-      stylesheet.masterCellFormats.push(date_formatter);
-      stylesheet.masterCellFormats.push(time_formatter);
-      stylesheet.masterCellFormats.push(datetime_formatter);
-      keys = _.keys(Dataclips.config.schema);
-      data = [];
-      data.push(keys);
-      this.collection.each(function(r) {
-        var values;
-        values = _.map(r.pick(keys), function(v, k) {
-          var type;
-          type = Dataclips.config.schema[k].type;
-          switch (type) {
-            case "date":
-              return {
-                value: v.format('x'),
-                metadata: {
-                  type: "date",
-                  style: date_formatter.id
-                }
-              };
-            case "time":
-              return {
-                value: v.format('x'),
-                metadata: {
-                  type: "date",
-                  style: time_formatter.id
-                }
-              };
-            case "datetime":
-              return {
-                value: v.format('x'),
-                metadata: {
-                  type: "date",
-                  style: datetime_formatter.id
-                }
-              };
-            default:
-              return {
-                value: v
-              };
-          }
+    "click a.download": function(e) {
+      if (Modernizr.adownload) {
+        e.preventDefault();
+        return this.buildXLSX().then(function(file) {
+          var filename;
+          filename = Dataclips.config.filename + ".xlsx";
+          return downloader(file, filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         });
-        return data.push(values);
-      });
-      sheet.setData(data);
-      workbook.addWorksheet(sheet);
-      ExcelBuilder.Builder.createFile(workbook, {
-        type: "blob"
-      }).then(function(file) {
-        var filename;
-        filename = Dataclips.config.name + ".xlsx";
-        return downloader(file, filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-      });
-      return false;
+      }
     },
     "input input[type=text]": _.debounce(function(event) {
       return this.filterArgs.set(event.target.name, $.trim(event.target.value));
@@ -374,7 +309,7 @@ module.exports = Backbone.View.extend({
     }
   },
   render: function() {
-    var booleanFilter, columns, dataView, dateFilter, exactMatcher, grid, numericFilter, options, textFilter, updateDataView;
+    var booleanFilter, columns, dataView, exactMatcher, grid, numericFilter, options, textFilter, updateDataView;
     this.filterArgs = new Backbone.Model;
     this.listenTo(Dataclips.proxy, "change", _.debounce(function(model) {
       this.$el.find("span.total_entries_count").text(model.get("total_entries_count"));
@@ -540,30 +475,6 @@ module.exports = Backbone.View.extend({
         return true;
       }
     };
-    dateFilter = function(item, attr, range) {
-      var gte, lte, value;
-      value = item[attr];
-      if (value === void 0) {
-        return true;
-      }
-      if ((range.from != null) || (range.to != null)) {
-        gte = function(from) {
-          if (from === void 0) {
-            return true;
-          }
-          return value >= from;
-        };
-        lte = function(to) {
-          if (to === void 0) {
-            return true;
-          }
-          return value <= to;
-        };
-        return gte(range.from) && lte(range.to);
-      } else {
-        return true;
-      }
-    };
     exactMatcher = function(item, attr, query) {
       if (!query) {
         return true;
@@ -581,13 +492,9 @@ module.exports = Backbone.View.extend({
           case "integer":
           case "float":
           case "decimal":
-            return numericFilter(item, attr, {
-              from: args[attr + "_from"],
-              to: args[attr + "_to"]
-            });
           case "datetime":
           case "date":
-            return dateFilter(item, attr, {
+            return numericFilter(item, attr, {
               from: args[attr + "_from"],
               to: args[attr + "_to"]
             });
@@ -607,7 +514,7 @@ module.exports = Backbone.View.extend({
           for (var i = 0, ref = args.totalRows - 1; 0 <= ref ? i <= ref : i >= ref; 0 <= ref ? i++ : i--){ results.push(i); }
           return results;
         }).apply(this), function(id) {
-          return dataView.getItem(id);
+          return _.omit(dataView.getItem(id), "id");
         })
       });
     });
@@ -632,15 +539,84 @@ module.exports = Backbone.View.extend({
         fadeOutSpeed: 0
       });
     }
+  },
+  buildXLSX: function() {
+    var data, date_formatter, datetime_formatter, keys, sheet, stylesheet, time_formatter, workbook;
+    workbook = ExcelBuilder.Builder.createWorkbook();
+    stylesheet = workbook.getStyleSheet();
+    stylesheet.fills = [{}, {}];
+    sheet = workbook.createWorksheet();
+    date_formatter = {
+      id: 1,
+      numFmtId: 14
+    };
+    time_formatter = {
+      id: 2,
+      numFmtId: 21
+    };
+    datetime_formatter = {
+      id: 3,
+      numFmtId: 22
+    };
+    stylesheet.masterCellFormats.push(date_formatter);
+    stylesheet.masterCellFormats.push(time_formatter);
+    stylesheet.masterCellFormats.push(datetime_formatter);
+    keys = _.keys(Dataclips.config.schema);
+    data = [];
+    data.push(_.map(keys, function(k) {
+      return Dataclips.config.headers[k];
+    }));
+    _.each(Dataclips.proxy.get("grid_entries"), function(record) {
+      var values;
+      values = _.map(record, function(v, k) {
+        var type;
+        type = Dataclips.config.schema[k].type;
+        switch (type) {
+          case "date":
+            return {
+              value: v,
+              metadata: {
+                type: "date",
+                style: date_formatter.id
+              }
+            };
+          case "time":
+            return {
+              value: v,
+              metadata: {
+                type: "date",
+                style: time_formatter.id
+              }
+            };
+          case "datetime":
+            return {
+              value: v,
+              metadata: {
+                type: "date",
+                style: datetime_formatter.id
+              }
+            };
+          default:
+            return {
+              value: v
+            };
+        }
+      });
+      return data.push(values);
+    });
+    sheet.setData(data);
+    workbook.addWorksheet(sheet);
+    return ExcelBuilder.Builder.createFile(workbook, {
+      type: "blob"
+    });
   }
 });
 
 
 },{"../vendor/slickgrid/lib/jquery.event.drag-2.2":8,"../vendor/slickgrid/plugins/slick.autotooltips":9,"../vendor/slickgrid/plugins/slick.rowselectionmodel":10,"../vendor/slickgrid/slick.core":11,"../vendor/slickgrid/slick.dataview":12,"../vendor/slickgrid/slick.grid":13,"downloadjs":18,"excel-builder":44,"moment":73,"moment/locale/de":72}],6:[function(require,module,exports){
-/*! modernizr 3.2.0 (Custom Build) | MIT *
- * http://modernizr.com/download/?-datalistelem-setclasses !*/
-!function(e,n,t){function s(e,n){return typeof e===n}function a(){var e,n,t,a,o,i,f;for(var u in r)if(r.hasOwnProperty(u)){if(e=[],n=r[u],n.name&&(e.push(n.name.toLowerCase()),n.options&&n.options.aliases&&n.options.aliases.length))for(t=0;t<n.options.aliases.length;t++)e.push(n.options.aliases[t].toLowerCase());for(a=s(n.fn,"function")?n.fn():n.fn,o=0;o<e.length;o++)i=e[o],f=i.split("."),1===f.length?Modernizr[f[0]]=a:(!Modernizr[f[0]]||Modernizr[f[0]]instanceof Boolean||(Modernizr[f[0]]=new Boolean(Modernizr[f[0]])),Modernizr[f[0]][f[1]]=a),l.push((a?"":"no-")+f.join("-"))}}function o(e){var n=u.className,t=Modernizr._config.classPrefix||"";if(c&&(n=n.baseVal),Modernizr._config.enableJSClass){var s=new RegExp("(^|\\s)"+t+"no-js(\\s|$)");n=n.replace(s,"$1"+t+"js$2")}Modernizr._config.enableClasses&&(n+=" "+t+e.join(" "+t),c?u.className.baseVal=n:u.className=n)}function i(){return"function"!=typeof n.createElement?n.createElement(arguments[0]):c?n.createElementNS.call(n,"http://www.w3.org/2000/svg",arguments[0]):n.createElement.apply(n,arguments)}var l=[],r=[],f={_version:"3.2.0",_config:{classPrefix:"",enableClasses:!0,enableJSClass:!0,usePrefixes:!0},_q:[],on:function(e,n){var t=this;setTimeout(function(){n(t[e])},0)},addTest:function(e,n,t){r.push({name:e,fn:n,options:t})},addAsyncTest:function(e){r.push({name:null,fn:e})}},Modernizr=function(){};Modernizr.prototype=f,Modernizr=new Modernizr;var u=n.documentElement,c="svg"===u.nodeName.toLowerCase(),p=i("input"),m="autocomplete autofocus list placeholder max min multiple pattern required step".split(" "),d={};Modernizr.input=function(n){for(var t=0,s=n.length;s>t;t++)d[n[t]]=!!(n[t]in p);return d.list&&(d.list=!(!i("datalist")||!e.HTMLDataListElement)),d}(m),Modernizr.addTest("datalistelem",Modernizr.input.list),a(),o(l),delete f.addTest,delete f.addAsyncTest;for(var g=0;g<Modernizr._q.length;g++)Modernizr._q[g]();e.Modernizr=Modernizr}(window,document);
-
+/*! modernizr 3.3.1 (Custom Build) | MIT *
+ * http://modernizr.com/download/?-adownload-datalistelem-setclasses !*/
+!function(e,n,t){function a(e,n){return typeof e===n}function s(){var e,n,t,s,o,i,f;for(var u in r)if(r.hasOwnProperty(u)){if(e=[],n=r[u],n.name&&(e.push(n.name.toLowerCase()),n.options&&n.options.aliases&&n.options.aliases.length))for(t=0;t<n.options.aliases.length;t++)e.push(n.options.aliases[t].toLowerCase());for(s=a(n.fn,"function")?n.fn():n.fn,o=0;o<e.length;o++)i=e[o],f=i.split("."),1===f.length?Modernizr[f[0]]=s:(!Modernizr[f[0]]||Modernizr[f[0]]instanceof Boolean||(Modernizr[f[0]]=new Boolean(Modernizr[f[0]])),Modernizr[f[0]][f[1]]=s),l.push((s?"":"no-")+f.join("-"))}}function o(e){var n=u.className,t=Modernizr._config.classPrefix||"";if(c&&(n=n.baseVal),Modernizr._config.enableJSClass){var a=new RegExp("(^|\\s)"+t+"no-js(\\s|$)");n=n.replace(a,"$1"+t+"js$2")}Modernizr._config.enableClasses&&(n+=" "+t+e.join(" "+t),c?u.className.baseVal=n:u.className=n)}function i(){return"function"!=typeof n.createElement?n.createElement(arguments[0]):c?n.createElementNS.call(n,"http://www.w3.org/2000/svg",arguments[0]):n.createElement.apply(n,arguments)}var l=[],r=[],f={_version:"3.3.1",_config:{classPrefix:"",enableClasses:!0,enableJSClass:!0,usePrefixes:!0},_q:[],on:function(e,n){var t=this;setTimeout(function(){n(t[e])},0)},addTest:function(e,n,t){r.push({name:e,fn:n,options:t})},addAsyncTest:function(e){r.push({name:null,fn:e})}},Modernizr=function(){};Modernizr.prototype=f,Modernizr=new Modernizr;var u=n.documentElement,c="svg"===u.nodeName.toLowerCase(),p=i("input"),d="autocomplete autofocus list placeholder max min multiple pattern required step".split(" "),m={};Modernizr.input=function(n){for(var t=0,a=n.length;a>t;t++)m[n[t]]=!!(n[t]in p);return m.list&&(m.list=!(!i("datalist")||!e.HTMLDataListElement)),m}(d),Modernizr.addTest("datalistelem",Modernizr.input.list),Modernizr.addTest("adownload",!e.externalHost&&"download"in i("a")),s(),o(l),delete f.addTest,delete f.addAsyncTest;for(var g=0;g<Modernizr._q.length;g++)Modernizr._q[g]();e.Modernizr=Modernizr}(window,document);
 },{}],7:[function(require,module,exports){
 (function($) {
 
@@ -12605,9 +12581,9 @@ var RelationshipManager = require('./RelationshipManager');
 var SheetView = require('./SheetView');
 
 /**
- * This module represents an excel worksheet in its basic form - no tables, charts, etc. Its purpose is 
+ * This module represents an excel worksheet in its basic form - no tables, charts, etc. Its purpose is
  * to hold data, the data's link to how it should be styled, and any links to other outside resources.
- * 
+ *
  * @module Excel/Worksheet
  */
     var Worksheet = function (config) {
@@ -12631,19 +12607,19 @@ var SheetView = require('./SheetView');
         this.initialize(config);
     };
     _.extend(Worksheet.prototype, {
-        
+
         initialize: function (config) {
             config = config || {};
             this.name = config.name;
             this.id = _.uniqueId('Worksheet');
-            this._timezoneOffset = new Date().getTimezoneOffset() * 60 * 1000;
+            this._timezoneOffset = 0;
             if(config.columns) {
                 this.setColumns(config.columns);
             }
-            
+
             this.relations = new RelationshipManager();
         },
-        
+
         /**
          * Returns an object that can be consumed by a WorksheetExportWorker
          * @returns {Object}
@@ -12664,7 +12640,7 @@ var SheetView = require('./SheetView');
                 id: this.id
             };
         },
-        
+
         /**
          * Imports data - to be used while inside of a WorksheetExportWorker.
          * @param {Object} data
@@ -12674,16 +12650,16 @@ var SheetView = require('./SheetView');
             delete data.relations;
             _.extend(this, data);
         },
-        
+
         setSharedStringCollection: function (stringCollection) {
             this.sharedStrings = stringCollection;
         },
-        
+
         addTable: function (table) {
             this._tables.push(table);
             this.relations.addRelation(table, 'table');
         },
-                
+
         addDrawings: function (table) {
             this._drawings.push(table);
             this.relations.addRelation(table, 'drawingRelationship');
@@ -12692,13 +12668,13 @@ var SheetView = require('./SheetView');
         setRowInstructions: function (rowIndex, instructions) {
             this._rowInstructions[rowIndex] = instructions;
         },
-        
+
         /**
         * Expects an array length of three.
-        * 
-        * @see Excel/Worksheet compilePageDetailPiece 
+        *
+        * @see Excel/Worksheet compilePageDetailPiece
         * @see <a href='/cookbook/addingHeadersAndFooters.html'>Adding headers and footers to a worksheet</a>
-        * 
+        *
         * @param {Array} headers [left, center, right]
         */
         setHeader: function (headers) {
@@ -12707,13 +12683,13 @@ var SheetView = require('./SheetView');
             }
             this._headers = headers;
         },
-        
+
         /**
         * Expects an array length of three.
-        * 
-        * @see Excel/Worksheet compilePageDetailPiece 
+        *
+        * @see Excel/Worksheet compilePageDetailPiece
         * @see <a href='/cookbook/addingHeadersAndFooters.html'>Adding headers and footers to a worksheet</a>
-        * 
+        *
         * @param {Array} footers [left, center, right]
         */
         setFooter: function (footers) {
@@ -12722,7 +12698,7 @@ var SheetView = require('./SheetView');
             }
             this._footers = footers;
         },
-        
+
         /**
          * Turns page header/footer details into the proper format for Excel.
          * @param {type} data
@@ -12736,11 +12712,11 @@ var SheetView = require('./SheetView');
             "&R", this.compilePageDetailPiece(data[2] || "")
             ].join('');
         },
-    
+
         /**
          * Turns instructions on page header/footer details into something
          * usable by Excel.
-         * 
+         *
          * @param {type} data
          * @returns {String|@exp;_@call;reduce}
          */
@@ -12748,7 +12724,7 @@ var SheetView = require('./SheetView');
             if(_.isString(data)) {
                 return '&"-,Regular"'.concat(data);
             }
-            if(_.isObject(data) && !_.isArray(data)) { 
+            if(_.isObject(data) && !_.isArray(data)) {
                 var string = "";
                 if(data.font || data.bold) {
                     var weighting = data.bold ? "Bold" : "Regular";
@@ -12764,10 +12740,10 @@ var SheetView = require('./SheetView');
                     string += "&"+data.fontSize;
                 }
                 string += data.text;
-                
+
                 return string;
             }
-            
+
             if(_.isArray(data)) {
                 var self = this;
                 return _.reduce(data, function (m, v) {
@@ -12775,10 +12751,10 @@ var SheetView = require('./SheetView');
                 }, "");
             }
         },
-        
+
         /**
-         * Creates the header node. 
-         * 
+         * Creates the header node.
+         *
          * @todo implement the ability to do even/odd headers
          * @param {XML Doc} doc
          * @returns {XML Node}
@@ -12788,25 +12764,25 @@ var SheetView = require('./SheetView');
             oddHeader.appendChild(doc.createTextNode(this.compilePageDetailPackage(this._headers)));
             return oddHeader;
         },
-    
+
         /**
          * Creates the footer node.
-         * 
+         *
          * @todo implement the ability to do even/odd footers
          * @param {XML Doc} doc
          * @returns {XML Node}
-         */    
+         */
         exportFooter: function (doc) {
             var oddFooter = doc.createElement('oddFooter');
             oddFooter.appendChild(doc.createTextNode(this.compilePageDetailPackage(this._footers)));
             return oddFooter;
         },
-        
+
         /**
-         * This creates some nodes ahead of time, which cuts down on generation time due to 
+         * This creates some nodes ahead of time, which cuts down on generation time due to
          * most cell definitions being essentially the same, but having multiple nodes that need
          * to be created. Cloning takes less time than creation.
-         * 
+         *
          * @private
          * @param {XML Doc} doc
          * @returns {_L8.Anonym$0._buildCache.Anonym$2}
@@ -12816,19 +12792,19 @@ var SheetView = require('./SheetView');
             var value = doc.createElement('v');
             value.appendChild(doc.createTextNode("--temp--"));
             numberNode.appendChild(value);
-            
+
             var formulaNode = doc.createElement('c');
             var formulaValue = doc.createElement('f');
             formulaValue.appendChild(doc.createTextNode("--temp--"));
             formulaNode.appendChild(formulaValue);
-            
+
             var stringNode = doc.createElement('c');
             stringNode.setAttribute('t', 's');
             var stringValue = doc.createElement('v');
             stringValue.appendChild(doc.createTextNode("--temp--"));
             stringNode.appendChild(stringValue);
-            
-            
+
+
             return {
                 number: numberNode,
                 date: numberNode,
@@ -12836,11 +12812,11 @@ var SheetView = require('./SheetView');
                 formula: formulaNode
             };
         },
-        
+
         /**
          * Runs through the XML document and grabs all of the strings that will
-         * be sent to the 'shared strings' document. 
-         * 
+         * be sent to the 'shared strings' document.
+         *
          * @returns {Array}
          */
         collectSharedStrings: function () {
@@ -12857,7 +12833,7 @@ var SheetView = require('./SheetView');
                     if (cellValue && typeof cellValue === 'object') {
                         cellValue = cellValue.value;
                     }
-                    
+
                     if(!metadata.type) {
                         if(typeof cellValue === 'number') {
                             metadata.type = 'number';
@@ -12872,7 +12848,7 @@ var SheetView = require('./SheetView');
             }
             return _.keys(strings);
         },
-        
+
         toXML: function () {
             var data = this.data;
             var columns = this.columns || [];
@@ -12881,18 +12857,18 @@ var SheetView = require('./SheetView');
             var i, l, row;
             worksheet.setAttribute('xmlns:r', util.schemas.relationships);
             worksheet.setAttribute('xmlns:mc', util.schemas.markupCompat);
-            
+
             var maxX = 0;
             var sheetData = util.createElement(doc, 'sheetData');
-            
+
             var cellCache = this._buildCache(doc);
-            
+
             for(row = 0, l = data.length; row < l; row++) {
                 var dataRow = data[row];
                 var cellCount = dataRow.length;
                 maxX = cellCount > maxX ? cellCount : maxX;
                 var rowNode = doc.createElement('row');
-                
+
                 for(var c = 0; c < cellCount; c++) {
                     columns[c] = columns[c] || {};
                     var cellValue = dataRow[c];
@@ -12901,7 +12877,7 @@ var SheetView = require('./SheetView');
                     if (cellValue && typeof cellValue === 'object') {
                         cellValue = cellValue.value;
                     }
-            
+
                     if(!metadata.type) {
                         if(typeof cellValue === 'number') {
                             metadata.type = 'number';
@@ -12959,8 +12935,8 @@ var SheetView = require('./SheetView');
                 }
 
                 sheetData.appendChild(rowNode);
-            } 
-            
+            }
+
             if(maxX !== 0) {
                 worksheet.appendChild(util.createElement(doc, 'dimension', [
                     ['ref',  util.positionToLetterRef(1, 1) + ':' + util.positionToLetterRef(maxX, data.length)]
@@ -12978,7 +12954,7 @@ var SheetView = require('./SheetView');
             }
             worksheet.appendChild(sheetData);
 
-            // The spec doesn't say anything about this, but Excel 2013 requires sheetProtection immediately after sheetData 
+            // The spec doesn't say anything about this, but Excel 2013 requires sheetProtection immediately after sheetData
             if (this.sheetProtection) {
                 worksheet.appendChild(this.sheetProtection.exportXML(doc));
             }
@@ -13016,7 +12992,7 @@ var SheetView = require('./SheetView');
                 }
                 worksheet.appendChild(mergeCells);
             }
-            
+
             this.exportPageSettings(doc, worksheet);
 
             if(this._headers.length > 0 || this._footers.length > 0) {
@@ -13050,9 +13026,9 @@ var SheetView = require('./SheetView');
             }
             return doc;
         },
-        
+
         /**
-         * 
+         *
          * @param {XML Doc} doc
          * @returns {XML Node}
          */
@@ -13078,7 +13054,7 @@ var SheetView = require('./SheetView');
                 } else {
                     col.setAttribute('width', 9.140625);
                 }
-                
+
                 cols.appendChild(col);
             }
             return cols;
@@ -13086,44 +13062,44 @@ var SheetView = require('./SheetView');
 
         /**
          * Sets the page settings on a worksheet node.
-         * 
+         *
          * @param {XML Doc} doc
          * @param {XML Node} worksheet
          * @returns {undefined}
          */
         exportPageSettings: function (doc, worksheet) {
-            
+
             if(this._orientation) {
                 worksheet.appendChild(util.createElement(doc, 'pageSetup', [
                     ['orientation', this._orientation]
                 ]));
             }
         },
-    
+
         /**
          * http://www.schemacentral.com/sc/ooxml/t-ssml_ST_Orientation.html
-         * 
+         *
          * Can be one of 'portrait' or 'landscape'.
-         * 
+         *
          * @param {String} orientation
          * @returns {undefined}
          */
         setPageOrientation: function (orientation) {
             this._orientation = orientation;
         },
-        
+
         /**
-         * Expects an array of column definitions. Each column definition needs to have a width assigned to it. 
-         * 
+         * Expects an array of column definitions. Each column definition needs to have a width assigned to it.
+         *
          * @param {Array} columns
          */
         setColumns: function (columns) {
             this.columns = columns;
         },
-        
+
         /**
-         * Expects an array of data to be translated into cells. 
-         * 
+         * Expects an array of data to be translated into cells.
+         *
          * @param {Array} data Two dimensional array - [ [A1, A2], [B1, B2] ]
          * @see <a href='/cookbook/addingDataToAWorksheet.html'>Adding data to a worksheet</a>
          */
@@ -13161,7 +13137,7 @@ var SheetView = require('./SheetView');
          * hidden
          * max
          * min
-         * outlineLevel 
+         * outlineLevel
          * phonetic
          * style
          * width
