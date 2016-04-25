@@ -11,6 +11,7 @@
     schema:       <%= raw @schema.to_json %>,
     headers:      <%= raw @headers.to_json %>,
     variables:    <%= raw @variables.to_json %>,
+    time_zone:    '<%= @insight.time_zone %>',
     translations: <%= raw I18n.t("dictionaries", scope: "dataclips", default: {}).to_json %>
   };
 

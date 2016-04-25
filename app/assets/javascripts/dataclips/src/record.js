@@ -1,4 +1,5 @@
 moment = require("moment");
+require("moment-timezone");
 
 module.exports = Backbone.Model.extend({
   parse: function(options) {
