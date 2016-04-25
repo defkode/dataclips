@@ -1,1 +1,1 @@
-Rails.application.config.assets.precompile += %w( twitter/bootstrap.js )
+Rails.application.config.assets.precompile += %w(vendor/datetimepicker.js dataclips/dist/bundle.js)
