@@ -335,7 +335,7 @@ module.exports = Backbone.View.extend
           when "date"
             if v
               offset = moment(v).tz(Dataclips.config.time_zone).utcOffset() * 60 * 1000
-              _v = 25569.0 + ((v - offset)  / (60 * 60 * 24 * 1000))
+              _v = 25569.0 + ((v + offset)  / (60 * 60 * 24 * 1000))
               value: _v, metadata: {style: date_formatter.id}
             else
               null
@@ -350,14 +350,14 @@ module.exports = Backbone.View.extend
                   datetime_formatter.id
 
               offset = moment(v).tz(Dataclips.config.time_zone).utcOffset() * 60 * 1000
-              _v = 25569.0 + ((v - offset)  / (60 * 60 * 24 * 1000))
+              _v = 25569.0 + ((v + offset)  / (60 * 60 * 24 * 1000))
               value: _v, metadata: {style: style}
             else
               null
           when "time"
             if v
               offset = moment(v).tz(Dataclips.config.time_zone).utcOffset() * 60 * 1000
-              _v = 25569.0 + ((v - offset)  / (60 * 60 * 24 * 1000))
+              _v = 25569.0 + ((v + offset)  / (60 * 60 * 24 * 1000))
               value: _v, metadata: {style: time_formatter.id}
             else
               null
