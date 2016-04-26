@@ -19,6 +19,9 @@ module.exports = {
     time: function(row, cell, value, columnDef, context) {
       return value != null ? moment(value).format('HH:mm:ss') : void 0;
     },
+    time_without_seconds: function(row, cell, value, columnDef, context) {
+      return value != null ? moment(value).format('HH:mm') : void 0;
+    },
     datetime: function(row, cell, value, columnDef, context) {
       return value != null ? moment(value).format('L HH:mm:ss') : void 0;
     },

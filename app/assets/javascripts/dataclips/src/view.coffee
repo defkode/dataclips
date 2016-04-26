@@ -306,12 +306,14 @@ module.exports = Backbone.View.extend
 
     sheet = workbook.createWorksheet()
 
-    # http://closedxml.codeplex.com/wikipage?title=NumberFormatId%20Lookup%20Table
-    date_formatter     = {id: 1, numFmtId: 14}
-    time_formatter     = {id: 2, numFmtId: 21}
-    datetime_formatter = {id: 3, numFmtId: 22}
+    # http://closedxml.codeplex.com/wikipage?title  NumberFormatId%20Lookup%20Table
+    date_formatter                 = {id: 1, numFmtId: 14} # d/m/yyyy
+    time_without_seconds_formatter = {id: 2, numFmtId: 20} # H:mm
+    time_formatter                 = {id: 3, numFmtId: 21} # H:mm:ss
+    datetime_formatter             = {id: 4, numFmtId: 22} # m/d/yyyy H:mm
 
     stylesheet.masterCellFormats.push(date_formatter)
+    stylesheet.masterCellFormats.push(time_without_seconds_formatter)
     stylesheet.masterCellFormats.push(time_formatter)
     stylesheet.masterCellFormats.push(datetime_formatter)
 
@@ -321,24 +323,46 @@ module.exports = Backbone.View.extend
     data.push _.map keys, (k) -> Dataclips.config.headers[k] # localized headers
 
     _.each Dataclips.proxy.get("grid_entries"), (record) ->
-      values = _.map record, (v, k) ->
-        type = Dataclips.config.schema[k].type
+      values = _.map Dataclips.config.schema, (options, k) ->
+        type      = options.type
+        formatter = options.formatter
+
+        v = record[k]
 
         switch type
+          when "boolean"
+            value: + v # convert false/true to 0/1
           when "date"
-            offset = moment(v).tz(Dataclips.config.time_zone).zone() * 60 * 1000
-            _v = 25569.0 + ((v - offset)  / (60 * 60 * 24 * 1000))
-            value: _v, metadata: {style: date_formatter.id}
-          when "time"
-            offset = moment(v).tz(Dataclips.config.time_zone).zone() * 60 * 1000
-            _v = 25569.0 + ((v - offset)  / (60 * 60 * 24 * 1000))
-            value: _v, metadata: {style: time_formatter.id}
+            if v
+              offset = moment(v).tz(Dataclips.config.time_zone).utcOffset() * 60 * 1000
+              _v = 25569.0 + ((v - offset)  / (60 * 60 * 24 * 1000))
+              value: _v, metadata: {style: date_formatter.id}
+            else
+              null
           when "datetime"
-            offset = moment(v).tz(Dataclips.config.time_zone).zone() * 60 * 1000
-            _v = 25569.0 + ((v - offset)  / (60 * 60 * 24 * 1000))
-            value: _v, metadata: {style: datetime_formatter.id}
+            if v
+              style = switch formatter
+                when "time"
+                  time_formatter.id
+                when "time_without_seconds"
+                  time_without_seconds_formatter.id
+                else
+                  datetime_formatter.id
+
+              offset = moment(v).tz(Dataclips.config.time_zone).utcOffset() * 60 * 1000
+              _v = 25569.0 + ((v - offset)  / (60 * 60 * 24 * 1000))
+              value: _v, metadata: {style: style}
+            else
+              null
+          when "time"
+            if v
+              offset = moment(v).tz(Dataclips.config.time_zone).utcOffset() * 60 * 1000
+              _v = 25569.0 + ((v - offset)  / (60 * 60 * 24 * 1000))
+              value: _v, metadata: {style: time_formatter.id}
+            else
+              null
           else
-            value: v
+            v
 
       data.push values
 
