@@ -7,7 +7,9 @@ require('../vendor/slickgrid/slick.dataview');
 require('../vendor/slickgrid/plugins/slick.autotooltips');
 require('../vendor/slickgrid/plugins/slick.rowselectionmodel');
 
-ExcelBuilder     = require("excel-builder");
+require("bootstrap")
+
+ExcelBuilder  = require("excel-builder");
 
 downloader = require("downloadjs")
 
@@ -28,9 +30,14 @@ module.exports = Backbone.View.extend
     "click a.download": (e) ->
       if Modernizr.adownload
         e.preventDefault()
-        @buildXLSX().then (file) ->
-          filename = "#{Dataclips.config.filename}.xlsx"
-          downloader(file, filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+        $("#exampleModal").modal()
+        $("#exampleModal .btn.btn-primary").click (e) ->
+          $("#exampleModal .btn.btn-primary").prop("disabled", true)
+
+        # @buildXLSX().then (file) ->
+        #   filename = "#{Dataclips.config.filename}.xlsx"
+        #   downloader(file, filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 
 
