@@ -7,6 +7,19 @@ namespace :dataclips do
     end
   end
 
+  desc "Fix Checksums"
+  task fix_checksums: :environment do
+    Dataclips::Insight.find_each do |i|
+      if i.checksum != Dataclips::Insight.calculate_checksum(i.clip_id, i.params)
+        puts i.inspect
+        i.checksum = Dataclips::Insight.calculate_checksum(i.clip_id, i.params)
+        i.save!
+      else
+        puts "."
+      end
+    end
+  end
+
   desc "Delete insights for clip_id"
   task :delete_insights, [:clip_id] => :environment do |t, args|
     Dataclips::Insight.where(clip_id: args.clip_id).delete_all

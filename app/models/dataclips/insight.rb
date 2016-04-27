@@ -5,7 +5,7 @@ module Dataclips
     validates :clip_id, presence: true
     validates :checksum, presence: true, uniqueness: true
 
-    before_validation :calculate_checksum
+    before_validation :set_checksum
 
     def to_param
       hash_id
@@ -22,9 +22,8 @@ module Dataclips
     def self.get!(clip_id, params = nil, excludes = [])
       clip_path = File.join(Dataclips::Engine.config.path, "#{clip_id}.sql")
       if File.exists?(clip_path)
-        Dataclips::Insight.where(clip_id: clip_id).detect do |di|
-          di.params == params
-        end || Dataclips::Insight.create!(clip_id: clip_id, name: "#{params.to_s.parameterize}", params: params, excludes: excludes || [])
+        checksum = calculate_checksum(clip_id, params)
+        Dataclips::Insight.find_by(clip_id: clip_id, checksum: checksum) || Dataclips::Insight.create!(clip_id: clip_id, name: "#{params.to_s.parameterize}", params: params, excludes: excludes || [])
       else
         raise FileNotFound.new(clip_path)
       end
@@ -43,8 +42,12 @@ module Dataclips
       read_attribute(:time_zone) || Rails.configuration.time_zone
     end
 
-    def calculate_checksum
-      self.checksum = Digest::MD5.hexdigest Marshal.dump(slice(:clip_id, :params))
+    def self.calculate_checksum(clip_id, params)
+      Digest::MD5.hexdigest Marshal.dump({clip_id: clip_id, params: params}.to_json)
+    end
+
+    def set_checksum
+      self.checksum = self.class.calculate_checksum(clip_id, params)
     end
   end
 end
