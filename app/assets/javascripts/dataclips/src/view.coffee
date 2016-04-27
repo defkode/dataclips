@@ -30,14 +30,25 @@ module.exports = Backbone.View.extend
     "click a.download": (e) ->
       if Modernizr.adownload
         e.preventDefault()
+        @modal.modal('show')
+        $('#xlsx').tab('show')
 
-        $("#exampleModal").modal()
-        $("#exampleModal .btn.btn-primary").click (e) ->
-          $("#exampleModal .btn.btn-primary").prop("disabled", true)
+    "click #download-dialog .btn.btn-primary": _.debounce (e) ->
+      button = $(e.target)
 
-        # @buildXLSX().then (file) ->
-        #   filename = "#{Dataclips.config.filename}.xlsx"
-        #   downloader(file, filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+      if @$el.find(".tab-pane.active").attr("id") is "xlsx"
+        button.prop("disabled", true).blur().find("i").show()
+        filename = $('#filename_xlsx').val() + '.xlsx'
+        setTimeout =>
+          @buildXLSX().then (file) =>
+            @modal.modal('hide');
+            button.prop("disabled", false).find("i").hide()
+            downloader(file, filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        , 100
+      else
+        # csv
+        @modal.modal('hide')
+        $("#download-dialog form").submit()
 
 
 
@@ -78,7 +89,6 @@ module.exports = Backbone.View.extend
       @resetFilter(key)
 
 
-
   resetFilter: (key) ->
     type = Dataclips.config.schema[key]["type"]
     switch type
@@ -104,11 +114,6 @@ module.exports = Backbone.View.extend
     @collection.reset()
     @collection.fetchInBatches()
 
-
-  moveProgressBar: (percentLoaded) ->
-    $("#modal, #progress").toggle percentLoaded isnt 100
-
-
   requestFullScreen: (element) ->
     if (document.fullscreenEnabled || document.mozFullScreenEnabled || document.documentElement.webkitRequestFullScreen)
       if element.requestFullscreen
@@ -119,6 +124,7 @@ module.exports = Backbone.View.extend
         element.webkitRequestFullScreen()
 
   render: ->
+    @modal = $("#download-dialog").modal('hide')
     @filterArgs = new Backbone.Model
 
     @listenTo Dataclips.proxy, "change", _.debounce (model) ->
@@ -329,7 +335,9 @@ module.exports = Backbone.View.extend
 
     data.push _.map keys, (k) -> Dataclips.config.headers[k] # localized headers
 
-    _.each Dataclips.proxy.get("grid_entries"), (record) ->
+    entries_count = Dataclips.proxy.get("grid_entries").length
+
+    _.each Dataclips.proxy.get("grid_entries"), (record, i) =>
       values = _.map Dataclips.config.schema, (options, k) ->
         type      = options.type
         formatter = options.formatter

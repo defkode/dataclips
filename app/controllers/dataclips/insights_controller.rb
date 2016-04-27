@@ -9,8 +9,14 @@ module Dataclips
     def export
       setup_clip
 
+      filename = if params[:filename].present?
+        params[:filename]
+      else
+        @insight.name.present? ? @insight.name : @insight.clip_id.parameterize
+      end
+
       response.headers['Content-Type']        = "text/csv"
-      response.headers['Content-Disposition'] = "attachment; filename=#{@insight.name.parameterize}.csv"
+      response.headers['Content-Disposition'] = "attachment; filename=#{filename}.csv"
 
       international_csv_options = {force_quotes: true}
       continental_csv_options   = {force_quotes: true, col_sep: ";"}

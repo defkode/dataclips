@@ -63,59 +63,72 @@ Backbone.$ = $;
 
 Dataclips         = require('./dataclips');
 Records           = require('./records');
-Dataclips.View    = require('./view')
+
+Dataclips.Progress = require('./progress');
+Dataclips.View     = require('./view');
 
 Dataclips.run = function(){
+  var collection     = new Records;
+  collection.url     = this.config.url;
+  this.view           = new Dataclips.View({collection: collection});
+  this.progress       = new Dataclips.Progress();
 
-  var bg, circ, collection, ctx, draw, imd, quart, view;
-  bg = $('#progress').get(0);
-  ctx = bg.getContext('2d');
-  imd = null;
-  circ = Math.PI * 2;
-  quart = Math.PI / 2;
-  ctx.beginPath();
-  ctx.strokeStyle = '#6F5498';
-  ctx.closePath();
-  ctx.fill();
-  ctx.lineWidth = 10.0;
-  imd = ctx.getImageData(0, 0, 240, 240);
-
-  draw = function(current) {
-    ctx.putImageData(imd, 0, 0);
-    ctx.beginPath();
-    ctx.arc(120, 120, 70, -quart, (circ * current) - quart, false);
-    return ctx.stroke();
-  };
-
-  collection = new Records;
-  collection.url = this.config.url;
-  view = new Dataclips.View({
-    collection: collection
-  });
   collection.on("reset", function() {
-    return Dataclips.proxy.clear();
+    Dataclips.proxy.clear();
   });
-  collection.on("batchInsert", (function(_this) {
-    return function(data) {
-      var entries_count, percent_loaded, total_entries_count;
-      total_entries_count = data.total_entries_count;
-      entries_count = collection.size();
-      percent_loaded = entries_count > 0 ? Math.round((entries_count / total_entries_count) * 100) : total_entries_count === 0 ? 100 : 0;
-      view.moveProgressBar(percent_loaded);
-      draw(percent_loaded / 100);
-      return Dataclips.proxy.set({
-        total_entries_count: total_entries_count,
-        entries_count: entries_count,
-        percent_loaded: percent_loaded,
-        batch: data.records
-      });
-    };
-  })(this));
+
+  collection.on("batchInsert", function(data){
+    var total_entries_count = data.total_entries_count;
+    var entries_count       = collection.size();
+    var percent_loaded      = entries_count > 0 ? (entries_count / total_entries_count) : total_entries_count === 0 ? 1 : 0;
+
+    Dataclips.progress.moveProgressBar(percent_loaded);
+
+    Dataclips.proxy.set({
+      total_entries_count: total_entries_count,
+      entries_count:       entries_count,
+      percent_loaded:      percent_loaded,
+      batch:               data.records
+    });
+  });
+
   collection.fetchInBatches(this.config.params);
-  return view.render();
+
+  this.progress.render();
+  this.view.render();
 };
 
-},{"../vendor/modernizr":6,"../vendor/polyfills/datalist":7,"./dataclips":1,"./records":4,"./view":5,"backbone":14,"jquery":59,"underscore":109}],3:[function(require,module,exports){
+},{"../vendor/modernizr":7,"../vendor/polyfills/datalist":8,"./dataclips":1,"./progress":3,"./records":5,"./view":6,"backbone":15,"jquery":60,"underscore":110}],3:[function(require,module,exports){
+module.exports = Backbone.View.extend({
+  el: "#progress",
+  initialize: function(options){
+    bg = this.$el.get(0);
+    this.ctx = bg.getContext('2d');
+    this.ctx.lineWidth = 10.0;
+
+    this.ctx.beginPath();
+    this.ctx.strokeStyle = '#6F5498';
+    this.ctx.closePath();
+    this.ctx.fill();
+    this.imd = this.ctx.getImageData(0, 0, 240, 240);
+  },
+  moveProgressBar: function(percentLoaded){
+    $("#modal, #progress").toggle(percentLoaded !== 1)
+    this.draw(percentLoaded);
+  },
+  draw: function(percentLoaded) {
+    this.ctx.putImageData(this.imd, 0, 0);
+    this.ctx.beginPath();
+
+    circ = Math.PI * 2;
+    quart = Math.PI / 2;
+
+    this.ctx.arc(120, 120, 70, -quart, (circ * percentLoaded) - quart, false);
+    this.ctx.stroke();
+  }
+});
+
+},{}],4:[function(require,module,exports){
 moment = require("moment");
 require("moment-timezone");
 
@@ -137,7 +150,7 @@ module.exports = Backbone.Model.extend({
     return attributes
   }
 });
-},{"moment":89,"moment-timezone":86}],4:[function(require,module,exports){
+},{"moment":90,"moment-timezone":87}],5:[function(require,module,exports){
 Record  = require('./record');
 
 module.exports = Backbone.Collection.extend({
@@ -173,7 +186,7 @@ module.exports = Backbone.Collection.extend({
     return data.records;
   }
 });
-},{"./record":3}],5:[function(require,module,exports){
+},{"./record":4}],6:[function(require,module,exports){
 var ExcelBuilder, downloader, moment;
 
 require('../vendor/slickgrid/lib/jquery.event.drag-2.2');
@@ -212,9 +225,30 @@ module.exports = Backbone.View.extend({
     "click a.download": function(e) {
       if (Modernizr.adownload) {
         e.preventDefault();
-        return $("#exampleModal").modal();
+        this.modal.modal('show');
+        return $('#xlsx').tab('show');
       }
     },
+    "click #download-dialog .btn.btn-primary": _.debounce(function(e) {
+      var button, filename;
+      button = $(e.target);
+      if (this.$el.find(".tab-pane.active").attr("id") === "xlsx") {
+        button.prop("disabled", true).blur().find("i").show();
+        filename = $('#filename_xlsx').val() + '.xlsx';
+        return setTimeout((function(_this) {
+          return function() {
+            return _this.buildXLSX().then(function(file) {
+              _this.modal.modal('hide');
+              button.prop("disabled", false).find("i").hide();
+              return downloader(file, filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            });
+          };
+        })(this), 100);
+      } else {
+        this.modal.modal('hide');
+        return $("#download-dialog form").submit();
+      }
+    }),
     "input input[type=text]": _.debounce(function(event) {
       return this.filterArgs.set(event.target.name, $.trim(event.target.value));
     }),
@@ -296,9 +330,6 @@ module.exports = Backbone.View.extend({
     this.collection.reset();
     return this.collection.fetchInBatches();
   },
-  moveProgressBar: function(percentLoaded) {
-    return $("#modal, #progress").toggle(percentLoaded !== 100);
-  },
   requestFullScreen: function(element) {
     if (document.fullscreenEnabled || document.mozFullScreenEnabled || document.documentElement.webkitRequestFullScreen) {
       if (element.requestFullscreen) {
@@ -312,6 +343,7 @@ module.exports = Backbone.View.extend({
   },
   render: function() {
     var booleanFilter, columns, dataView, exactMatcher, grid, numericFilter, options, textFilter, updateDataView;
+    this.modal = $("#download-dialog").modal('hide');
     this.filterArgs = new Backbone.Model;
     this.listenTo(Dataclips.proxy, "change", _.debounce(function(model) {
       this.$el.find("span.total_entries_count").text(model.get("total_entries_count"));
@@ -508,12 +540,12 @@ module.exports = Backbone.View.extend({
       });
     });
     dataView.onPagingInfoChanged.subscribe(function(e, args) {
-      var i, ref, results;
+      var j, ref, results;
       return Dataclips.proxy.set({
         grid_entries_count: args.totalRows,
         grid_entries: _.map((function() {
           results = [];
-          for (var i = 0, ref = args.totalRows - 1; 0 <= ref ? i <= ref : i >= ref; 0 <= ref ? i++ : i--){ results.push(i); }
+          for (var j = 0, ref = args.totalRows - 1; 0 <= ref ? j <= ref : j >= ref; 0 <= ref ? j++ : j--){ results.push(j); }
           return results;
         }).apply(this), function(id) {
           return _.omit(dataView.getItem(id), "id");
@@ -543,7 +575,7 @@ module.exports = Backbone.View.extend({
     }
   },
   buildXLSX: function() {
-    var data, date_formatter, datetime_formatter, keys, sheet, stylesheet, time_formatter, time_without_seconds_formatter, workbook;
+    var data, date_formatter, datetime_formatter, entries_count, keys, sheet, stylesheet, time_formatter, time_without_seconds_formatter, workbook;
     workbook = ExcelBuilder.Builder.createWorkbook();
     stylesheet = workbook.getStyleSheet();
     stylesheet.fills = [{}, {}];
@@ -573,76 +605,79 @@ module.exports = Backbone.View.extend({
     data.push(_.map(keys, function(k) {
       return Dataclips.config.headers[k];
     }));
-    _.each(Dataclips.proxy.get("grid_entries"), function(record) {
-      var values;
-      values = _.map(Dataclips.config.schema, function(options, k) {
-        var _v, formatter, offset, style, type, v;
-        type = options.type;
-        formatter = options.formatter;
-        v = record[k];
-        switch (type) {
-          case "boolean":
-            return {
-              value: +v
-            };
-          case "date":
-            if (v) {
-              offset = moment(v).tz(Dataclips.config.time_zone).utcOffset() * 60 * 1000;
-              _v = 25569.0 + ((v + offset) / (60 * 60 * 24 * 1000));
+    entries_count = Dataclips.proxy.get("grid_entries").length;
+    _.each(Dataclips.proxy.get("grid_entries"), (function(_this) {
+      return function(record, i) {
+        var values;
+        values = _.map(Dataclips.config.schema, function(options, k) {
+          var _v, formatter, offset, style, type, v;
+          type = options.type;
+          formatter = options.formatter;
+          v = record[k];
+          switch (type) {
+            case "boolean":
               return {
-                value: _v,
-                metadata: {
-                  style: date_formatter.id
-                }
+                value: +v
               };
-            } else {
-              return null;
-            }
-            break;
-          case "datetime":
-            if (v) {
-              style = (function() {
-                switch (formatter) {
-                  case "time":
-                    return time_formatter.id;
-                  case "time_without_seconds":
-                    return time_without_seconds_formatter.id;
-                  default:
-                    return datetime_formatter.id;
-                }
-              })();
-              offset = moment(v).tz(Dataclips.config.time_zone).utcOffset() * 60 * 1000;
-              _v = 25569.0 + ((v + offset) / (60 * 60 * 24 * 1000));
-              return {
-                value: _v,
-                metadata: {
-                  style: style
-                }
-              };
-            } else {
-              return null;
-            }
-            break;
-          case "time":
-            if (v) {
-              offset = moment(v).tz(Dataclips.config.time_zone).utcOffset() * 60 * 1000;
-              _v = 25569.0 + ((v + offset) / (60 * 60 * 24 * 1000));
-              return {
-                value: _v,
-                metadata: {
-                  style: time_formatter.id
-                }
-              };
-            } else {
-              return null;
-            }
-            break;
-          default:
-            return v;
-        }
-      });
-      return data.push(values);
-    });
+            case "date":
+              if (v) {
+                offset = moment(v).tz(Dataclips.config.time_zone).utcOffset() * 60 * 1000;
+                _v = 25569.0 + ((v + offset) / (60 * 60 * 24 * 1000));
+                return {
+                  value: _v,
+                  metadata: {
+                    style: date_formatter.id
+                  }
+                };
+              } else {
+                return null;
+              }
+              break;
+            case "datetime":
+              if (v) {
+                style = (function() {
+                  switch (formatter) {
+                    case "time":
+                      return time_formatter.id;
+                    case "time_without_seconds":
+                      return time_without_seconds_formatter.id;
+                    default:
+                      return datetime_formatter.id;
+                  }
+                })();
+                offset = moment(v).tz(Dataclips.config.time_zone).utcOffset() * 60 * 1000;
+                _v = 25569.0 + ((v + offset) / (60 * 60 * 24 * 1000));
+                return {
+                  value: _v,
+                  metadata: {
+                    style: style
+                  }
+                };
+              } else {
+                return null;
+              }
+              break;
+            case "time":
+              if (v) {
+                offset = moment(v).tz(Dataclips.config.time_zone).utcOffset() * 60 * 1000;
+                _v = 25569.0 + ((v + offset) / (60 * 60 * 24 * 1000));
+                return {
+                  value: _v,
+                  metadata: {
+                    style: time_formatter.id
+                  }
+                };
+              } else {
+                return null;
+              }
+              break;
+            default:
+              return v;
+          }
+        });
+        return data.push(values);
+      };
+    })(this));
     sheet.setData(data);
     workbook.addWorksheet(sheet);
     return ExcelBuilder.Builder.createFile(workbook, {
@@ -652,11 +687,11 @@ module.exports = Backbone.View.extend({
 });
 
 
-},{"../vendor/slickgrid/lib/jquery.event.drag-2.2":8,"../vendor/slickgrid/plugins/slick.autotooltips":9,"../vendor/slickgrid/plugins/slick.rowselectionmodel":10,"../vendor/slickgrid/slick.core":11,"../vendor/slickgrid/slick.dataview":12,"../vendor/slickgrid/slick.grid":13,"bootstrap":16,"downloadjs":31,"excel-builder":57,"moment":89,"moment/locale/de":88}],6:[function(require,module,exports){
+},{"../vendor/slickgrid/lib/jquery.event.drag-2.2":9,"../vendor/slickgrid/plugins/slick.autotooltips":10,"../vendor/slickgrid/plugins/slick.rowselectionmodel":11,"../vendor/slickgrid/slick.core":12,"../vendor/slickgrid/slick.dataview":13,"../vendor/slickgrid/slick.grid":14,"bootstrap":17,"downloadjs":32,"excel-builder":58,"moment":90,"moment/locale/de":89}],7:[function(require,module,exports){
 /*! modernizr 3.3.1 (Custom Build) | MIT *
  * http://modernizr.com/download/?-adownload-datalistelem-setclasses !*/
 !function(e,n,t){function a(e,n){return typeof e===n}function s(){var e,n,t,s,o,i,f;for(var u in r)if(r.hasOwnProperty(u)){if(e=[],n=r[u],n.name&&(e.push(n.name.toLowerCase()),n.options&&n.options.aliases&&n.options.aliases.length))for(t=0;t<n.options.aliases.length;t++)e.push(n.options.aliases[t].toLowerCase());for(s=a(n.fn,"function")?n.fn():n.fn,o=0;o<e.length;o++)i=e[o],f=i.split("."),1===f.length?Modernizr[f[0]]=s:(!Modernizr[f[0]]||Modernizr[f[0]]instanceof Boolean||(Modernizr[f[0]]=new Boolean(Modernizr[f[0]])),Modernizr[f[0]][f[1]]=s),l.push((s?"":"no-")+f.join("-"))}}function o(e){var n=u.className,t=Modernizr._config.classPrefix||"";if(c&&(n=n.baseVal),Modernizr._config.enableJSClass){var a=new RegExp("(^|\\s)"+t+"no-js(\\s|$)");n=n.replace(a,"$1"+t+"js$2")}Modernizr._config.enableClasses&&(n+=" "+t+e.join(" "+t),c?u.className.baseVal=n:u.className=n)}function i(){return"function"!=typeof n.createElement?n.createElement(arguments[0]):c?n.createElementNS.call(n,"http://www.w3.org/2000/svg",arguments[0]):n.createElement.apply(n,arguments)}var l=[],r=[],f={_version:"3.3.1",_config:{classPrefix:"",enableClasses:!0,enableJSClass:!0,usePrefixes:!0},_q:[],on:function(e,n){var t=this;setTimeout(function(){n(t[e])},0)},addTest:function(e,n,t){r.push({name:e,fn:n,options:t})},addAsyncTest:function(e){r.push({name:null,fn:e})}},Modernizr=function(){};Modernizr.prototype=f,Modernizr=new Modernizr;var u=n.documentElement,c="svg"===u.nodeName.toLowerCase(),p=i("input"),d="autocomplete autofocus list placeholder max min multiple pattern required step".split(" "),m={};Modernizr.input=function(n){for(var t=0,a=n.length;a>t;t++)m[n[t]]=!!(n[t]in p);return m.list&&(m.list=!(!i("datalist")||!e.HTMLDataListElement)),m}(d),Modernizr.addTest("datalistelem",Modernizr.input.list),Modernizr.addTest("adownload",!e.externalHost&&"download"in i("a")),s(),o(l),delete f.addTest,delete f.addAsyncTest;for(var g=0;g<Modernizr._q.length;g++)Modernizr._q[g]();e.Modernizr=Modernizr}(window,document);
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 (function($) {
 
   // Make jQuery's :contains case insensitive (like HTML5 datalist)
@@ -848,7 +883,7 @@ module.exports = Backbone.View.extend({
   };
 })(jQuery);
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 /*! 
  * jquery.event.drag - v 2.2
  * Copyright (c) 2010 Three Dub Media - http://threedubmedia.com
@@ -1251,7 +1286,7 @@ $event.fixHooks.touchcancel = {
 $special.draginit = $special.dragstart = $special.dragend = drag;
 
 })( jQuery );
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 (function ($) {
   // Register namespace
   $.extend(true, window, {
@@ -1335,7 +1370,7 @@ $special.draginit = $special.dragstart = $special.dragend = drag;
     });
   }
 })(jQuery);
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 (function ($) {
   // register namespace
   $.extend(true, window, {
@@ -1525,7 +1560,7 @@ $special.draginit = $special.dragstart = $special.dragend = drag;
     });
   }
 })(jQuery);
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 /***
  * Contains core SlickGrid classes.
  * @module Core
@@ -2011,7 +2046,7 @@ $special.draginit = $special.dragstart = $special.dragend = drag;
 
 
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 (function ($) {
   $.extend(true, window, {
     Slick: {
@@ -3154,7 +3189,7 @@ $special.draginit = $special.dragstart = $special.dragend = drag;
 
 })(jQuery);
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 /**
  * @license
  * (c) 2009-2013 Michael Leibman
@@ -6751,7 +6786,7 @@ if (typeof Slick === "undefined") {
   }
 }(jQuery));
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 (function (global){
 //     Backbone.js 1.3.3
 
@@ -8675,7 +8710,7 @@ if (typeof Slick === "undefined") {
 });
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"jquery":59,"underscore":109}],15:[function(require,module,exports){
+},{"jquery":60,"underscore":110}],16:[function(require,module,exports){
 'use strict'
 
 exports.toByteArray = toByteArray
@@ -8786,7 +8821,7 @@ function fromByteArray (uint8) {
   return parts.join('')
 }
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 // This file is autogenerated via the `commonjs` Grunt task. You can require() this file in a CommonJS environment.
 require('../../js/transition.js')
 require('../../js/alert.js')
@@ -8800,7 +8835,7 @@ require('../../js/popover.js')
 require('../../js/scrollspy.js')
 require('../../js/tab.js')
 require('../../js/affix.js')
-},{"../../js/affix.js":17,"../../js/alert.js":18,"../../js/button.js":19,"../../js/carousel.js":20,"../../js/collapse.js":21,"../../js/dropdown.js":22,"../../js/modal.js":23,"../../js/popover.js":24,"../../js/scrollspy.js":25,"../../js/tab.js":26,"../../js/tooltip.js":27,"../../js/transition.js":28}],17:[function(require,module,exports){
+},{"../../js/affix.js":18,"../../js/alert.js":19,"../../js/button.js":20,"../../js/carousel.js":21,"../../js/collapse.js":22,"../../js/dropdown.js":23,"../../js/modal.js":24,"../../js/popover.js":25,"../../js/scrollspy.js":26,"../../js/tab.js":27,"../../js/tooltip.js":28,"../../js/transition.js":29}],18:[function(require,module,exports){
 /* ========================================================================
  * Bootstrap: affix.js v3.3.6
  * http://getbootstrap.com/javascript/#affix
@@ -8964,7 +8999,7 @@ require('../../js/affix.js')
 
 }(jQuery);
 
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 /* ========================================================================
  * Bootstrap: alert.js v3.3.6
  * http://getbootstrap.com/javascript/#alerts
@@ -9060,7 +9095,7 @@ require('../../js/affix.js')
 
 }(jQuery);
 
-},{}],19:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 /* ========================================================================
  * Bootstrap: button.js v3.3.6
  * http://getbootstrap.com/javascript/#buttons
@@ -9182,7 +9217,7 @@ require('../../js/affix.js')
 
 }(jQuery);
 
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 /* ========================================================================
  * Bootstrap: carousel.js v3.3.6
  * http://getbootstrap.com/javascript/#carousel
@@ -9421,7 +9456,7 @@ require('../../js/affix.js')
 
 }(jQuery);
 
-},{}],21:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 /* ========================================================================
  * Bootstrap: collapse.js v3.3.6
  * http://getbootstrap.com/javascript/#collapse
@@ -9634,7 +9669,7 @@ require('../../js/affix.js')
 
 }(jQuery);
 
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 /* ========================================================================
  * Bootstrap: dropdown.js v3.3.6
  * http://getbootstrap.com/javascript/#dropdowns
@@ -9801,7 +9836,7 @@ require('../../js/affix.js')
 
 }(jQuery);
 
-},{}],23:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 /* ========================================================================
  * Bootstrap: modal.js v3.3.6
  * http://getbootstrap.com/javascript/#modals
@@ -10140,7 +10175,7 @@ require('../../js/affix.js')
 
 }(jQuery);
 
-},{}],24:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 /* ========================================================================
  * Bootstrap: popover.js v3.3.6
  * http://getbootstrap.com/javascript/#popovers
@@ -10250,7 +10285,7 @@ require('../../js/affix.js')
 
 }(jQuery);
 
-},{}],25:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 /* ========================================================================
  * Bootstrap: scrollspy.js v3.3.6
  * http://getbootstrap.com/javascript/#scrollspy
@@ -10424,7 +10459,7 @@ require('../../js/affix.js')
 
 }(jQuery);
 
-},{}],26:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 /* ========================================================================
  * Bootstrap: tab.js v3.3.6
  * http://getbootstrap.com/javascript/#tabs
@@ -10581,7 +10616,7 @@ require('../../js/affix.js')
 
 }(jQuery);
 
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 /* ========================================================================
  * Bootstrap: tooltip.js v3.3.6
  * http://getbootstrap.com/javascript/#tooltip
@@ -11097,7 +11132,7 @@ require('../../js/affix.js')
 
 }(jQuery);
 
-},{}],28:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 /* ========================================================================
  * Bootstrap: transition.js v3.3.6
  * http://getbootstrap.com/javascript/#transitions
@@ -11158,7 +11193,7 @@ require('../../js/affix.js')
 
 }(jQuery);
 
-},{}],29:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 (function (global){
 /*!
  * The buffer module from node.js, for the browser.
@@ -12873,14 +12908,14 @@ function isnan (val) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"base64-js":15,"ieee754":58,"isarray":30}],30:[function(require,module,exports){
+},{"base64-js":16,"ieee754":59,"isarray":31}],31:[function(require,module,exports){
 var toString = {}.toString;
 
 module.exports = Array.isArray || function (arr) {
   return toString.call(arr) == '[object Array]';
 };
 
-},{}],31:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 
 //download.js v4.1, by dandavis; 2008-2015. [CCBY2] see http://danml.com/download.html for tests/usage
 // v1 landed a FF+Chrome compat way of downloading strings to local un-named files, upgraded to use a hidden frame and optional mime
@@ -13040,7 +13075,7 @@ module.exports = Array.isArray || function (arr) {
 	}; /* end download() */
 }));
 
-},{}],32:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 var util = require('../util');
@@ -13106,7 +13141,7 @@ _.extend(AbsoluteAnchor.prototype, {
     }
 });
 module.exports = AbsoluteAnchor;
-},{"../util":53,"lodash":84}],33:[function(require,module,exports){
+},{"../util":54,"lodash":85}],34:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 //var util = require('../util');
@@ -13117,7 +13152,7 @@ _.extend(Chart.prototype, {
 
 });
 module.exports = Chart;
-},{"lodash":84}],34:[function(require,module,exports){
+},{"lodash":85}],35:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 var util = require('../util');
@@ -13188,7 +13223,7 @@ _.extend(OneCellAnchor.prototype, {
     }
 });
 module.exports = OneCellAnchor;
-},{"../util":53,"lodash":84}],35:[function(require,module,exports){
+},{"../util":54,"lodash":85}],36:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 var util = require('../util');
@@ -13296,7 +13331,7 @@ _.extend(Picture.prototype, {
 
 module.exports = Picture;
 
-},{"../util":53,"./index":37,"lodash":84}],36:[function(require,module,exports){
+},{"../util":54,"./index":38,"lodash":85}],37:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 var util = require('../util');
@@ -13375,7 +13410,7 @@ _.extend(TwoCellAnchor.prototype, {
 });
 module.exports = TwoCellAnchor;
 
-},{"../util":53,"lodash":84}],37:[function(require,module,exports){
+},{"../util":54,"lodash":85}],38:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 var AbsoluteAnchor = require('./AbsoluteAnchor');
@@ -13426,7 +13461,7 @@ Object.defineProperties(Drawing, {
 
 module.exports = Drawing;
 
-},{"./AbsoluteAnchor":32,"./Chart":33,"./OneCellAnchor":34,"./Picture":35,"./TwoCellAnchor":36,"lodash":84}],38:[function(require,module,exports){
+},{"./AbsoluteAnchor":33,"./Chart":34,"./OneCellAnchor":35,"./Picture":36,"./TwoCellAnchor":37,"lodash":85}],39:[function(require,module,exports){
 /**
  * @module Excel/Drawings
  */
@@ -13475,7 +13510,7 @@ _.extend(Drawings.prototype, {
 });
 
 module.exports = Drawings;
-},{"./RelationshipManager":42,"./util":53,"lodash":84}],39:[function(require,module,exports){
+},{"./RelationshipManager":43,"./util":54,"lodash":85}],40:[function(require,module,exports){
 "use strict";
 
 /**
@@ -13524,14 +13559,14 @@ _.extend(Pane.prototype, {
 });
 
 module.exports = Pane;
-},{"lodash":84}],40:[function(require,module,exports){
+},{"lodash":85}],41:[function(require,module,exports){
 /**
  * This is mostly a global spot where all of the relationship managers can get and set
  * path information from/to. 
  * @module Excel/Paths
  */
 module.exports = {};
-},{}],41:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 "use strict";
 
 module.exports = {
@@ -13549,7 +13584,7 @@ module.exports = {
     }
 };
 
-},{}],42:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 var util = require('./util');
@@ -13610,7 +13645,7 @@ _.extend(RelationshipManager.prototype, {
 });
     
 module.exports = RelationshipManager;
-},{"./Paths":40,"./util":53,"lodash":84}],43:[function(require,module,exports){
+},{"./Paths":41,"./util":54,"lodash":85}],44:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 var util = require('./util');
@@ -13666,7 +13701,7 @@ _.extend(sharedStrings.prototype, {
     }
 });
 module.exports = sharedStrings;
-},{"./util":53,"lodash":84}],44:[function(require,module,exports){
+},{"./util":54,"lodash":85}],45:[function(require,module,exports){
 (function (Buffer){
 "use strict";
 
@@ -13763,7 +13798,7 @@ SheetProtection.algorithms = {MD5: 'md5', SHA1: 'sha1', SHA256: 'sha256', SHA384
 
 module.exports = SheetProtection;
 }).call(this,require("buffer").Buffer)
-},{"./util":53,"buffer":29,"lodash":84,"node-forge":90}],45:[function(require,module,exports){
+},{"./util":54,"buffer":30,"lodash":85,"node-forge":91}],46:[function(require,module,exports){
 /**
  * @module Excel/SheetView
  *
@@ -13850,7 +13885,7 @@ _.extend(SheetView.prototype, {
 });
 
 module.exports = SheetView;
-},{"./Pane":39,"./util":53,"lodash":84}],46:[function(require,module,exports){
+},{"./Pane":40,"./util":54,"lodash":85}],47:[function(require,module,exports){
 /**
  * @module Excel/StyleSheet
  */
@@ -13882,12 +13917,7 @@ var StyleSheet = function () {
     }];
     this.fonts = [{}];
     this.numberFormatters = [];
-    this.fills = [{}, {
-        type: 'pattern',
-        patternType: 'gray125',
-        fgColor: 'FF333333',
-        bgColor: 'FF333333'
-    }];
+    this.fills = [{}];
     this.borders = [{
         top: {},
         left: {},
@@ -14545,7 +14575,7 @@ _.extend(StyleSheet.prototype, {
 });
 module.exports = StyleSheet;
 
-},{"./util":53,"lodash":84}],47:[function(require,module,exports){
+},{"./util":54,"lodash":85}],48:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 var util = require('./util');
@@ -14720,7 +14750,7 @@ _.extend(Table.prototype, {
     }
 });
 module.exports = Table;
-},{"./util":53,"lodash":84}],48:[function(require,module,exports){
+},{"./util":54,"lodash":85}],49:[function(require,module,exports){
 "use strict";
 var Q = require('q');
 var _ = require('lodash');
@@ -14984,7 +15014,7 @@ _.extend(Workbook.prototype, {
     }
 });
 module.exports = Workbook;
-},{"./Paths":40,"./RelationshipManager":42,"./SharedStrings":43,"./StyleSheet":46,"./Worksheet":49,"./XMLDOM":51,"./util":53,"lodash":84,"q":108}],49:[function(require,module,exports){
+},{"./Paths":41,"./RelationshipManager":43,"./SharedStrings":44,"./StyleSheet":47,"./Worksheet":50,"./XMLDOM":52,"./util":54,"lodash":85,"q":109}],50:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 var util = require('./util');
@@ -14992,9 +15022,9 @@ var RelationshipManager = require('./RelationshipManager');
 var SheetView = require('./SheetView');
 
 /**
- * This module represents an excel worksheet in its basic form - no tables, charts, etc. Its purpose is
+ * This module represents an excel worksheet in its basic form - no tables, charts, etc. Its purpose is 
  * to hold data, the data's link to how it should be styled, and any links to other outside resources.
- *
+ * 
  * @module Excel/Worksheet
  */
     var Worksheet = function (config) {
@@ -15018,7 +15048,7 @@ var SheetView = require('./SheetView');
         this.initialize(config);
     };
     _.extend(Worksheet.prototype, {
-
+        
         initialize: function (config) {
             config = config || {};
             this.name = config.name;
@@ -15027,10 +15057,10 @@ var SheetView = require('./SheetView');
             if(config.columns) {
                 this.setColumns(config.columns);
             }
-
+            
             this.relations = new RelationshipManager();
         },
-
+        
         /**
          * Returns an object that can be consumed by a WorksheetExportWorker
          * @returns {Object}
@@ -15051,7 +15081,7 @@ var SheetView = require('./SheetView');
                 id: this.id
             };
         },
-
+        
         /**
          * Imports data - to be used while inside of a WorksheetExportWorker.
          * @param {Object} data
@@ -15061,16 +15091,16 @@ var SheetView = require('./SheetView');
             delete data.relations;
             _.extend(this, data);
         },
-
+        
         setSharedStringCollection: function (stringCollection) {
             this.sharedStrings = stringCollection;
         },
-
+        
         addTable: function (table) {
             this._tables.push(table);
             this.relations.addRelation(table, 'table');
         },
-
+                
         addDrawings: function (table) {
             this._drawings.push(table);
             this.relations.addRelation(table, 'drawingRelationship');
@@ -15079,13 +15109,13 @@ var SheetView = require('./SheetView');
         setRowInstructions: function (rowIndex, instructions) {
             this._rowInstructions[rowIndex] = instructions;
         },
-
+        
         /**
         * Expects an array length of three.
-        *
-        * @see Excel/Worksheet compilePageDetailPiece
+        * 
+        * @see Excel/Worksheet compilePageDetailPiece 
         * @see <a href='/cookbook/addingHeadersAndFooters.html'>Adding headers and footers to a worksheet</a>
-        *
+        * 
         * @param {Array} headers [left, center, right]
         */
         setHeader: function (headers) {
@@ -15094,13 +15124,13 @@ var SheetView = require('./SheetView');
             }
             this._headers = headers;
         },
-
+        
         /**
         * Expects an array length of three.
-        *
-        * @see Excel/Worksheet compilePageDetailPiece
+        * 
+        * @see Excel/Worksheet compilePageDetailPiece 
         * @see <a href='/cookbook/addingHeadersAndFooters.html'>Adding headers and footers to a worksheet</a>
-        *
+        * 
         * @param {Array} footers [left, center, right]
         */
         setFooter: function (footers) {
@@ -15109,7 +15139,7 @@ var SheetView = require('./SheetView');
             }
             this._footers = footers;
         },
-
+        
         /**
          * Turns page header/footer details into the proper format for Excel.
          * @param {type} data
@@ -15123,11 +15153,11 @@ var SheetView = require('./SheetView');
             "&R", this.compilePageDetailPiece(data[2] || "")
             ].join('');
         },
-
+    
         /**
          * Turns instructions on page header/footer details into something
          * usable by Excel.
-         *
+         * 
          * @param {type} data
          * @returns {String|@exp;_@call;reduce}
          */
@@ -15135,7 +15165,7 @@ var SheetView = require('./SheetView');
             if(_.isString(data)) {
                 return '&"-,Regular"'.concat(data);
             }
-            if(_.isObject(data) && !_.isArray(data)) {
+            if(_.isObject(data) && !_.isArray(data)) { 
                 var string = "";
                 if(data.font || data.bold) {
                     var weighting = data.bold ? "Bold" : "Regular";
@@ -15151,10 +15181,10 @@ var SheetView = require('./SheetView');
                     string += "&"+data.fontSize;
                 }
                 string += data.text;
-
+                
                 return string;
             }
-
+            
             if(_.isArray(data)) {
                 var self = this;
                 return _.reduce(data, function (m, v) {
@@ -15162,10 +15192,10 @@ var SheetView = require('./SheetView');
                 }, "");
             }
         },
-
+        
         /**
-         * Creates the header node.
-         *
+         * Creates the header node. 
+         * 
          * @todo implement the ability to do even/odd headers
          * @param {XML Doc} doc
          * @returns {XML Node}
@@ -15175,25 +15205,25 @@ var SheetView = require('./SheetView');
             oddHeader.appendChild(doc.createTextNode(this.compilePageDetailPackage(this._headers)));
             return oddHeader;
         },
-
+    
         /**
          * Creates the footer node.
-         *
+         * 
          * @todo implement the ability to do even/odd footers
          * @param {XML Doc} doc
          * @returns {XML Node}
-         */
+         */    
         exportFooter: function (doc) {
             var oddFooter = doc.createElement('oddFooter');
             oddFooter.appendChild(doc.createTextNode(this.compilePageDetailPackage(this._footers)));
             return oddFooter;
         },
-
+        
         /**
-         * This creates some nodes ahead of time, which cuts down on generation time due to
+         * This creates some nodes ahead of time, which cuts down on generation time due to 
          * most cell definitions being essentially the same, but having multiple nodes that need
          * to be created. Cloning takes less time than creation.
-         *
+         * 
          * @private
          * @param {XML Doc} doc
          * @returns {_L8.Anonym$0._buildCache.Anonym$2}
@@ -15203,19 +15233,19 @@ var SheetView = require('./SheetView');
             var value = doc.createElement('v');
             value.appendChild(doc.createTextNode("--temp--"));
             numberNode.appendChild(value);
-
+            
             var formulaNode = doc.createElement('c');
             var formulaValue = doc.createElement('f');
             formulaValue.appendChild(doc.createTextNode("--temp--"));
             formulaNode.appendChild(formulaValue);
-
+            
             var stringNode = doc.createElement('c');
             stringNode.setAttribute('t', 's');
             var stringValue = doc.createElement('v');
             stringValue.appendChild(doc.createTextNode("--temp--"));
             stringNode.appendChild(stringValue);
-
-
+            
+            
             return {
                 number: numberNode,
                 date: numberNode,
@@ -15223,11 +15253,11 @@ var SheetView = require('./SheetView');
                 formula: formulaNode
             };
         },
-
+        
         /**
          * Runs through the XML document and grabs all of the strings that will
-         * be sent to the 'shared strings' document.
-         *
+         * be sent to the 'shared strings' document. 
+         * 
          * @returns {Array}
          */
         collectSharedStrings: function () {
@@ -15244,7 +15274,7 @@ var SheetView = require('./SheetView');
                     if (cellValue && typeof cellValue === 'object') {
                         cellValue = cellValue.value;
                     }
-
+                    
                     if(!metadata.type) {
                         if(typeof cellValue === 'number') {
                             metadata.type = 'number';
@@ -15259,7 +15289,7 @@ var SheetView = require('./SheetView');
             }
             return _.keys(strings);
         },
-
+        
         toXML: function () {
             var data = this.data;
             var columns = this.columns || [];
@@ -15268,18 +15298,18 @@ var SheetView = require('./SheetView');
             var i, l, row;
             worksheet.setAttribute('xmlns:r', util.schemas.relationships);
             worksheet.setAttribute('xmlns:mc', util.schemas.markupCompat);
-
+            
             var maxX = 0;
             var sheetData = util.createElement(doc, 'sheetData');
-
+            
             var cellCache = this._buildCache(doc);
-
+            
             for(row = 0, l = data.length; row < l; row++) {
                 var dataRow = data[row];
                 var cellCount = dataRow.length;
                 maxX = cellCount > maxX ? cellCount : maxX;
                 var rowNode = doc.createElement('row');
-
+                
                 for(var c = 0; c < cellCount; c++) {
                     columns[c] = columns[c] || {};
                     var cellValue = dataRow[c];
@@ -15288,7 +15318,7 @@ var SheetView = require('./SheetView');
                     if (cellValue && typeof cellValue === 'object') {
                         cellValue = cellValue.value;
                     }
-
+            
                     if(!metadata.type) {
                         if(typeof cellValue === 'number') {
                             metadata.type = 'number';
@@ -15346,8 +15376,8 @@ var SheetView = require('./SheetView');
                 }
 
                 sheetData.appendChild(rowNode);
-            }
-
+            } 
+            
             if(maxX !== 0) {
                 worksheet.appendChild(util.createElement(doc, 'dimension', [
                     ['ref',  util.positionToLetterRef(1, 1) + ':' + util.positionToLetterRef(maxX, data.length)]
@@ -15365,7 +15395,7 @@ var SheetView = require('./SheetView');
             }
             worksheet.appendChild(sheetData);
 
-            // The spec doesn't say anything about this, but Excel 2013 requires sheetProtection immediately after sheetData
+            // The spec doesn't say anything about this, but Excel 2013 requires sheetProtection immediately after sheetData 
             if (this.sheetProtection) {
                 worksheet.appendChild(this.sheetProtection.exportXML(doc));
             }
@@ -15403,7 +15433,7 @@ var SheetView = require('./SheetView');
                 }
                 worksheet.appendChild(mergeCells);
             }
-
+            
             this.exportPageSettings(doc, worksheet);
 
             if(this._headers.length > 0 || this._footers.length > 0) {
@@ -15437,9 +15467,9 @@ var SheetView = require('./SheetView');
             }
             return doc;
         },
-
+        
         /**
-         *
+         * 
          * @param {XML Doc} doc
          * @returns {XML Node}
          */
@@ -15465,7 +15495,7 @@ var SheetView = require('./SheetView');
                 } else {
                     col.setAttribute('width', 9.140625);
                 }
-
+                
                 cols.appendChild(col);
             }
             return cols;
@@ -15473,44 +15503,44 @@ var SheetView = require('./SheetView');
 
         /**
          * Sets the page settings on a worksheet node.
-         *
+         * 
          * @param {XML Doc} doc
          * @param {XML Node} worksheet
          * @returns {undefined}
          */
         exportPageSettings: function (doc, worksheet) {
-
+            
             if(this._orientation) {
                 worksheet.appendChild(util.createElement(doc, 'pageSetup', [
                     ['orientation', this._orientation]
                 ]));
             }
         },
-
+    
         /**
          * http://www.schemacentral.com/sc/ooxml/t-ssml_ST_Orientation.html
-         *
+         * 
          * Can be one of 'portrait' or 'landscape'.
-         *
+         * 
          * @param {String} orientation
          * @returns {undefined}
          */
         setPageOrientation: function (orientation) {
             this._orientation = orientation;
         },
-
+        
         /**
-         * Expects an array of column definitions. Each column definition needs to have a width assigned to it.
-         *
+         * Expects an array of column definitions. Each column definition needs to have a width assigned to it. 
+         * 
          * @param {Array} columns
          */
         setColumns: function (columns) {
             this.columns = columns;
         },
-
+        
         /**
-         * Expects an array of data to be translated into cells.
-         *
+         * Expects an array of data to be translated into cells. 
+         * 
          * @param {Array} data Two dimensional array - [ [A1, A2], [B1, B2] ]
          * @see <a href='/cookbook/addingDataToAWorksheet.html'>Adding data to a worksheet</a>
          */
@@ -15548,7 +15578,7 @@ var SheetView = require('./SheetView');
          * hidden
          * max
          * min
-         * outlineLevel
+         * outlineLevel 
          * phonetic
          * style
          * width
@@ -15560,7 +15590,7 @@ var SheetView = require('./SheetView');
     });
     module.exports = Worksheet;
 
-},{"./RelationshipManager":42,"./SheetView":45,"./util":53,"lodash":84}],50:[function(require,module,exports){
+},{"./RelationshipManager":43,"./SheetView":46,"./util":54,"lodash":85}],51:[function(require,module,exports){
 /* jshint strict: false, node: true */
 /* globals  onmessage: true, importScripts, postMessage */
 "use strict";
@@ -15601,7 +15631,7 @@ var onmessage = function(event) {
 
 
 
-},{}],51:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
 'use strict';
 var _ = require('lodash');
 
@@ -15726,7 +15756,7 @@ _.extend(XMLDOM.XMLNode.prototype, {
 });
 
 module.exports = XMLDOM;
-},{"lodash":84}],52:[function(require,module,exports){
+},{"lodash":85}],53:[function(require,module,exports){
 /* jshint unused: false */
 /* globals  importScripts, JSZip, postMessage */
 
@@ -15759,7 +15789,7 @@ var onmessage = function(event) {
 
 
 
-},{}],53:[function(require,module,exports){
+},{}],54:[function(require,module,exports){
 "use strict";
 var XMLDOM = require('./XMLDOM');
 var _ = require('lodash');
@@ -15886,7 +15916,7 @@ var util = {
 };
 
 module.exports = util;
-},{"./XMLDOM":51,"lodash":84}],54:[function(require,module,exports){
+},{"./XMLDOM":52,"lodash":85}],55:[function(require,module,exports){
 'use strict';
 
 var Workbook = require('../Excel/Workbook');
@@ -15957,11 +15987,11 @@ _.extend(Template.prototype, {
 
 module.exports = Template;
 
-},{"../Excel/Table":47,"../Excel/Workbook":48,"lodash":84}],55:[function(require,module,exports){
+},{"../Excel/Table":48,"../Excel/Workbook":49,"lodash":85}],56:[function(require,module,exports){
 module.exports = {
     BasicReport: require('./BasicReport')
 };
-},{"./BasicReport":54}],56:[function(require,module,exports){
+},{"./BasicReport":55}],57:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 var Workbook = require('./Excel/Workbook');
@@ -16048,7 +16078,7 @@ var Factory = {
 
 
 module.exports = Factory;
-},{"./Excel/Workbook":48,"jszip":69,"lodash":84}],57:[function(require,module,exports){
+},{"./Excel/Workbook":49,"jszip":70,"lodash":85}],58:[function(require,module,exports){
 var _ = require('lodash');
 var EBExport = module.exports = {
     Drawings: require('./Excel/Drawings'),
@@ -16080,7 +16110,7 @@ try {
     //Silently ignore?
     console.info("Not attaching EB to window");
 }
-},{"./Excel/Drawing/index":37,"./Excel/Drawings":38,"./Excel/Pane":39,"./Excel/Paths":40,"./Excel/Positioning":41,"./Excel/RelationshipManager":42,"./Excel/SharedStrings":43,"./Excel/SheetProtection":44,"./Excel/SheetView":45,"./Excel/StyleSheet":46,"./Excel/Table":47,"./Excel/Workbook":48,"./Excel/Worksheet":49,"./Excel/WorksheetExportWorker":50,"./Excel/XMLDOM":51,"./Excel/ZipWorker":52,"./Excel/util":53,"./Template":55,"./excel-builder":56,"lodash":84}],58:[function(require,module,exports){
+},{"./Excel/Drawing/index":38,"./Excel/Drawings":39,"./Excel/Pane":40,"./Excel/Paths":41,"./Excel/Positioning":42,"./Excel/RelationshipManager":43,"./Excel/SharedStrings":44,"./Excel/SheetProtection":45,"./Excel/SheetView":46,"./Excel/StyleSheet":47,"./Excel/Table":48,"./Excel/Workbook":49,"./Excel/Worksheet":50,"./Excel/WorksheetExportWorker":51,"./Excel/XMLDOM":52,"./Excel/ZipWorker":53,"./Excel/util":54,"./Template":56,"./excel-builder":57,"lodash":85}],59:[function(require,module,exports){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = nBytes * 8 - mLen - 1
@@ -16166,7 +16196,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],59:[function(require,module,exports){
+},{}],60:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v2.2.3
  * http://jquery.com/
@@ -26010,7 +26040,7 @@ if ( !noGlobal ) {
 return jQuery;
 }));
 
-},{}],60:[function(require,module,exports){
+},{}],61:[function(require,module,exports){
 'use strict';
 var DataReader = require('./dataReader');
 
@@ -26063,7 +26093,7 @@ ArrayReader.prototype.readData = function(size) {
 };
 module.exports = ArrayReader;
 
-},{"./dataReader":65}],61:[function(require,module,exports){
+},{"./dataReader":66}],62:[function(require,module,exports){
 'use strict';
 // private property
 var _keyStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
@@ -26135,7 +26165,7 @@ exports.decode = function(input, utf8) {
 
 };
 
-},{}],62:[function(require,module,exports){
+},{}],63:[function(require,module,exports){
 'use strict';
 function CompressedObject() {
     this.compressedSize = 0;
@@ -26165,7 +26195,7 @@ CompressedObject.prototype = {
 };
 module.exports = CompressedObject;
 
-},{}],63:[function(require,module,exports){
+},{}],64:[function(require,module,exports){
 'use strict';
 exports.STORE = {
     magic: "\x00\x00",
@@ -26180,7 +26210,7 @@ exports.STORE = {
 };
 exports.DEFLATE = require('./flate');
 
-},{"./flate":68}],64:[function(require,module,exports){
+},{"./flate":69}],65:[function(require,module,exports){
 'use strict';
 
 var utils = require('./utils');
@@ -26284,7 +26314,7 @@ module.exports = function crc32(input, crc) {
 };
 // vim: set shiftwidth=4 softtabstop=4:
 
-},{"./utils":81}],65:[function(require,module,exports){
+},{"./utils":82}],66:[function(require,module,exports){
 'use strict';
 var utils = require('./utils');
 
@@ -26394,7 +26424,7 @@ DataReader.prototype = {
 };
 module.exports = DataReader;
 
-},{"./utils":81}],66:[function(require,module,exports){
+},{"./utils":82}],67:[function(require,module,exports){
 'use strict';
 exports.base64 = false;
 exports.binary = false;
@@ -26407,7 +26437,7 @@ exports.comment = null;
 exports.unixPermissions = null;
 exports.dosPermissions = null;
 
-},{}],67:[function(require,module,exports){
+},{}],68:[function(require,module,exports){
 'use strict';
 var utils = require('./utils');
 
@@ -26514,7 +26544,7 @@ exports.isRegExp = function (object) {
 };
 
 
-},{"./utils":81}],68:[function(require,module,exports){
+},{"./utils":82}],69:[function(require,module,exports){
 'use strict';
 var USE_TYPEDARRAY = (typeof Uint8Array !== 'undefined') && (typeof Uint16Array !== 'undefined') && (typeof Uint32Array !== 'undefined');
 
@@ -26532,7 +26562,7 @@ exports.uncompress =  function(input) {
     return pako.inflateRaw(input);
 };
 
-},{"pako":91}],69:[function(require,module,exports){
+},{"pako":92}],70:[function(require,module,exports){
 'use strict';
 
 var base64 = require('./base64');
@@ -26613,7 +26643,7 @@ JSZip.base64 = {
 JSZip.compressions = require('./compressions');
 module.exports = JSZip;
 
-},{"./base64":61,"./compressions":63,"./defaults":66,"./deprecatedPublicUtils":67,"./load":70,"./object":73,"./support":77}],70:[function(require,module,exports){
+},{"./base64":62,"./compressions":64,"./defaults":67,"./deprecatedPublicUtils":68,"./load":71,"./object":74,"./support":78}],71:[function(require,module,exports){
 'use strict';
 var base64 = require('./base64');
 var utf8 = require('./utf8');
@@ -26654,7 +26684,7 @@ module.exports = function(data, options) {
     return this;
 };
 
-},{"./base64":61,"./utf8":80,"./utils":81,"./zipEntries":82}],71:[function(require,module,exports){
+},{"./base64":62,"./utf8":81,"./utils":82,"./zipEntries":83}],72:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 module.exports = function(data, encoding){
@@ -26665,7 +26695,7 @@ module.exports.test = function(b){
 };
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":29}],72:[function(require,module,exports){
+},{"buffer":30}],73:[function(require,module,exports){
 'use strict';
 var Uint8ArrayReader = require('./uint8ArrayReader');
 
@@ -26688,7 +26718,7 @@ NodeBufferReader.prototype.readData = function(size) {
 };
 module.exports = NodeBufferReader;
 
-},{"./uint8ArrayReader":78}],73:[function(require,module,exports){
+},{"./uint8ArrayReader":79}],74:[function(require,module,exports){
 'use strict';
 var support = require('./support');
 var utils = require('./utils');
@@ -27560,7 +27590,7 @@ var out = {
 };
 module.exports = out;
 
-},{"./base64":61,"./compressedObject":62,"./compressions":63,"./crc32":64,"./defaults":66,"./nodeBuffer":71,"./signature":74,"./stringWriter":76,"./support":77,"./uint8ArrayWriter":79,"./utf8":80,"./utils":81}],74:[function(require,module,exports){
+},{"./base64":62,"./compressedObject":63,"./compressions":64,"./crc32":65,"./defaults":67,"./nodeBuffer":72,"./signature":75,"./stringWriter":77,"./support":78,"./uint8ArrayWriter":80,"./utf8":81,"./utils":82}],75:[function(require,module,exports){
 'use strict';
 exports.LOCAL_FILE_HEADER = "PK\x03\x04";
 exports.CENTRAL_FILE_HEADER = "PK\x01\x02";
@@ -27569,7 +27599,7 @@ exports.ZIP64_CENTRAL_DIRECTORY_LOCATOR = "PK\x06\x07";
 exports.ZIP64_CENTRAL_DIRECTORY_END = "PK\x06\x06";
 exports.DATA_DESCRIPTOR = "PK\x07\x08";
 
-},{}],75:[function(require,module,exports){
+},{}],76:[function(require,module,exports){
 'use strict';
 var DataReader = require('./dataReader');
 var utils = require('./utils');
@@ -27608,7 +27638,7 @@ StringReader.prototype.readData = function(size) {
 };
 module.exports = StringReader;
 
-},{"./dataReader":65,"./utils":81}],76:[function(require,module,exports){
+},{"./dataReader":66,"./utils":82}],77:[function(require,module,exports){
 'use strict';
 
 var utils = require('./utils');
@@ -27640,7 +27670,7 @@ StringWriter.prototype = {
 
 module.exports = StringWriter;
 
-},{"./utils":81}],77:[function(require,module,exports){
+},{"./utils":82}],78:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 exports.base64 = true;
@@ -27678,7 +27708,7 @@ else {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":29}],78:[function(require,module,exports){
+},{"buffer":30}],79:[function(require,module,exports){
 'use strict';
 var ArrayReader = require('./arrayReader');
 
@@ -27706,7 +27736,7 @@ Uint8ArrayReader.prototype.readData = function(size) {
 };
 module.exports = Uint8ArrayReader;
 
-},{"./arrayReader":60}],79:[function(require,module,exports){
+},{"./arrayReader":61}],80:[function(require,module,exports){
 'use strict';
 
 var utils = require('./utils');
@@ -27744,7 +27774,7 @@ Uint8ArrayWriter.prototype = {
 
 module.exports = Uint8ArrayWriter;
 
-},{"./utils":81}],80:[function(require,module,exports){
+},{"./utils":82}],81:[function(require,module,exports){
 'use strict';
 
 var utils = require('./utils');
@@ -27953,7 +27983,7 @@ exports.utf8decode = function utf8decode(buf) {
 };
 // vim: set shiftwidth=4 softtabstop=4:
 
-},{"./nodeBuffer":71,"./support":77,"./utils":81}],81:[function(require,module,exports){
+},{"./nodeBuffer":72,"./support":78,"./utils":82}],82:[function(require,module,exports){
 'use strict';
 var support = require('./support');
 var compressions = require('./compressions');
@@ -28299,7 +28329,7 @@ exports.extend = function() {
 };
 
 
-},{"./compressions":63,"./nodeBuffer":71,"./support":77}],82:[function(require,module,exports){
+},{"./compressions":64,"./nodeBuffer":72,"./support":78}],83:[function(require,module,exports){
 'use strict';
 var StringReader = require('./stringReader');
 var NodeBufferReader = require('./nodeBufferReader');
@@ -28581,7 +28611,7 @@ ZipEntries.prototype = {
 // }}} end of ZipEntries
 module.exports = ZipEntries;
 
-},{"./arrayReader":60,"./nodeBufferReader":72,"./object":73,"./signature":74,"./stringReader":75,"./support":77,"./uint8ArrayReader":78,"./utils":81,"./zipEntry":83}],83:[function(require,module,exports){
+},{"./arrayReader":61,"./nodeBufferReader":73,"./object":74,"./signature":75,"./stringReader":76,"./support":78,"./uint8ArrayReader":79,"./utils":82,"./zipEntry":84}],84:[function(require,module,exports){
 'use strict';
 var StringReader = require('./stringReader');
 var utils = require('./utils');
@@ -28902,7 +28932,7 @@ ZipEntry.prototype = {
 };
 module.exports = ZipEntry;
 
-},{"./compressedObject":62,"./object":73,"./stringReader":75,"./support":77,"./utils":81}],84:[function(require,module,exports){
+},{"./compressedObject":63,"./object":74,"./stringReader":76,"./support":78,"./utils":82}],85:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -41257,7 +41287,7 @@ module.exports = ZipEntry;
 }.call(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],85:[function(require,module,exports){
+},{}],86:[function(require,module,exports){
 module.exports={
 	"version": "2015g",
 	"zones": [
@@ -41848,11 +41878,11 @@ module.exports={
 		"Pacific/Pohnpei|Pacific/Ponape"
 	]
 }
-},{}],86:[function(require,module,exports){
+},{}],87:[function(require,module,exports){
 var moment = module.exports = require("./moment-timezone");
 moment.tz.load(require('./data/packed/latest.json'));
 
-},{"./data/packed/latest.json":85,"./moment-timezone":87}],87:[function(require,module,exports){
+},{"./data/packed/latest.json":86,"./moment-timezone":88}],88:[function(require,module,exports){
 //! moment-timezone.js
 //! version : 0.4.1
 //! author : Tim Wood
@@ -42280,7 +42310,7 @@ moment.tz.load(require('./data/packed/latest.json'));
 	return moment;
 }));
 
-},{"moment":89}],88:[function(require,module,exports){
+},{"moment":90}],89:[function(require,module,exports){
 //! moment.js locale configuration
 //! locale : german (de)
 //! author : lluchs : https://github.com/lluchs
@@ -42359,7 +42389,7 @@ moment.tz.load(require('./data/packed/latest.json'));
     return de;
 
 }));
-},{"../moment":89}],89:[function(require,module,exports){
+},{"../moment":90}],90:[function(require,module,exports){
 //! moment.js
 //! version : 2.13.0
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
@@ -46400,7 +46430,7 @@ moment.tz.load(require('./data/packed/latest.json'));
     return _moment;
 
 }));
-},{}],90:[function(require,module,exports){
+},{}],91:[function(require,module,exports){
 /**
  * Node.js module for Forge.
  *
@@ -46494,7 +46524,7 @@ define([
 });
 })();
 
-},{}],91:[function(require,module,exports){
+},{}],92:[function(require,module,exports){
 // Top level file is just a mixin of submodules & constants
 'use strict';
 
@@ -46510,7 +46540,7 @@ assign(pako, deflate, inflate, constants);
 
 module.exports = pako;
 
-},{"./lib/deflate":92,"./lib/inflate":93,"./lib/utils/common":94,"./lib/zlib/constants":97}],92:[function(require,module,exports){
+},{"./lib/deflate":93,"./lib/inflate":94,"./lib/utils/common":95,"./lib/zlib/constants":98}],93:[function(require,module,exports){
 'use strict';
 
 
@@ -46912,7 +46942,7 @@ exports.deflate = deflate;
 exports.deflateRaw = deflateRaw;
 exports.gzip = gzip;
 
-},{"./utils/common":94,"./utils/strings":95,"./zlib/deflate":99,"./zlib/messages":104,"./zlib/zstream":106}],93:[function(require,module,exports){
+},{"./utils/common":95,"./utils/strings":96,"./zlib/deflate":100,"./zlib/messages":105,"./zlib/zstream":107}],94:[function(require,module,exports){
 'use strict';
 
 
@@ -47332,7 +47362,7 @@ exports.inflate = inflate;
 exports.inflateRaw = inflateRaw;
 exports.ungzip  = inflate;
 
-},{"./utils/common":94,"./utils/strings":95,"./zlib/constants":97,"./zlib/gzheader":100,"./zlib/inflate":102,"./zlib/messages":104,"./zlib/zstream":106}],94:[function(require,module,exports){
+},{"./utils/common":95,"./utils/strings":96,"./zlib/constants":98,"./zlib/gzheader":101,"./zlib/inflate":103,"./zlib/messages":105,"./zlib/zstream":107}],95:[function(require,module,exports){
 'use strict';
 
 
@@ -47436,7 +47466,7 @@ exports.setTyped = function (on) {
 
 exports.setTyped(TYPED_OK);
 
-},{}],95:[function(require,module,exports){
+},{}],96:[function(require,module,exports){
 // String encode/decode helpers
 'use strict';
 
@@ -47623,7 +47653,7 @@ exports.utf8border = function (buf, max) {
   return (pos + _utf8len[buf[pos]] > max) ? pos : max;
 };
 
-},{"./common":94}],96:[function(require,module,exports){
+},{"./common":95}],97:[function(require,module,exports){
 'use strict';
 
 // Note: adler32 takes 12% for level 0 and 2% for level 6.
@@ -47657,7 +47687,7 @@ function adler32(adler, buf, len, pos) {
 
 module.exports = adler32;
 
-},{}],97:[function(require,module,exports){
+},{}],98:[function(require,module,exports){
 'use strict';
 
 
@@ -47709,7 +47739,7 @@ module.exports = {
   //Z_NULL:                 null // Use -1 or null inline, depending on var type
 };
 
-},{}],98:[function(require,module,exports){
+},{}],99:[function(require,module,exports){
 'use strict';
 
 // Note: we can't get significant speed boost here.
@@ -47752,7 +47782,7 @@ function crc32(crc, buf, len, pos) {
 
 module.exports = crc32;
 
-},{}],99:[function(require,module,exports){
+},{}],100:[function(require,module,exports){
 'use strict';
 
 var utils   = require('../utils/common');
@@ -49602,7 +49632,7 @@ exports.deflatePrime = deflatePrime;
 exports.deflateTune = deflateTune;
 */
 
-},{"../utils/common":94,"./adler32":96,"./crc32":98,"./messages":104,"./trees":105}],100:[function(require,module,exports){
+},{"../utils/common":95,"./adler32":97,"./crc32":99,"./messages":105,"./trees":106}],101:[function(require,module,exports){
 'use strict';
 
 
@@ -49644,7 +49674,7 @@ function GZheader() {
 
 module.exports = GZheader;
 
-},{}],101:[function(require,module,exports){
+},{}],102:[function(require,module,exports){
 'use strict';
 
 // See state defs from inflate.js
@@ -49972,7 +50002,7 @@ module.exports = function inflate_fast(strm, start) {
   return;
 };
 
-},{}],102:[function(require,module,exports){
+},{}],103:[function(require,module,exports){
 'use strict';
 
 
@@ -51512,7 +51542,7 @@ exports.inflateSyncPoint = inflateSyncPoint;
 exports.inflateUndermine = inflateUndermine;
 */
 
-},{"../utils/common":94,"./adler32":96,"./crc32":98,"./inffast":101,"./inftrees":103}],103:[function(require,module,exports){
+},{"../utils/common":95,"./adler32":97,"./crc32":99,"./inffast":102,"./inftrees":104}],104:[function(require,module,exports){
 'use strict';
 
 
@@ -51841,7 +51871,7 @@ module.exports = function inflate_table(type, lens, lens_index, codes, table, ta
   return 0;
 };
 
-},{"../utils/common":94}],104:[function(require,module,exports){
+},{"../utils/common":95}],105:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -51856,7 +51886,7 @@ module.exports = {
   '-6':   'incompatible version' /* Z_VERSION_ERROR (-6) */
 };
 
-},{}],105:[function(require,module,exports){
+},{}],106:[function(require,module,exports){
 'use strict';
 
 
@@ -53060,7 +53090,7 @@ exports._tr_flush_block  = _tr_flush_block;
 exports._tr_tally = _tr_tally;
 exports._tr_align = _tr_align;
 
-},{"../utils/common":94}],106:[function(require,module,exports){
+},{"../utils/common":95}],107:[function(require,module,exports){
 'use strict';
 
 
@@ -53091,7 +53121,7 @@ function ZStream() {
 
 module.exports = ZStream;
 
-},{}],107:[function(require,module,exports){
+},{}],108:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -53184,7 +53214,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],108:[function(require,module,exports){
+},{}],109:[function(require,module,exports){
 (function (process){
 // vim:ts=4:sts=4:sw=4:
 /*!
@@ -55236,7 +55266,7 @@ return Q;
 });
 
 }).call(this,require('_process'))
-},{"_process":107}],109:[function(require,module,exports){
+},{"_process":108}],110:[function(require,module,exports){
 //     Underscore.js 1.8.3
 //     http://underscorejs.org
 //     (c) 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
