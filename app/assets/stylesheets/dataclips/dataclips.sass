@@ -1,0 +1,155 @@
+@import "./slickgrid/slickgrid-core"
+@import "./slickgrid/slickgrid-default"
+@import "./slickgrid/slickgrid-green"
+
+body:-webkit-full-screen
+  width: 100%
+
+#grid
+  margin-right: 40px
+  font-family: Inconsolata
+
+#modal
+  position: fixed
+  top: 0
+  left: 0
+  width: 100%
+  height: 100%
+  z-index: 2
+  background-color: rgba(255,255,255,0.8)
+
+#counters
+  z-index: 4
+  position: fixed
+  bottom: 10px
+  left: 10px
+  padding: 5px 10px
+  font-size: 11px
+  background: rgba(255,255,255,0.7)
+  box-shadow: -5px 0 20px 0 rgba(0,0,0,0.3)
+  font-family: Inconsolata
+
+
+#progress
+  z-index: 3
+  position: absolute
+  top: 50%; left: 50%
+  margin: -100px 0 0 -100px
+
+
+#filters
+  font-family: Inconsolata
+  z-index: 1
+  position: fixed
+  top: 0
+  right: -440px
+  width: 480px
+  height: 100%
+  background-color: rgba(255, 255,255,1)
+  transition: all 0.5s ease
+  box-shadow: -5px 0 20px 0 rgba(0,0,0,0.3)
+
+
+#toggle
+  height: 100%
+  position: absolute
+  top: 0
+  left: 0
+  width: 40px
+  border-right: 1px solid silver
+
+
+#toggle a
+  font-size: 20px
+  color: #fff
+  text-decoration: none
+  text-align: center
+  display: block
+  margin-top: 10px
+
+#sidebar
+  position: relative
+  margin-left: 40px
+  width: 450px
+  overflow: auto
+
+
+#filters:target
+  right: 0
+
+
+#filters a.hide-filters
+  display: none
+
+#filters:target a.show-filters
+  display: none
+
+#filters:target a.hide-filters
+  display: block
+
+.actions
+  text-align: center
+  width: 40px
+  position: absolute
+  bottom: 10px
+
+.input-group
+  margin: 10px 0
+
+label.main
+  display: block
+  padding: 5px
+  text-overflow: ellipsis
+  text-shadow: white 0 1px 0
+  background: #d0d0d0
+  padding: 8px
+  font-size: 12px
+
+.row
+  margin: 0
+
+datalist
+  position: relative
+
+ul.datalist
+  list-style: none
+  display: none
+  background: white
+  border: 1px solid #e2e2e2
+  position: absolute
+  top: 0
+  left: 0
+  max-height: 300px
+  z-index: 10
+  overflow-y: auto
+  width: 300px
+  padding: 0
+
+.datalist:empty
+  display: none !important
+
+
+.datalist li
+  padding: 3px
+  font: 13px "Lucida Grande", Sans-Serif
+
+
+.datalist li small
+  color: gray
+  right: 0
+  position: absolute
+  top: auto
+  padding-right: 5px
+  width: 120px
+  text-align: right
+  white-space: nowrap
+
+.datalist li span
+  width: 180px
+  left: 0
+  top: auto
+  text-overflow: ellipsis
+
+.datalist li.active
+  background: #3875d7
+  color: white

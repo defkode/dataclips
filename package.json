@@ -24,6 +24,7 @@
     "downloadjs": "^1.4.2",
     "eonasdan-bootstrap-datetimepicker": "github:eonasdan/bootstrap-datetimepicker",
     "excel-builder": "^2.0.0",
+    "font-awesome": "^4.6.1",
     "jquery": "^2.2.3",
     "moment": "^2.13.0"
   },
@@ -32,6 +33,9 @@
     "browserify-incremental": "^3.1.1",
     "coffeeify": "^2.0.1",
     "gulp": "^3.9.1",
+    "gulp-concat": "^2.6.0",
+    "gulp-less": "^3.1.0",
+    "gulp-sass": "^2.3.1",
     "gulp-sourcemaps": "^2.0.0-alpha",
     "modernizr": "^3.3.1",
     "vinyl-source-stream": "^1.1.0"
