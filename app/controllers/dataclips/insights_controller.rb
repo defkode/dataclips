@@ -46,6 +46,9 @@ module Dataclips
       respond_to do |format|
         format.html do
           @theme = params[:theme] || "default"
+          if @insight.basic_auth_credentials.present?
+            request_http_basic_authentication unless authenticate_with_http_basic { |login, password| @insight.authenticate(login, password) }
+          end
         end
 
         format.json do

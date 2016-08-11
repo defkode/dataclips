@@ -19,6 +19,10 @@ module Dataclips
       find_by(clip_id: clip_id)
     end
 
+    def authenticate(login, password)
+      basic_auth_credentials == [login,password].join(":")
+    end
+
     def self.get!(clip_id, params = nil, excludes = [])
       clip_path = File.join(Dataclips::Engine.config.path, "#{clip_id}.sql")
       if File.exists?(clip_path)
