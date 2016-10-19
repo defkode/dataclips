@@ -240,7 +240,8 @@ module.exports = Backbone.View.extend
 
       return false unless value?
 
-      value.toLowerCase().indexOf(query.toLowerCase()) != -1
+      _.any query.split(" OR "), (keyword) ->
+        value.toLowerCase().indexOf(keyword.toLowerCase()) != -1
 
     booleanFilter = (item, attr, selector) ->
       return true if selector is undefined # all
