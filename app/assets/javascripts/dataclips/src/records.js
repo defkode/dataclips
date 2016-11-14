@@ -25,7 +25,9 @@ module.exports = Backbone.Collection.extend({
         fetchNextPage(collection, data.page, data.total_pages);
       },
       error: function(collection, response) {
-        alert(response.responseText);
+        if (response.status) {
+          alert(response.responseText);
+        }
       }
     });
   },
