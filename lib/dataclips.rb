@@ -27,10 +27,11 @@ module Dataclips
         sql = SQLQuery.new File.read(path)
 
         klass = Class.new(Clip) do
-          @template  = sql.template
-          @schema    = sql.schema
-          @per_page  = sql.options["per_page"]
-          @variables = sql.variables
+          @template   = sql.template
+          @schema     = sql.schema
+          @per_page   = sql.options["per_page"]
+          @connection = sql.options["connection"]
+          @variables  = sql.variables
 
           attr_accessor *sql.variables.keys
 

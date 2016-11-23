@@ -18,6 +18,15 @@ module Dataclips
       def per_page
         @per_page || 1000
       end
+
+      def connection
+        if @connection
+          connection_name = "dataclips_#{@connection}_#{Rails.env}".to_sym # dataclips_stats_production
+          ActiveRecord::Base.establish_connection(connection_name).connection
+        else
+          ActiveRecord::Base.connection
+        end
+      end
     end
 
     def exclude!(fields = [])
@@ -70,28 +79,25 @@ module Dataclips
     end
 
     def paginate(page = 1)
-      ActiveRecord::Base::transaction do
-        WillPaginate::Collection.create(page, self.class.per_page) do |pager|
-          results = ActiveRecord::Base.connection.execute <<-SQL
-            BEGIN READ ONLY;
-            WITH insight AS (#{query})
-              SELECT
-                COUNT(*) OVER () AS _total_entries_count,
-                *
-              FROM insight
-              LIMIT #{pager.per_page} OFFSET #{pager.offset};
-          SQL
+      WillPaginate::Collection.create(page, self.class.per_page) do |pager|
+        results = self.class.connection.execute <<-SQL
+          WITH insight AS (#{query})
+            SELECT
+              COUNT(*) OVER () AS _total_entries_count,
+              *
+            FROM insight
+            LIMIT #{pager.per_page} OFFSET #{pager.offset};
+        SQL
 
-          if pager.total_entries.nil?
-            pager.total_entries = results.none? ? 0 : results.first["_total_entries_count"].to_i
-          end
-
-          records = results.map do |record|
-            type_cast record.except("_total_entries_count").symbolize_keys
-          end
-
-          pager.replace records
+        if pager.total_entries.nil?
+          pager.total_entries = results.none? ? 0 : results.first["_total_entries_count"].to_i
         end
+
+        records = results.map do |record|
+          type_cast record.except("_total_entries_count").symbolize_keys
+        end
+
+        pager.replace records
       end
     end
   end
