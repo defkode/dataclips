@@ -9,17 +9,5 @@ module Dataclips
         memo
       end
     end
-
-    def render_json_records(clip, page = 1)
-      page = params[:page] || 1
-      records = clip.paginate(page)
-
-      render json: {
-        page:                records.current_page,
-        total_pages:         records.total_pages,
-        total_entries_count: records.total_entries,
-        records:             records
-      }
-    end
   end
 end

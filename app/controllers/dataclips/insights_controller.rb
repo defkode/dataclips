@@ -26,11 +26,13 @@ module Dataclips
 
       response.stream.write CSV.generate(csv_options) { |csv| csv << @headers.values}
 
-      records = @clip.paginate(1)
+      paginator = Dataclips::Paginator.new(@insight.query, @schema)
+
+      records = paginator.paginate(1)
       stream_records(records, csv_options, @time_zone)
 
       while next_page = records.next_page do
-        records = @clip.paginate(next_page)
+        records = paginator.paginate(next_page)
         stream_records(records, csv_options, @time_zone)
       end
     rescue IOError => e
@@ -52,9 +54,12 @@ module Dataclips
         end
 
         format.json do
-          render_json_records(@clip, params[:page])
+          render_json_records(@insight.query, @schema, params[:page])
         end
       end
+    end
+
+    def index
     end
 
     protected
@@ -68,23 +73,27 @@ module Dataclips
     end
 
     def setup_clip
-      @insight   = Insight.find_by_hash_id(params[:id]) or raise ActiveRecord::RecordNotFound
+      @insight   = Insight.find_by_hash_id!(params[:id])
       @clip_id   = @insight.clip_id
       @time_zone = @insight.time_zone
 
-      begin
-        @klass     = "::Dataclips::#{@clip_id.gsub('/', '_').camelize}Clip".constantize
-      rescue NameError
-        Rails.logger.fatal("Dataclip: #{@clip_id} does not exist.")
-        nil
-      end
-
-      @variables = @klass.variables
-      @clip          = @klass.new @insight.params
-      @clip.exclude!(@insight.excludes) if @insight.excludes.any?
+      @clip      = Dataclips::Clip.new(@clip_id)
+      # @clip.exclude!(@insight.excludes) if @insight.excludes.any?
 
       @schema = @clip.schema
       @headers   = localize_headers(@clip_id, @schema.keys)
+    end
+
+    def render_json_records(query, schema, page)
+      paginator = Dataclips::Paginator.new(query, schema)
+      records = paginator.paginate(page || 1)
+
+      render json: {
+        page:                records.current_page,
+        total_pages:         records.total_pages,
+        total_entries_count: records.total_entries,
+        records:             records
+      }
     end
   end
 end

@@ -10,7 +10,6 @@
     url:          '<%= insight_path(@insight) %>',
     schema:       <%= raw @schema.to_json %>,
     headers:      <%= raw @headers.to_json %>,
-    variables:    <%= raw @variables.to_json %>,
     time_zone:    '<%= @insight.time_zone %>',
     translations: <%= raw I18n.t("dictionaries", scope: "dataclips", default: {}).to_json %>
   };
@@ -38,7 +37,7 @@
 <div id="filters">
   <div id="sidebar">
       <% @schema.each do |key, options| %>
-        <% next unless options[:filter] %>
+        <% next unless options["filter"] %>
         <% id = "#{@clip_id}_#{key}".parameterize %>
 
         <label class="main" for="<%= id %>">
@@ -55,7 +54,7 @@
         </label>
 
         <div class="row">
-          <%= render options[:type], key: key, id: id, dictionary: options[:dictionary] %>
+          <%= render options["type"], key: key, id: id, dictionary: options["dictionary"] %>
         </div>
       <% end %>
   </div>
