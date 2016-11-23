@@ -1,4 +1,4 @@
 # Dataclips
 
 ```
-rake dovecote:install:migrations
+rake dataclips:install:migrations
