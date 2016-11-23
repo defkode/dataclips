@@ -1,6 +1,5 @@
 class AddSqlToInsights < ActiveRecord::Migration
   def change
-  def change
     add_column :dataclips_insights, :query, :text
     add_column :dataclips_insights, :hash_id, :string
 
