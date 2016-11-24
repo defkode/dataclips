@@ -77,10 +77,9 @@ module Dataclips
       @clip_id   = @insight.clip_id
       @time_zone = @insight.time_zone
 
-      @clip      = Dataclips::Clip.new(@clip_id)
       # @clip.exclude!(@insight.excludes) if @insight.excludes.any?
 
-      @schema = @clip.schema
+      @schema    = @insight.schema
       @headers   = localize_headers(@clip_id, @schema.keys)
     end
 

@@ -4,6 +4,7 @@ module Dataclips
 
     validates :clip_id, presence: true
     validates :query, presence: true
+    validates :schema, presence: true
     validates :hash_id, presence: true, uniqueness: true
     validates :checksum, presence: true, uniqueness: true
 
@@ -28,14 +29,15 @@ module Dataclips
         if insight = Dataclips::Insight.find_by(clip_id: clip_id, checksum: checksum)
           return insight
         else
-          hash_id = Dataclips.hashids.encode(Time.now.to_i)
+          hash_id = Dataclips.hashids.encode(Time.now.to_i + (1..1000).to_a.shuffle.first)
           clip = Dataclips::Clip.new(clip_id)
-          query = clip.query(params)
+          query = clip.query(params || {})
 
           return Dataclips::Insight.create!({
             clip_id: clip_id,
             hash_id: hash_id,
             query: query,
+            schema: clip.schema.to_json,
             params: params,
             name: "#{params.to_s.parameterize}",
             excludes: excludes || []
