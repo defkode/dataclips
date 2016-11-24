@@ -1,3 +1,5 @@
+require 'will_paginate/array'
+
 module Dataclips
   class Paginator
     attr_accessor :query, :schema, :per_page

@@ -1,5 +1,3 @@
-require 'will_paginate/array'
-
 module Dataclips
   class Clip
     attr_accessor :clip_id, :template, :params, :schema

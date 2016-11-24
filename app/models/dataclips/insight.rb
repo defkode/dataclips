@@ -22,7 +22,7 @@ module Dataclips
       basic_auth_credentials == [login,password].join(":")
     end
 
-    def self.get!(clip_id, params = nil, excludes = [])
+    def self.get!(clip_id, params = nil)
       clip_path = File.join(Dataclips::Engine.config.path, "#{clip_id}.sql")
       if File.exists?(clip_path)
         checksum = calculate_checksum(clip_id, params)
@@ -39,8 +39,7 @@ module Dataclips
             query: query,
             schema: clip.schema.to_json,
             params: params,
-            name: "#{params.to_s.parameterize}",
-            excludes: excludes || []
+            name: "#{params.to_s.parameterize}"
           })
         end
       else
