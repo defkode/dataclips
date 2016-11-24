@@ -8,9 +8,5 @@ module Dataclips
       config.path         = Rails.root.join('app/dataclips').to_s
       config.watchable_files.concat Dir.glob("#{config.path}/**/*.sql")
     end
-
-    # config.to_prepare do |reloader|
-    #   Dataclips.reload!
-    # end
   end
 end

@@ -72,6 +72,13 @@ module Dataclips
       }
     end
 
+    def localize_headers(clip_id, keys)
+      keys.inject({}) do |memo, key|
+        memo[key] = I18n.t("#{clip_id}.schema.#{key}", scope: "dataclips", default: key.to_s)
+        memo
+      end
+    end
+
     def setup_clip
       @insight   = Insight.find_by_hash_id!(params[:id])
       @clip_id   = @insight.clip_id
