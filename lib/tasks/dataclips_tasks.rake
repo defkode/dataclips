@@ -24,4 +24,18 @@ namespace :dataclips do
   task :delete_insights, [:clip_id] => :environment do |t, args|
     Dataclips::Insight.where(clip_id: args.clip_id).delete_all
   end
+
+
+  desc "Update query for clip_id"
+  task :update_insights, [:clip_id] => :environment do |t, args|
+    Dataclips::Insight.where(clip_id: args.clip_id).find_each do |i|
+      clip = Dataclips::Clip.new(i.clip_id)
+      query = clip.query(i.params || {})
+
+      i.update!({
+        query: query,
+        schema: clip.schema.to_json,
+      })
+    end
+  end
 end

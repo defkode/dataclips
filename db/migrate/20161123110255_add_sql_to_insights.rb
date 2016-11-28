@@ -16,7 +16,7 @@ class AddSqlToInsights < ActiveRecord::Migration
       query = clip.query(d.params || {})
 
       d.update!({
-        query:   query.squish,
+        query:   query,
         schema:  clip.schema.to_json,
         hash_id: hashids.encode(d.id)
       })
