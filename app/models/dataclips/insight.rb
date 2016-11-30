@@ -39,6 +39,7 @@ module Dataclips
             query: query,
             schema: clip.schema.to_json,
             params: params,
+            per_page: clip.per_page,
             name: "#{params.to_s.parameterize}"
           })
         end
