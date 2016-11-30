@@ -29,7 +29,7 @@ module Dataclips
         if insight = Dataclips::Insight.find_by(clip_id: clip_id, checksum: checksum)
           return insight
         else
-          hash_id = Dataclips.hashids.encode(Time.now.to_i + (1..10000).to_a.shuffle.first)
+          hash_id = SecureRandom.urlsafe_base64(6)
           clip = Dataclips::Clip.new(clip_id)
           query = clip.query(params || {})
 
