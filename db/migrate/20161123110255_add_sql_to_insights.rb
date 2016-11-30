@@ -1,8 +1,10 @@
 class AddSqlToInsights < ActiveRecord::Migration
   def change
+    add_column :dataclips_insights, :hash_id, :string
     add_column :dataclips_insights, :query, :text
     add_column :dataclips_insights, :schema, :json
-    add_column :dataclips_insights, :hash_id, :string
+    add_column :dataclips_insights, :per_page, :integer
+    add_column :dataclips_insights, :last_viewed_at, :datetime
 
     add_index :dataclips_insights, :hash_id, unique: true
 
@@ -16,9 +18,10 @@ class AddSqlToInsights < ActiveRecord::Migration
       query = clip.query(d.params || {})
 
       d.update!({
+        hash_id: hashids.encode(d.id),
         query:   query,
         schema:  clip.schema.to_json,
-        hash_id: hashids.encode(d.id)
+        per_page: clip.per_page
       })
     end
 
