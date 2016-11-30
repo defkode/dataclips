@@ -35,6 +35,7 @@ namespace :dataclips do
       i.update!({
         query: query,
         schema: clip.schema.to_json,
+        per_page: clip.per_page
       })
     end
   end

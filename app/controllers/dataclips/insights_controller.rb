@@ -47,6 +47,8 @@ module Dataclips
 
       respond_to do |format|
         format.html do
+          @insight.touch(:last_viewed_at)
+
           @theme = params[:theme] || "default"
           if @insight.basic_auth_credentials.present?
             request_http_basic_authentication unless authenticate_with_http_basic { |login, password| @insight.authenticate(login, password) }
@@ -54,7 +56,7 @@ module Dataclips
         end
 
         format.json do
-          render_json_records(@insight.query, @schema, params[:page])
+          render_json_records(@insight.query, @schema, params[:page], @insight.per_page)
         end
       end
     end
@@ -81,6 +83,7 @@ module Dataclips
 
     def setup_clip
       @insight   = Insight.find_by_hash_id!(params[:id])
+
       @clip_id   = @insight.clip_id
       @time_zone = @insight.time_zone
 
@@ -88,8 +91,8 @@ module Dataclips
       @headers   = localize_headers(@clip_id, @schema.keys)
     end
 
-    def render_json_records(query, schema, page)
-      paginator = Dataclips::Paginator.new(query, schema)
+    def render_json_records(query, schema, page, per_page)
+      paginator = Dataclips::Paginator.new(query, schema, per_page)
       records = paginator.paginate(page || 1)
 
       render json: {
