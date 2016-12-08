@@ -47,7 +47,7 @@ module Dataclips
 
       respond_to do |format|
         format.html do
-          @insight.touch(:last_viewed_at)
+          @insight.touch(:last_viewed_at) unless ENV['DATACLIPS_READONLY']
 
           @theme = params[:theme] || "default"
           if @insight.basic_auth_credentials.present?
