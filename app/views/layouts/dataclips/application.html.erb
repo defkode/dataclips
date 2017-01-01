@@ -4,7 +4,7 @@
   <title><%= yield :title %></title>
   <link href="//fonts.googleapis.com/css?family=Inconsolata:400,700&subset=latin,latin-ext" rel="stylesheet" type="text/css">
   <%= stylesheet_link_tag    "dataclips/application.css", media: "all" %>
-  <%= javascript_include_tag "dataclips/dist/bundle.js", "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/js/bootstrap-datetimepicker.min.js" %>
+  <%= javascript_include_tag "dataclips/dist/bundle.js", "dataclips/vendor/bootstrap-datetimepicker.min" %>
   <% if Dataclips::Engine.config.include_js.present? %>
     <%= javascript_include_tag Dataclips::Engine.config.include_js %>
   <% end %>
