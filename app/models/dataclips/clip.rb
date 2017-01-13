@@ -12,7 +12,7 @@ Liquid::Template.register_filter(DataclipsFilters)
 
 module Dataclips
   class Clip
-    attr_accessor :clip_id, :template, :params, :schema
+    attr_accessor :clip_id, :template, :params, :schema, :name
 
     def initialize(clip_id)
       @clip_id   = clip_id
@@ -38,6 +38,7 @@ module Dataclips
       end
 
       @per_page = config_yaml["per_page"] || 1000
+      @name     = config_yaml["name"]
     end
 
     def load_template

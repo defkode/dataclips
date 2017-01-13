@@ -22,7 +22,7 @@ module Dataclips
       basic_auth_credentials == [login,password].join(":")
     end
 
-    def self.get!(clip_id, params = nil)
+    def self.get!(clip_id, params = nil, name = nil)
       clip_path = File.join(Dataclips::Engine.config.path, "#{clip_id}.sql")
       if File.exists?(clip_path)
         checksum = calculate_checksum(clip_id, params)
@@ -34,13 +34,13 @@ module Dataclips
           query = clip.query(params || {})
 
           return Dataclips::Insight.create!({
-            clip_id: clip_id,
-            hash_id: hash_id,
-            query: query,
-            schema: clip.schema.to_json,
-            params: params,
-            per_page: clip.per_page,
-            name: "#{params.to_s.parameterize}"
+            clip_id:   clip_id,
+            hash_id:   hash_id,
+            query:     query,
+            schema:    clip.schema.to_json,
+            params:    params,
+            per_page:  clip.per_page,
+            name:      name || clip.name || clip_id
           })
         end
       else
