@@ -1,6 +1,18 @@
+require "liquid"
+
+module DataclipsFilters
+  def quote_literals(input)
+    input.map do |item|
+      item.is_a?(String) ? "'#{item}'" : item
+    end
+  end
+end
+
+Liquid::Template.register_filter(DataclipsFilters)
+
 module Dataclips
   class Clip
-    attr_accessor :clip_id, :template, :params, :schema
+    attr_accessor :clip_id, :template, :params, :schema, :name
 
     def initialize(clip_id)
       @clip_id   = clip_id
@@ -26,16 +38,17 @@ module Dataclips
       end
 
       @per_page = config_yaml["per_page"] || 1000
+      @name     = config_yaml["name"]
     end
 
     def load_template
       Dir.chdir(Dataclips::Engine.config.path) do
-        File.read("#{clip_id}.sql")
+        Liquid::Template.parse File.read("#{clip_id}.sql")
       end
     end
 
     def query(params = {})
-      template % params.deep_symbolize_keys
+      template.render(params.with_indifferent_access)
     end
   end
 end

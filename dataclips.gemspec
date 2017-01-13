@@ -21,4 +21,5 @@ Gem::Specification.new do |s|
   s.add_dependency "will_paginate",                   "~> 3.0"
   s.add_dependency "hashids",                         "~> 1.0"
   s.add_dependency "font-awesome-rails",              "~> 4.3"
+  s.add_dependency "liquid",                          "~> 4.0.0"
 end
