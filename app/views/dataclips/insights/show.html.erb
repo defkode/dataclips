@@ -2,14 +2,15 @@
  <%= @insight.name %>
 <% end %>
 <script>
+
   Dataclips.config = {
     locale:       '<%= I18n.locale %>',
-    id:           '<%= @clip_id %>',
+    id:           '<%= @insight.clip_id %>',
     name:         '<%= @insight.name %>',
-    filename:     '<%= (@insight.name.present? ? @insight.name : @insight.clip_id).parameterize %>',
+    filename:     '<%= insight_filename(@insight) %>',
     url:          '<%= insight_path(@insight) %>',
     schema:       <%= raw @schema.to_json %>,
-    headers:      <%= raw @headers.to_json %>,
+    headers:      <%= raw localize_headers(@insight.clip_id, @schema.keys).to_json %>,
     time_zone:    '<%= @insight.time_zone %>',
     translations: <%= raw I18n.t("dictionaries", scope: "dataclips", default: {}).to_json %>
   };
@@ -114,17 +115,17 @@
               <form class="form-horizontal">
                 <label for="filename_xlsx" class="col-sm-2 control-label">Filename:</label>
                 <div class="input-group col-sm-10">
-                  <input type="text" class="form-control" id="filename_xlsx" name="filename" placeholder="<%= (@insight.name.present? ? @insight.name : @insight.clip_id).parameterize %>" value="<%= (@insight.name.present? ? @insight.name : @insight.clip_id).parameterize %>" required>
+                  <input type="text" class="form-control" id="filename_xlsx" name="filename" placeholder="<%= insight_filename(@insight) %>" value="<%= insight_filename(@insight) %>" required>
                   <div class="input-group-addon">.xlsx</div>
                 </div>
               </form>
             </div>
 
             <div role="tabpanel" class="tab-pane" id="csv">
-              <form method="get" action="<%= download_insight_url(@insight, I18n.locale) %>" class="form-horizontal">
+              <form class="form-horizontal">
                   <label for="filename_csv" class="col-sm-2 control-label">Filename:</label>
                   <div class="input-group col-sm-10">
-                    <input type="text" class="form-control" id="filename_csv" name="filename" placeholder="<%= (@insight.name.present? ? @insight.name : @insight.clip_id).parameterize %>" value="<%= (@insight.name.present? ? @insight.name : @insight.clip_id).parameterize %>" required>
+                    <input type="text" class="form-control" id="filename_csv" name="filename" placeholder="<%= insight_filename(@insight) %>" value="<%= insight_filename(@insight) %>" required>
                     <div class="input-group-addon">.csv</div>
                   </div>
                   <label for="format" class="col-sm-2 control-label">Format:</label>

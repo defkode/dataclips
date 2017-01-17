@@ -4,8 +4,15 @@ module Dataclips
       dataclips.insight_path(insight, locale: locale)
     end
 
-    def download_insight_url(insight, locale = I18n.locale)
-      dataclips.export_insight_path(insight, locale: locale, format: :csv)
+    def localize_headers(clip_id, keys)
+      keys.inject({}) do |memo, key|
+        memo[key] = I18n.t("#{clip_id}.schema.#{key}", scope: "dataclips", default: key.to_s)
+        memo
+      end
+    end
+
+    def insight_filename(insight)
+      (insight.name.present? ? insight.name : insight.clip_id).parameterize
     end
 
     def insight_filters(insight, filters_sets = {}, default_filter = "default")
