@@ -31,13 +31,20 @@ module Dataclips
         return insight
       else
         hash_id = SecureRandom.urlsafe_base64(6)
+        
+        if basic_auth = options[:basic_auth]
+          if basic_auth[:username].present? && basic_auth[:password].present?
+            basic_auth_credentials = [basic_auth[:username], basic_auth[:password]].join(":")
+          end
+        end
 
         return Dataclips::Insight.create!({
           clip_id:   clip_id,
           hash_id:   hash_id,
           name:      name,
           params:    params,
-          schema:    schema
+          schema:    schema,
+          basic_auth_credentials: basic_auth_credentials
         })
       end
     end
