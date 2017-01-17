@@ -26,7 +26,7 @@ module Dataclips
 
       response.stream.write CSV.generate(csv_options) { |csv| csv << @headers.values}
 
-      paginator = Dataclips::Paginator.new(@insight.query, @schema)
+      paginator = Dataclips::Paginator.new(@query, @schema)
 
       records = paginator.paginate(1)
       stream_records(records, csv_options, @time_zone)
@@ -47,7 +47,7 @@ module Dataclips
 
       respond_to do |format|
         format.html do
-          @insight.touch(:last_viewed_at) unless ENV['DATACLIPS_READONLY']
+          @insight.touch(:last_viewed_at)
 
           @theme = params[:theme] || "default"
           if @insight.basic_auth_credentials.present?
@@ -56,7 +56,7 @@ module Dataclips
         end
 
         format.json do
-          render_json_records(@insight.query, @schema, params[:page], @insight.per_page)
+          render_json_records(@query, @schema, params[:page], @per_page)
         end
       end
     end
@@ -87,7 +87,12 @@ module Dataclips
       @clip_id   = @insight.clip_id
       @time_zone = @insight.time_zone
 
-      @schema    = @insight.schema
+      @clip      = Clip.new(@clip_id, @insight.schema) 
+
+      @schema    = @clip.schema
+      @query     = @clip.query(@insight.params)
+      @per_page  = @clip.per_page
+
       @headers   = localize_headers(@clip_id, @schema.keys)
     end
 

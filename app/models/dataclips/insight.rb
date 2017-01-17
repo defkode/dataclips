@@ -3,8 +3,6 @@ module Dataclips
     class FileNotFound < ArgumentError; end
 
     validates :clip_id, presence: true
-    validates :query, presence: true
-    validates :schema, presence: true
     validates :hash_id, presence: true, uniqueness: true
     validates :checksum, presence: true, uniqueness: true
 
@@ -22,29 +20,25 @@ module Dataclips
       basic_auth_credentials == [login,password].join(":")
     end
 
-    def self.get!(clip_id, params = nil, name = nil)
-      clip_path = File.join(Dataclips::Engine.config.path, "#{clip_id}.sql")
-      if File.exists?(clip_path)
-        checksum = calculate_checksum(clip_id, params)
-        if insight = Dataclips::Insight.find_by(clip_id: clip_id, checksum: checksum)
-          return insight
-        else
-          hash_id = SecureRandom.urlsafe_base64(6)
-          clip = Dataclips::Clip.new(clip_id)
-          query = clip.query(params || {})
+    def self.get!(clip_id, params = {}, options = {})
+      schema    = options[:schema]
 
-          return Dataclips::Insight.create!({
-            clip_id:   clip_id,
-            hash_id:   hash_id,
-            query:     query,
-            schema:    clip.schema.to_json,
-            params:    params,
-            per_page:  clip.per_page,
-            name:      name || clip.name || clip_id
-          })
-        end
+      clip      = Clip.new(clip_id, schema) 
+      name      = options.fetch(:name, clip.name || clip_id)
+
+      checksum = calculate_checksum(clip_id, params, schema)
+      if insight = Dataclips::Insight.find_by(clip_id: clip_id, checksum: checksum)
+        return insight
       else
-        raise FileNotFound.new(clip_path)
+        hash_id = SecureRandom.urlsafe_base64(6)
+
+        return Dataclips::Insight.create!({
+          clip_id:   clip_id,
+          hash_id:   hash_id,
+          name:      name,
+          params:    params,
+          schema:    schema
+        })
       end
     end
 
@@ -52,12 +46,12 @@ module Dataclips
       read_attribute(:time_zone) || Rails.configuration.time_zone
     end
 
-    def self.calculate_checksum(clip_id, params)
-      Digest::MD5.hexdigest Marshal.dump({clip_id: clip_id, params: params}.to_json)
+    def self.calculate_checksum(clip_id, params, schema)
+      Digest::MD5.hexdigest Marshal.dump({clip_id: clip_id, params: params, schema: schema}.to_json)
     end
 
     def set_checksum
-      self.checksum = self.class.calculate_checksum(clip_id, params)
+      self.checksum = self.class.calculate_checksum(clip_id, params, schema)
     end
   end
 end

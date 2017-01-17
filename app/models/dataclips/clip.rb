@@ -14,20 +14,20 @@ module Dataclips
   class Clip
     attr_accessor :clip_id, :template, :params, :schema, :name
 
-    def initialize(clip_id)
+    def initialize(clip_id, schema = nil)
       @clip_id   = clip_id
       @template  = load_template
 
-      load_config
+      load_config(schema)
     end
 
     def per_page
       @per_page
     end
 
-    def load_config
+    def load_config(schema)
       config_file = Dir.chdir(Dataclips::Engine.config.path) do
-        File.read("#{clip_id}.yml")
+        schema.present? ? File.read("#{clip_id}.#{schema}.yml") : File.read("#{clip_id}.yml") 
       end
 
       config_yaml = YAML.load(config_file)
