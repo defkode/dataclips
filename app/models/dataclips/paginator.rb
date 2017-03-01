@@ -18,13 +18,41 @@ module Dataclips
       schema.reduce({}) do |memo, (key, schema_key)|
         value = attributes[key]
         memo[key] = case schema_key["type"]
-          when "text"     then ActiveRecord::Type::String.new.type_cast_from_database(value)
-          when "integer"  then ActiveRecord::Type::Integer.new.type_cast_from_database(value)
-          when "float"    then ActiveRecord::Type::Float.new.type_cast_from_database(value)
-          when "datetime" then ActiveRecord::Type::DateTime.new.type_cast_from_database(value)
-          when "time"     then ActiveRecord::Type::Time.new.type_cast_from_database(value)
-          when "date"     then ActiveRecord::Type::Date.new.type_cast_from_database(value)
-          when "boolean"  then ActiveRecord::Type::Boolean.new.type_cast_from_database(value)
+          when "text"
+            type_caster = ActiveRecord::Type::String.new
+            type_caster.respond_to?(:cast) ?
+              type_caster.cast(value) :
+              type_caster.type_cast_from_database(value)
+          when "integer"
+            type_caster = ActiveRecord::Type::Integer.new
+            type_caster.respond_to?(:cast) ?
+              type_caster.cast(value) :
+              type_caster.type_cast_from_database(value)
+          when "float"
+            type_caster = ActiveRecord::Type::Float.new
+            type_caster.respond_to?(:cast) ?
+              type_caster.cast(value) :
+              type_caster.type_cast_from_database(value)
+          when "datetime"
+            type_caster = ActiveRecord::Type::DateTime.new
+            type_caster.respond_to?(:cast) ?
+              type_caster.cast(value) :
+              type_caster.type_cast_from_database(value)
+          when "time"
+            type_caster = ActiveRecord::Type::Time.new
+            type_caster.respond_to?(:cast) ?
+              type_caster.cast(value) :
+              type_caster.type_cast_from_database(value)
+          when "date"
+            type_caster = ActiveRecord::Type::Date.new
+            type_caster.respond_to?(:cast) ?
+              type_caster.cast(value) :
+              type_caster.type_cast_from_database(value)
+          when "boolean"
+            type_caster = ActiveRecord::Type::Boolean.new
+            type_caster.respond_to?(:cast) ?
+              type_caster.cast(value) :
+              type_caster.type_cast_from_database(value)
           else value
           end
         memo
