@@ -3,19 +3,24 @@ require("moment-timezone");
 
 module.exports = Backbone.Model.extend({
   parse: function(options) {
-    var attributes = _.reduce(options, function(memo, value, key) {
-      var type = Dataclips.config.schema[key].type;
+    var attributes = {};
+    var schema = Dataclips.config.schema;
+
+    var key, value, hasProp = {}.hasOwnProperty;
+
+    for (key in options) {
+      if (!hasProp.call(options, key)) continue;
+      value = options[key];
+      var type = schema[key].type;
       if (type === "date" || type === "time" || type === "datetime") {
         if (value != null) {
-          memo[key] = parseInt(moment(value).format('x'));
+          attributes[key] = parseInt(moment(value).format('x'));
         }
       } else {
-        memo[key] = value;
+        attributes[key] = value;
       }
-    return memo;
-    }, {});
-
-    attributes.id = this.cid
+    }
+    if(attributes.id === undefined) { attributes.id = this.cid; }
     return attributes
   }
 });
