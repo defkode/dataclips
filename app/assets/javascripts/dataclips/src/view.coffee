@@ -374,7 +374,7 @@ module.exports = Backbone.View.extend
             if v
               offset = moment(v).tz(Dataclips.config.time_zone).utcOffset() * 60 * 1000
               _v = 25569.0 + ((v + offset)  / (60 * 60 * 24 * 1000))
-              value: _v, metadata: {style: time_formatter.id}
+              value: _v % 1, metadata: {style: time_formatter.id}
             else
               null
           else
