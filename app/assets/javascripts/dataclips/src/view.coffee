@@ -320,7 +320,7 @@ module.exports = Backbone.View.extend
 
     sheet = workbook.createWorksheet()
 
-    # http://closedxml.codeplex.com/wikipage?title  NumberFormatId%20Lookup%20Table
+    # https://github.com/closedxml/closedxml/wiki/NumberFormatId-Lookup-Table
     date_formatter                 = {id: 1, numFmtId: 14} # d/m/yyyy
     time_without_seconds_formatter = {id: 2, numFmtId: 20} # H:mm
     time_formatter                 = {id: 3, numFmtId: 21} # H:mm:ss
