@@ -31,8 +31,6 @@
   "devDependencies": {
     "browserify": "^13.0.0",
     "browserify-incremental": "^3.1.1",
-    "coffee-loader": "^0.7.3",
-    "coffeeify": "^2.0.1",
     "gulp": "^3.9.1",
     "gulp-concat": "^2.6.0",
     "gulp-less": "^3.1.0",
