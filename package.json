@@ -21,9 +21,9 @@
   "homepage": "https://github.com/defkode/dataclips#readme",
   "dependencies": {
     "backbone": "^1.3.3",
-    "downloadjs": "^1.4.2",
+    "downloadjs": "^1.4.7",
     "eonasdan-bootstrap-datetimepicker": "github:eonasdan/bootstrap-datetimepicker",
-    "excel-builder": "^2.0.0",
+    "excel-builder": "2.0.0",
     "font-awesome": "^4.6.1",
     "jquery": "^2.2.3",
     "moment": "^2.13.0"
@@ -31,6 +31,7 @@
   "devDependencies": {
     "browserify": "^13.0.0",
     "browserify-incremental": "^3.1.1",
+    "coffee-loader": "^0.7.3",
     "coffeeify": "^2.0.1",
     "gulp": "^3.9.1",
     "gulp-concat": "^2.6.0",
@@ -38,6 +39,7 @@
     "gulp-sass": "^2.3.1",
     "gulp-sourcemaps": "^2.0.0-alpha",
     "modernizr": "^3.3.1",
-    "vinyl-source-stream": "^1.1.0"
+    "vinyl-source-stream": "^1.1.0",
+    "webpack": "^3.0.0"
   }
 }
