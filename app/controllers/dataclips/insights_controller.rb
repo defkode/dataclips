@@ -50,6 +50,8 @@ module Dataclips
           @insight.touch(:last_viewed_at)
 
           @theme = params[:theme] || "default"
+          @sidebar = params[:sidebar] == "1"
+
           if @insight.basic_auth_credentials.present?
             request_http_basic_authentication unless authenticate_with_http_basic { |login, password| @insight.authenticate(login, password) }
           end

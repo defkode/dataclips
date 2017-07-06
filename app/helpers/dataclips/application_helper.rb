@@ -29,12 +29,13 @@ module Dataclips
       theme          = options.fetch(:theme, "default")
       id             = options.fetch(:id, dom_id(insight))
       locale         = options.fetch(:locale, I18n.locale)
+      sidebar        = options.fetch(:sidebar, true)
 
       render "dataclips/shared/iframe", {
-        id:     id,
-        width:  width,
-        height: height,
-        src:    dataclips.insight_path(insight, locale: locale, theme: theme)
+        id:      id,
+        width:   width,
+        height:  height,
+        src:     dataclips.insight_path(insight, {locale: locale, theme: theme, sidebar: sidebar ? 1 : 0})
       }
     end
   end
