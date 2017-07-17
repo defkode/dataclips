@@ -951,9 +951,9 @@ evp_bytestokey@^1.0.0:
   dependencies:
     create-hash "^1.1.1"
 
-excel-builder@^2.0.0:
-  version "2.0.3"
-  resolved "https://registry.yarnpkg.com/excel-builder/-/excel-builder-2.0.3.tgz#ff96a4d55b5e1606d0bd8703df9d5911c171a271"
+excel-builder@2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/excel-builder/-/excel-builder-2.0.0.tgz#535044bddeb58f106683569038e753a9892c40d3"
   dependencies:
     grunt "^0.4.5"
     grunt-contrib-watch "^0.6.1"

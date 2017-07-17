@@ -27275,41 +27275,6 @@ _.extend(Workbook.prototype, {
     addDrawings: function (drawings) {
         this.drawings.push(drawings);
     },
-    
-    /**
-     * Set number of rows to repeat for this sheet.
-     * 
-     * @param {String} sheet name
-     * @param {int} number of rows to repeat from the top
-     * @returns {undefined}
-     */
-    setPrintTitleTop: function (inSheet, inRowCount) {
-    	if (this.printTitles == null) {
-    		this.printTitles = {};
-    	}
-    	if (this.printTitles[inSheet] == null) {
-    		this.printTitles[inSheet] = {};
-    	}
-    	this.printTitles[inSheet].top = inRowCount;
-    },
-    
-    /**
-     * Set number of rows to repeat for this sheet.
-     * 
-     * @param {String} sheet name
-     * @param {int} number of columns to repeat from the left
-     * @returns {undefined}
-     */
-    setPrintTitleLeft: function (inSheet, inColumn) {
-    	if (this.printTitles == null) {
-    		this.printTitles = {};
-    	}
-    	if (this.printTitles[inSheet] == null) {
-    		this.printTitles[inSheet] = {};
-    	}
-    	//WARN: this does not handle AA, AB, etc.
-    	this.printTitles[inSheet].left = String.fromCharCode(64 + inRowCount);
-    },
 
     addMedia: function (type, fileName, fileData, contentType) {
         var fileNamePieces = fileName.split('.');
@@ -27436,35 +27401,6 @@ _.extend(Workbook.prototype, {
             sheets.appendChild(sheet);
         }
         wb.appendChild(sheets);
-        
-        //now to add repeating rows
-        var definedNames = util.createElement(doc, "definedNames");
-        var ctr = 0;
-        for (var name in this.printTitles) {
-        	if (!this.printTitles.hasOwnProperty(name)) {
-    		    continue;
-    		}
-        	var entry = this.printTitles[name];
-        	var definedName = doc.createElement('definedName');
-        	definedName.setAttribute("name", "_xlnm.Print_Titles");
-        	definedName.setAttribute("localSheetId", ctr++);
-        	
-        	var value = "";
-        	if (entry.top) {
-        		value += name + "!$1:$" + entry.top;
-        		if (entry.left) {
-        			value += ","
-        		}
-        	}
-        	if (entry.left) {
-        		value += name + "!$A:$" + entry.left;
-        	}
-        	
-        	definedName.appendChild(doc.createTextNode(value));
-        	definedNames.appendChild(definedName);
-        }
-        wb.appendChild(definedNames);
-        
         return doc;
     },
 
@@ -28044,25 +27980,7 @@ var SheetView = require('./SheetView');
          * @returns {undefined}
          */
         exportPageSettings: function (doc, worksheet) {
-            if(this._margin) {
-            	var defaultVal = 0.7;
-            	var left = this._margin.left?this._margin.left:defaultVal;;
-            	var right = this._margin.right?this._margin.right:defaultVal;;
-            	var top = this._margin.top?this._margin.top:defaultVal;
-            	var bottom = this._margin.bottom?this._margin.bottom:defaultVal;
-            	defaultVal = 0.3;
-            	var header = this._margin.header?this._margin.header:defaultVal;;
-            	var footer = this._margin.footer?this._margin.footer:defaultVal;;
-            	
-            	worksheet.appendChild(util.createElement(doc, 'pageMargins', [
-                    ['top', top]
-                    , ['bottom', bottom]
-                    , ['left', left]
-                    , ['right', right]
-                    , ['header', header]
-                    , ['footer', footer]
-                ]));
-            }
+            
             if(this._orientation) {
                 worksheet.appendChild(util.createElement(doc, 'pageSetup', [
                     ['orientation', this._orientation]
@@ -28070,36 +27988,6 @@ var SheetView = require('./SheetView');
             }
         },
     
-        /**
-         * http://www.schemacentral.com/sc/ooxml/t-ssml_ST_Orientation.html
-         * 
-         * Can be one of 'portrait' or 'landscape'.
-         * 
-         * @param {String} orientation
-         * @returns {undefined}
-         */
-        setPageOrientation: function (orientation) {
-            this._orientation = orientation;
-        },
-        
-        /**
-         * Set page details in inches.
-         * use this structure:
-         * {
-         *   top: 0.7
-         *   , bottom: 0.7
-         *   , left: 0.7
-         *   , right: 0.7
-         *   , header: 0.3
-         *   , footer: 0.3
-         * }
-         * 
-         * @returns {undefined}
-         */
-        setPageMargin: function (input) {
-        	this._margin = input;
-        },
-        
         /**
          * http://www.schemacentral.com/sc/ooxml/t-ssml_ST_Orientation.html
          * 
@@ -28361,14 +28249,12 @@ var onmessage = function(event) {
     postMessage({
         base64: !!event.data.base64
     });
-    zip.generateAsync({
-        base64: !!event.data.base64
-    }).then(function (data) {
-        postMessage({
-            status: 'done',
-            data: data
-        });
-    })
+    postMessage({
+        status: 'done',
+        data: zip.generate({
+            base64: !!event.data.base64
+        })
+    });
 };
 
 
@@ -28654,7 +28540,7 @@ var Factory = {
                     zip.file(path, content, {base64: true, binary: true});
                 }
             });
-            return zip.generateAsync(_.defaults(options || {}, {
+            return zip.generate(_.defaults(options || {}, {
                 type: "base64"
             }));
         });
