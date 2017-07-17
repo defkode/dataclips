@@ -50,7 +50,13 @@ module Dataclips
           @insight.touch(:last_viewed_at)
 
           @theme = params[:theme] || "default"
-          @sidebar = params[:sidebar] == "1"
+
+
+          @sidebar = if params[:sidebar] && params[:sidebar] == "0"
+            false
+          else
+            true
+          end
 
           if @insight.basic_auth_credentials.present?
             request_http_basic_authentication unless authenticate_with_http_basic { |login, password| @insight.authenticate(login, password) }
@@ -89,7 +95,7 @@ module Dataclips
       @clip_id   = @insight.clip_id
       @time_zone = @insight.time_zone
 
-      @clip      = Clip.new(@clip_id, @insight.schema) 
+      @clip      = Clip.new(@clip_id, @insight.schema)
 
       @schema    = @clip.schema
       @query     = @clip.query(@insight.params)

@@ -104,6 +104,9 @@
 .theme-default #toggle {
   background: #6F5498; }
 
+.with-sidebar #grid {
+  margin-right: 40px; }
+
 .theme-green #grid {
   border: 1px solid whitesmoke;
   backround: #fff; }
@@ -128,12 +131,15 @@
 .theme-green #toggle {
   background: #85bf05; }
 
+.with-sidebar #grid {
+  margin-right: 40px; }
+
 body:-webkit-full-screen {
   width: 100%; }
 
 #grid {
-  margin-right: 40px;
-  font-family: Inconsolata; }
+  font-family: Inconsolata;
+  margin: 0; }
 
 #modal {
   position: fixed;

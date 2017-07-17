@@ -6,14 +6,14 @@
   <% if Dataclips::Engine.config.include_css.present? %>
     <%= stylesheet_link_tag Dataclips::Engine.config.include_css %>
   <% else %>
-    <%= stylesheet_link_tag "dataclips/application.css", media: "all" %>
+    <%= stylesheet_link_tag "//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css", "dataclips/application.css", "dataclips/dataclips.css", media: "all" %>
   <% end %>
   <%= javascript_include_tag "dataclips/dist/bundle.js", "dataclips/vendor/bootstrap-datetimepicker.min" %>
   <% if Dataclips::Engine.config.include_js.present? %>
     <%= javascript_include_tag Dataclips::Engine.config.include_js %>
   <% end %>
 </head>
-<body class="theme-<%= @theme %>">
+<body class="theme-<%= @theme %> <%= ('with-sidebar' if @sidebar) %>">
 <%= yield %>
 </body>
 </html>
