@@ -49,8 +49,7 @@ module Dataclips
         format.html do
           @insight.touch(:last_viewed_at)
 
-          @theme = params[:theme] || "default"
-
+          @theme = @clip.theme
 
           @sidebar = if params[:sidebar] && params[:sidebar] == "0"
             false
@@ -84,7 +83,7 @@ module Dataclips
 
     def localize_headers(clip_id, keys)
       keys.inject({}) do |memo, key|
-        memo[key] = I18n.t("#{clip_id}.schema.#{key}", scope: "dataclips", default: key.to_s)
+        memo[key] = I18n.t("dataclips.#{clip_id}.schema.#{key}", default: key.to_s)
         memo
       end
     end

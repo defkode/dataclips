@@ -25,9 +25,13 @@ module Dataclips
       @per_page
     end
 
+    def theme
+      @theme
+    end
+
     def load_config(schema)
       config_file = Dir.chdir(Dataclips::Engine.config.path) do
-        schema.present? ? File.read("#{clip_id}.#{schema}.yml") : File.read("#{clip_id}.yml") 
+        schema.present? ? File.read("#{clip_id}.#{schema}.yml") : File.read("#{clip_id}.yml")
       end
 
       config_yaml = YAML.load(config_file)
@@ -38,6 +42,7 @@ module Dataclips
       end
 
       @per_page = config_yaml["per_page"] || 1000
+      @theme    = config_yaml["theme"] || 'default'
       @name     = config_yaml["name"]
     end
 

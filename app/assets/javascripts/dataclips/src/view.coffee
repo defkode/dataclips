@@ -177,6 +177,7 @@ module.exports = Backbone.View.extend
       enableColumnReorder:        false
       forceFitColumns:            true
       enableTextSelectionOnCells: true
+      rowHeight:                  Dataclips.config.row_height
 
     dataView = new Slick.Data.DataView()
     dataView.setFilterArgs(@filterArgs.toJSON())
@@ -320,7 +321,7 @@ module.exports = Backbone.View.extend
 
     sheet = workbook.createWorksheet()
 
-    # http://closedxml.codeplex.com/wikipage?title  NumberFormatId%20Lookup%20Table
+    # https://github.com/closedxml/closedxml/wiki/NumberFormatId-Lookup-Table
     date_formatter                 = {id: 1, numFmtId: 14} # d/m/yyyy
     time_without_seconds_formatter = {id: 2, numFmtId: 20} # H:mm
     time_formatter                 = {id: 3, numFmtId: 21} # H:mm:ss
@@ -367,7 +368,7 @@ module.exports = Backbone.View.extend
 
               offset = moment(v).tz(Dataclips.config.time_zone).utcOffset() * 60 * 1000
               _v = 25569.0 + ((v + offset)  / (60 * 60 * 24 * 1000))
-              value: _v, metadata: {style: style}
+              value: (if formatter is "time_without_seconds" then _v % 1 else _v), metadata: {style: style}
             else
               null
           when "time"

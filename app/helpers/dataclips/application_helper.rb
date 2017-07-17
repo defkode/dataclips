@@ -26,7 +26,6 @@ module Dataclips
     def insight(insight, options = {})
       width          = options.fetch(:width, "100%")
       height         = options.fetch(:height, "500")
-      theme          = options.fetch(:theme, "default")
       id             = options.fetch(:id, dom_id(insight))
       locale         = options.fetch(:locale, I18n.locale)
       sidebar        = options.fetch(:sidebar, true)
@@ -35,7 +34,7 @@ module Dataclips
         id:      id,
         width:   width,
         height:  height,
-        src:     dataclips.insight_path(insight, {locale: locale, theme: theme, sidebar: sidebar ? 1 : 0})
+        src:     dataclips.insight_path(insight, {locale: locale, sidebar: sidebar ? 1 : 0})
       }
     end
   end
