@@ -1,21 +1,8 @@
-<%- content_for :title do %>
- <%= @insight.name %>
-<% end %>
-<script>
-  Dataclips.config = {
-    locale:       '<%= I18n.locale %>',
-    id:           '<%= @clip_id %>',
-    name:         '<%= @insight.name %>',
-    filename:     '<%= (@insight.name.present? ? @insight.name : @insight.clip_id).parameterize %>',
-    url:          '<%= insight_path(@insight) %>',
-    schema:       <%= raw @schema.to_json %>,
-    headers:      <%= raw @headers.to_json %>,
-    time_zone:    '<%= @insight.time_zone %>',
-    theme:        '<%= @clip.theme %>',
-    row_height:   <%= Dataclips::Engine.config.themes[@theme]["row_height"] || 'undefined' %>,
-    translations: <%= raw I18n.t("dictionaries", scope: "dataclips", default: {}).to_json %>
-  };
+<% content_for :title, @insight.name  %>
 
+<%= render "dataclips_config" %>
+
+<script>
   $(window).resize(function(){
     $("#grid, #filters, #sidebar").css("height", $(window).height());
   });
@@ -23,9 +10,19 @@
   $(document).ready(function(){
     $(window).trigger("resize");
 
-    Dataclips.proxy = new Backbone.Model({total_entries_count: 0, percent_loaded: 0, entries: [], entries_count: 0, grid_entries: [], grid_entries_count: 0})
+    Dataclips.proxy = new Backbone.Model({
+      total_entries_count: 0,
+      percent_loaded:      0,
+      entries:             [],
+      entries_count:       0,
+      grid_entries:        [],
+      grid_entries_count:  0
+    });
+
+    Dataclips.filterArgs = new Backbone.Model;
 
     Dataclips.proxy.on("change", _.debounce(function(model){
+      // model.toJSON must contain only JS primitives (not functions)
       try { window.parent.postMessage(model.toJSON(), "*") } catch(err) {
         debugger
       }
@@ -36,121 +33,14 @@
 
 <div id="grid"></div>
 
-<% if @sidebar %>
-  <div id="filters">
-    <div id="sidebar">
-        <% @schema.each do |key, options| %>
-          <% next unless options["filter"] %>
-          <% id = "#{@clip_id}_#{key}".parameterize %>
-
-          <label class="main" for="<%= id %>">
-            <div class="row">
-              <div class="col-xs-6">
-                <%= @headers[key] %>
-              </div>
-              <div class="col-xs-6">
-                <div class="text-right">
-                  <button data-key="<%= key %>" class="reset"><i class="fa fa-times"></i></button>
-                </div>
-              </div>
-            </div>
-          </label>
-
-          <div class="row">
-            <%= render options["type"], key: key, id: id, dictionary: options["dictionary"] %>
-          </div>
-        <% end %>
-    </div>
-    <div id="toggle">
-      <a href="#" class="hide-filters">
-        <i class="fa fa-chevron-circle-right"></i>
-      </a>
-
-      <a href="#filters" class="show-filters">
-        <i class="fa fa-chevron-circle-left"></i>
-      </a>
-
-      <div class="actions">
-        <a href="#" class="reload">
-          <i class="fa fa-refresh"></i>
-        </a>
-
-        <a href="#" class="fullscreen">
-          <i class="fa fa-expand"></i>
-        </a>
-
-        <a href="<%= download_insight_url(@insight, I18n.locale) %>" class="download">
-          <i class="fa fa-download"></i>
-        </a>
-      </div>
-
-    </div>
-  </div>
-<% end %>
-
-<div id="modal"></div>
 <div id="counters">
  <span class="grid_entries_count">0</span> / <span class="total_entries_count">0</span>
 </div>
 
+<% if @sidebar %>
+  <%= render "sidebar" %>
+  <%= render "download_modal" %>
+<% end %>
+
 <canvas id="progress" width="240" height="240"></canvas>
-
-<div class="modal" id="download-dialog" tabindex="-1">
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title">Download</h4>
-      </div>
-      <div class="modal-body">
-
-        <div>
-
-          <!-- Nav tabs -->
-          <ul class="nav nav-tabs" role="tablist">
-            <li role="presentation" class="active"><a href="#xlsx" role="tab" data-toggle="tab">XLSX</a></li>
-            <li role="presentation"><a href="#csv" role="tab" data-toggle="tab">CSV</a></li>
-          </ul>
-
-          <!-- Tab panes -->
-          <div class="tab-content">
-            <div role="tabpanel" class="tab-pane in active" id="xlsx">
-              <form class="form-horizontal">
-                <label for="filename_xlsx" class="col-sm-2 control-label">Filename:</label>
-                <div class="input-group col-sm-10">
-                  <input type="text" class="form-control" id="filename_xlsx" name="filename" placeholder="<%= (@insight.name.present? ? @insight.name : @insight.clip_id).parameterize %>" value="<%= (@insight.name.present? ? @insight.name : @insight.clip_id).parameterize %>" required>
-                  <div class="input-group-addon">.xlsx</div>
-                </div>
-              </form>
-            </div>
-
-            <div role="tabpanel" class="tab-pane" id="csv">
-              <form method="get" action="<%= download_insight_url(@insight, I18n.locale) %>" class="form-horizontal">
-                  <label for="filename_csv" class="col-sm-2 control-label">Filename:</label>
-                  <div class="input-group col-sm-10">
-                    <input type="text" class="form-control" id="filename_csv" name="filename" placeholder="<%= (@insight.name.present? ? @insight.name : @insight.clip_id).parameterize %>" value="<%= (@insight.name.present? ? @insight.name : @insight.clip_id).parameterize %>" required>
-                    <div class="input-group-addon">.csv</div>
-                  </div>
-                  <label for="format" class="col-sm-2 control-label">Format:</label>
-                  <div class="input-group col-sm-10">
-                    <select id="format" name="locale" class="form-control form-select">
-                      <option value="de">Continental (separator: semicolon)</option>
-                      <option value="en">International (separator: comma)</option>
-                    </select>
-                  </div>
-              </form>
-            </div>
-          </div>
-
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary">
-          Download
-          <i class='fa fa-circle-o-notch fa-spin fa-fw' style='display: none'></i>
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
+<div id="modal"></div>

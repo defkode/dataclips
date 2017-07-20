@@ -1,0 +1,49 @@
+  <div id="filters">
+    <div id="sidebar">
+        <% @schema.each do |key, options| %>
+          <% next unless options["filter"] %>
+          <% id = "#{@clip_id}_#{key}".parameterize %>
+
+          <label class="main" for="<%= id %>">
+            <div class="row">
+              <div class="col-xs-6">
+                <%= @headers[key] %>
+              </div>
+              <div class="col-xs-6">
+                <div class="text-right">
+                  <button data-key="<%= key %>" class="reset"><i class="fa fa-times"></i></button>
+                </div>
+              </div>
+            </div>
+          </label>
+
+          <div class="row">
+            <%= render options["type"], key: key, id: id, dictionary: options["dictionary"] %>
+          </div>
+        <% end %>
+    </div>
+    <div id="toggle">
+      <a href="#" class="hide-filters">
+        <i class="fa fa-chevron-circle-right"></i>
+      </a>
+
+      <a href="#filters" class="show-filters">
+        <i class="fa fa-chevron-circle-left"></i>
+      </a>
+
+      <div class="actions">
+        <a href="#" class="reload">
+          <i class="fa fa-refresh"></i>
+        </a>
+
+        <a href="#" class="fullscreen">
+          <i class="fa fa-expand"></i>
+        </a>
+
+        <a href="<%= download_insight_url(@insight, I18n.locale) %>" class="download">
+          <i class="fa fa-download"></i>
+        </a>
+      </div>
+
+    </div>
+  </div>

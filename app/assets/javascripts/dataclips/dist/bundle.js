@@ -50,12 +50,72 @@ module.exports = {
 
 
 },{}],2:[function(require,module,exports){
+module.exports = {
+  textFilter: function(item, attr, query) {
+    var value;
+    if (!query) {
+      return true;
+    }
+    if (_.isEmpty(query.trim())) {
+      return true;
+    }
+    value = item[attr];
+    if (value == null) {
+      return false;
+    }
+    return _.any(query.split(" OR "), function(keyword) {
+      return value.toLowerCase().indexOf(keyword.toLowerCase()) !== -1;
+    });
+  },
+  booleanFilter: function(item, attr, selector) {
+    if (selector === void 0) {
+      return true;
+    }
+    return selector === item[attr];
+  },
+  numericFilter: function(item, attr, range) {
+    var gte, lte, value;
+    value = item[attr];
+    if (value === void 0) {
+      return true;
+    }
+    if ((range.from != null) || (range.to != null)) {
+      gte = function(from) {
+        if (from === void 0) {
+          return true;
+        }
+        return value >= from;
+      };
+      lte = function(to) {
+        if (to === void 0) {
+          return true;
+        }
+        return value <= to;
+      };
+      return gte(range.from) && lte(range.to);
+    } else {
+      return true;
+    }
+  },
+  exactMatcher: function(item, attr, query) {
+    if (!query) {
+      return true;
+    }
+    if (_.isEmpty(query.trim())) {
+      return true;
+    }
+    return item[attr] === query;
+  }
+}
+
+},{}],3:[function(require,module,exports){
 $          = jQuery = require('jquery');
 _          = require('underscore');
 
-// Modernizr
-require("../vendor/modernizr")
-require("../vendor/polyfills/datalist")
+// Moment
+moment = require("moment");
+require("moment/locale/de");
+
 
 // Backbone
 Backbone   = require('backbone');
@@ -64,22 +124,67 @@ Backbone.$ = $;
 Dataclips         = require('./dataclips');
 Records           = require('./records');
 
-Dataclips.Progress = require('./progress');
-Dataclips.View     = require('./view');
+Dataclips.Progress    = require('./progress');
+Dataclips.GridView    = require('./views/grid');
+Dataclips.SidebarView = require('./views/sidebar')
+
+Dataclips.resetFilter = function(key) {
+  var type = Dataclips.config.schema[key]["type"];
+
+  switch (type) {
+    case "integer":
+    case "float":
+    case "decimal":
+    case "date":
+    case "datetime":
+    case "time":
+      this.filterArgs.unset(key + "_from");
+      this.filterArgs.unset(key + "_to");
+      break;
+    default:
+      this.filterArgs.unset(key);
+  }
+}
+
+Dataclips.resetAllFilters = function(){
+  _.each(Dataclips.config.schema, function(options, key) {
+    Dataclips.resetFilter(key)
+  });
+};
+
+Dataclips.reload = function(){
+  Dataclips.collection.reset();
+  Dataclips.collection.fetchInBatches();
+};
+
+Dataclips.requestFullScreen = function(element) {
+  if (document.fullscreenEnabled || document.mozFullScreenEnabled || document.documentElement.webkitRequestFullScreen) {
+    if (element.requestFullscreen) {
+      return element.requestFullscreen();
+    } else if (element.mozRequestFullScreen) {
+      return element.mozRequestFullScreen();
+    } else if (element.webkitRequestFullScreen) {
+      return element.webkitRequestFullScreen();
+    }
+  }
+};
+
 
 Dataclips.run = function(){
-  var collection     = new Records;
-  collection.url     = this.config.url;
-  this.view           = new Dataclips.View({collection: collection});
-  this.progress       = new Dataclips.Progress();
+  Dataclips.collection     = new Records;
+  Dataclips.collection.url = this.config.url;
 
-  collection.on("reset", function() {
+  this.gridView      = new Dataclips.GridView({collection: Dataclips.collection});
+  this.sidebarView   = new Dataclips.SidebarView;
+  this.progress      = new Dataclips.Progress();
+
+  Dataclips.collection.on("reset", function() {
     Dataclips.proxy.clear();
   });
 
-  collection.on("batchInsert", function(data){
+  Dataclips.collection.on("batchInsert", function(data){
     var total_entries_count = data.total_entries_count;
-    var entries_count       = collection.size();
+    var entries_count       = Dataclips.collection.size();
     var percent_loaded      = entries_count > 0 ? (entries_count / total_entries_count) : total_entries_count === 0 ? 1 : 0;
 
     Dataclips.progress.moveProgressBar(percent_loaded);
@@ -92,13 +197,62 @@ Dataclips.run = function(){
     });
   });
 
-  collection.fetchInBatches(this.config.params);
+  Dataclips.collection.fetchInBatches(this.config.params);
 
   this.progress.render();
-  this.view.render();
+  this.gridView.render();
+  this.sidebarView.render();
 };
 
-},{"../vendor/modernizr":7,"../vendor/polyfills/datalist":8,"./dataclips":1,"./progress":3,"./records":5,"./view":6,"backbone":15,"jquery":61,"underscore":110}],3:[function(require,module,exports){
+
+window.addEventListener('message', function(e) {
+  if (e.data.refresh    === true) { Dataclips.reload() }
+  if (e.data.fullscreen === true) { Dataclips.requestFullScreen() }
+
+  if (e.data.filters) {
+    _.each(e.data.filters, function(value, key) {
+      if (Dataclips.config.schema[key] != null) {
+        var type = Dataclips.config.schema[key]["type"];
+        switch (type) {
+          case "boolean":
+            if (value != null) {
+              $("[name='" + key + "']").val(value === true ? "1" : "0");
+              return this.filterArgs.set(key, value);
+            }
+            break;
+          case "text":
+            if (value != null) {
+              return this.filterArgs.set(key, value);
+            }
+            break;
+          case "float":
+          case "integer":
+          case "decimal":
+            if (value.from != null) {
+              this.filterArgs.set(key + "_from", value.from);
+            }
+            if (value.to != null) {
+              return this.filterArgs.set(key + "_to", value.from);
+            }
+            break;
+          case "date":
+          case "datetime":
+          case "time":
+            if (value.from != null) {
+              this.filterArgs.set(key + "_from", moment(value.from).toDate());
+            }
+            if (value.to != null) {
+              return this.filterArgs.set(key + "_to", moment(value.to).toDate());
+            }
+        }
+      }
+    });
+  }
+
+});
+
+
+},{"./dataclips":1,"./progress":4,"./records":6,"./views/grid":7,"./views/sidebar":8,"backbone":18,"jquery":64,"moment":109,"moment/locale/de":108,"underscore":113}],4:[function(require,module,exports){
 module.exports = Backbone.View.extend({
   el: "#progress",
   initialize: function(options){
@@ -128,7 +282,7 @@ module.exports = Backbone.View.extend({
   }
 });
 
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 moment = require("moment");
 require("moment-timezone");
 
@@ -156,7 +310,7 @@ module.exports = Backbone.Model.extend({
   }
 });
 
-},{"moment":106,"moment-timezone":103}],5:[function(require,module,exports){
+},{"moment":109,"moment-timezone":106}],6:[function(require,module,exports){
 Record  = require('./record');
 
 module.exports = Backbone.Collection.extend({
@@ -195,49 +349,34 @@ module.exports = Backbone.Collection.extend({
   }
 });
 
-},{"./record":4}],6:[function(require,module,exports){
-var ExcelBuilder, downloader, moment;
+},{"./record":5}],7:[function(require,module,exports){
+var downloader, filters;
 
-require('../vendor/slickgrid/lib/jquery.event.drag-2.2');
+require('../../vendor/slickgrid/lib/jquery.event.drag-2.2');
 
-require('../vendor/slickgrid/slick.core');
+require('../../vendor/slickgrid/slick.core');
 
-require('../vendor/slickgrid/slick.grid');
+require('../../vendor/slickgrid/slick.grid');
 
-require('../vendor/slickgrid/slick.dataview');
+require('../../vendor/slickgrid/slick.dataview');
 
-require('../vendor/slickgrid/plugins/slick.autotooltips');
+require('../../vendor/slickgrid/plugins/slick.autotooltips');
 
-require('../vendor/slickgrid/plugins/slick.rowselectionmodel');
+require('../../vendor/slickgrid/plugins/slick.rowselectionmodel');
 
-require("bootstrap");
+require("../../vendor/modernizr");
 
-ExcelBuilder = require("excel-builder");
+require("../../vendor/polyfills/datalist");
 
 downloader = require("downloadjs");
 
-moment = require("moment");
+Dataclips.buildXLSX = require('../xlsx');
 
-require("moment/locale/de");
+filters = require('../filters');
 
 module.exports = Backbone.View.extend({
   el: "body",
   events: {
-    "click a.fullscreen": function() {
-      this.requestFullScreen(document.body);
-      return false;
-    },
-    "click a.reload": function() {
-      this.reload();
-      return false;
-    },
-    "click a.download": function(e) {
-      if (Modernizr.adownload) {
-        e.preventDefault();
-        this.modal.modal('show');
-        return $('#xlsx').tab('show');
-      }
-    },
     "click #download-dialog .btn.btn-primary": _.debounce(function(e) {
       var button, filename;
       button = $(e.target);
@@ -246,7 +385,7 @@ module.exports = Backbone.View.extend({
         filename = $('#filename_xlsx').val() + '.xlsx';
         return setTimeout((function(_this) {
           return function() {
-            return _this.buildXLSX().then(function(file) {
+            return Dataclips.buildXLSX().then(function(file) {
               _this.modal.modal('hide');
               button.prop("disabled", false).find("i").hide();
               return downloader(file, filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
@@ -258,166 +397,26 @@ module.exports = Backbone.View.extend({
         return $("#download-dialog form").submit();
       }
     }),
-    "input input[type=text]": _.debounce(function(event) {
-      return this.filterArgs.set(event.target.name, $.trim(event.target.value));
-    }),
-    "change input.float[type=number]": _.debounce(function(event) {
-      var value;
-      value = parseFloat(event.target.value);
-      if (_.isNaN(value)) {
-        return this.filterArgs.unset(event.target.name);
-      } else {
-        return this.filterArgs.set(event.target.name, value);
-      }
-    }),
-    "change input.integer[type=number]": _.debounce(function(event) {
-      var value;
-      value = parseInt(event.target.value);
-      if (_.isNaN(value)) {
-        return this.filterArgs.unset(event.target.name);
-      } else {
-        return this.filterArgs.set(event.target.name, value);
-      }
-    }),
-    "change select.boolean": _.debounce(function(event) {
-      var value;
-      value = event.target.value;
-      if (value === "") {
-        return this.filterArgs.unset(event.target.name);
-      } else {
-        return this.filterArgs.set(event.target.name, value === "1");
-      }
-    }),
-    "dp.change .input-group": _.debounce(function(event) {
-      var attrName, value;
-      value = event.date;
-      attrName = $(event.target).attr("rel");
-      if (value != null) {
-        return this.filterArgs.set(attrName, value);
-      } else {
-        return this.filterArgs.unset(attrName);
-      }
-    }),
-    "click button.reset": _.debounce(function(event) {
-      var key;
-      key = $(event.currentTarget).data("key");
-      return this.resetFilter(key);
-    })
-  },
-  resetFilter: function(key) {
-    var type;
-    type = Dataclips.config.schema[key]["type"];
-    switch (type) {
-      case "integer":
-      case "float":
-      case "decimal":
-      case "date":
-      case "datetime":
-      case "time":
-        this.$el.find("input[name=" + key + "_from]").val("");
-        this.$el.find("input[name=" + key + "_to]").val("");
-        this.filterArgs.unset(key + "_from");
-        return this.filterArgs.unset(key + "_to");
-      case "text":
-        this.$el.find("input[name=" + key + "]").val("");
-        return this.filterArgs.unset(key);
-      case "boolean":
-        this.$el.find("select[name=" + key + "]").val("");
-        return this.filterArgs.unset(key);
-      default:
-        return this.filterArgs.unset(key);
-    }
-  },
-  resetAllFilters: function() {
-    return _.each(Dataclips.config.schema, (function(_this) {
-      return function(options, key) {
-        return _this.resetFilter(key);
-      };
-    })(this));
-  },
-  reload: function() {
-    this.collection.reset();
-    return this.collection.fetchInBatches();
-  },
-  requestFullScreen: function(element) {
-    if (document.fullscreenEnabled || document.mozFullScreenEnabled || document.documentElement.webkitRequestFullScreen) {
-      if (element.requestFullscreen) {
-        return element.requestFullscreen();
-      } else if (element.mozRequestFullScreen) {
-        return element.mozRequestFullScreen();
-      } else if (element.webkitRequestFullScreen) {
-        return element.webkitRequestFullScreen();
+    "click a.download": function(e) {
+      if (Modernizr.adownload) {
+        e.preventDefault();
+        this.modal.modal('show');
+        return $('#xlsx').tab('show');
       }
     }
   },
   render: function() {
-    var booleanFilter, columns, dataView, exactMatcher, grid, numericFilter, options, textFilter, updateDataView;
-    this.modal = $("#download-dialog").modal('hide');
-    this.filterArgs = new Backbone.Model;
     this.listenTo(Dataclips.proxy, "change", _.debounce(function(model) {
       this.$el.find("span.total_entries_count").text(model.get("total_entries_count"));
       this.$el.find("span.entries_count").text(model.get("entries_count"));
       this.$el.find("span.percent_loaded").text(model.get("percent_loaded"));
       return this.$el.find("span.grid_entries_count").text(model.get("grid_entries_count"));
     }));
-    window.addEventListener('message', (function(_this) {
-      return function(e) {
-        if (e.data.refresh === true) {
-          _this.reload();
-        }
-        if (e.data.fullscreen === true) {
-          _this.requestFullScreen(document.body);
-        }
-        if (e.data.filters) {
-          _this.resetAllFilters();
-          return _.each(e.data.filters, function(value, key) {
-            var fromPicker, toPicker, type;
-            if (Dataclips.config.schema[key] != null) {
-              type = Dataclips.config.schema[key]["type"];
-              switch (type) {
-                case "boolean":
-                  if (value != null) {
-                    $("[name='" + key + "']").val(value === true ? "1" : "0");
-                    return _this.filterArgs.set(key, value);
-                  }
-                  break;
-                case "text":
-                  if (value != null) {
-                    $("[name='" + key + "']").val(value);
-                    return _this.filterArgs.set(key, value);
-                  }
-                  break;
-                case "float":
-                case "integer":
-                case "decimal":
-                  if (value.from != null) {
-                    $("[name='" + key + "_from']").val(value.from);
-                    _this.filterArgs.set(key + "_from", value.from);
-                  }
-                  if (value.to != null) {
-                    $("[name='" + key + "_to']").val(value.to);
-                    return _this.filterArgs.set(key + "_to", value.from);
-                  }
-                  break;
-                case "date":
-                case "datetime":
-                case "time":
-                  if (value.from != null) {
-                    fromPicker = $("[rel='" + key + "_from']");
-                    fromPicker.data('DateTimePicker').date(moment(value.from));
-                    _this.filterArgs.set(key + "_from", moment(value.from).toDate());
-                  }
-                  if (value.to != null) {
-                    toPicker = $("[rel='" + key + "_to']");
-                    toPicker.data('DateTimePicker').date(moment(value.to));
-                    return _this.filterArgs.set(key + "_to", moment(value.to).toDate());
-                  }
-              }
-            }
-          });
-        }
-      };
-    })(this));
+    this.configureSlickGrid();
+    return this.modal = $("#download-dialog").modal('hide');
+  },
+  configureSlickGrid: function() {
+    var columns, dataView, grid, options, updateDataView;
     options = {
       enableColumnReorder: false,
       forceFitColumns: true,
@@ -425,8 +424,8 @@ module.exports = Backbone.View.extend({
       rowHeight: Dataclips.config.row_height
     };
     dataView = new Slick.Data.DataView();
-    dataView.setFilterArgs(this.filterArgs.toJSON());
-    this.listenTo(this.filterArgs, "change", _.debounce(function(model, data) {
+    dataView.setFilterArgs(Dataclips.filterArgs.toJSON());
+    this.listenTo(Dataclips.filterArgs, "change", _.debounce(function(model, data) {
       dataView.setFilterArgs(model.attributes);
       return dataView.refresh();
     }));
@@ -475,89 +474,34 @@ module.exports = Backbone.View.extend({
       };
       return dataView.sort(compareByColumn, args.sortAsc);
     });
-    textFilter = function(item, attr, query) {
-      var value;
-      if (!query) {
-        return true;
-      }
-      if (_.isEmpty(query.trim())) {
-        return true;
-      }
-      value = item[attr];
-      if (value == null) {
-        return false;
-      }
-      return _.any(query.split(" OR "), function(keyword) {
-        return value.toLowerCase().indexOf(keyword.toLowerCase()) !== -1;
-      });
-    };
-    booleanFilter = function(item, attr, selector) {
-      if (selector === void 0) {
-        return true;
-      }
-      return selector === item[attr];
-    };
-    numericFilter = function(item, attr, range) {
-      var gte, lte, value;
-      value = item[attr];
-      if (value === void 0) {
-        return true;
-      }
-      if ((range.from != null) || (range.to != null)) {
-        gte = function(from) {
-          if (from === void 0) {
-            return true;
-          }
-          return value >= from;
-        };
-        lte = function(to) {
-          if (to === void 0) {
-            return true;
-          }
-          return value <= to;
-        };
-        return gte(range.from) && lte(range.to);
-      } else {
-        return true;
-      }
-    };
-    exactMatcher = function(item, attr, query) {
-      if (!query) {
-        return true;
-      }
-      if (_.isEmpty(query.trim())) {
-        return true;
-      }
-      return item[attr] === query;
-    };
     dataView.setFilter(function(item, args) {
       return _.all(Dataclips.config.schema, function(options, attr) {
         switch (options.type) {
           case "text":
-            return textFilter(item, attr, args[attr]);
+            return filters.textFilter(item, attr, args[attr]);
           case "integer":
           case "float":
           case "decimal":
           case "datetime":
           case "date":
-            return numericFilter(item, attr, {
+            return filters.numericFilter(item, attr, {
               from: args[attr + "_from"],
               to: args[attr + "_to"]
             });
           case "boolean":
-            return booleanFilter(item, attr, args[attr]);
+            return filters.booleanFilter(item, attr, args[attr]);
           default:
             return true;
         }
       });
     });
     dataView.onPagingInfoChanged.subscribe(function(e, args) {
-      var j, ref, results;
+      var i, ref, results;
       return Dataclips.proxy.set({
         grid_entries_count: args.totalRows,
         grid_entries: _.map((function() {
           results = [];
-          for (var j = 0, ref = args.totalRows - 1; 0 <= ref ? j <= ref : j >= ref; 0 <= ref ? j++ : j--){ results.push(j); }
+          for (var i = 0, ref = args.totalRows - 1; 0 <= ref ? i <= ref : i >= ref; 0 <= ref ? i++ : i--){ results.push(i); }
           return results;
         }).apply(this), function(id) {
           return _.omit(dataView.getItem(id), "id");
@@ -585,125 +529,208 @@ module.exports = Backbone.View.extend({
         fadeOutSpeed: 0
       });
     }
-  },
-  buildXLSX: function() {
-    var data, date_formatter, datetime_formatter, entries_count, keys, sheet, stylesheet, time_formatter, time_without_seconds_formatter, workbook;
-    workbook = ExcelBuilder.Builder.createWorkbook();
-    stylesheet = workbook.getStyleSheet();
-    stylesheet.fills = [{}, {}];
-    sheet = workbook.createWorksheet();
-    date_formatter = {
-      id: 1,
-      numFmtId: 14
-    };
-    time_without_seconds_formatter = {
-      id: 2,
-      numFmtId: 20
-    };
-    time_formatter = {
-      id: 3,
-      numFmtId: 21
-    };
-    datetime_formatter = {
-      id: 4,
-      numFmtId: 22
-    };
-    stylesheet.masterCellFormats.push(date_formatter);
-    stylesheet.masterCellFormats.push(time_without_seconds_formatter);
-    stylesheet.masterCellFormats.push(time_formatter);
-    stylesheet.masterCellFormats.push(datetime_formatter);
-    keys = _.keys(Dataclips.config.schema);
-    data = [];
-    data.push(_.map(keys, function(k) {
-      return Dataclips.config.headers[k];
-    }));
-    entries_count = Dataclips.proxy.get("grid_entries").length;
-    _.each(Dataclips.proxy.get("grid_entries"), (function(_this) {
-      return function(record, i) {
-        var values;
-        values = _.map(Dataclips.config.schema, function(options, k) {
-          var _v, formatter, offset, style, type, v;
-          type = options.type;
-          formatter = options.formatter;
-          v = record[k];
-          switch (type) {
-            case "boolean":
-              return {
-                value: +v
-              };
-            case "date":
-              if (v) {
-                offset = moment(v).tz(Dataclips.config.time_zone).utcOffset() * 60 * 1000;
-                _v = 25569.0 + ((v + offset) / (60 * 60 * 24 * 1000));
-                return {
-                  value: _v,
-                  metadata: {
-                    style: date_formatter.id
-                  }
-                };
-              } else {
-                return null;
-              }
-              break;
-            case "datetime":
-              if (v) {
-                style = (function() {
-                  switch (formatter) {
-                    case "time":
-                      return time_formatter.id;
-                    case "time_without_seconds":
-                      return time_without_seconds_formatter.id;
-                    default:
-                      return datetime_formatter.id;
-                  }
-                })();
-                offset = moment(v).tz(Dataclips.config.time_zone).utcOffset() * 60 * 1000;
-                _v = 25569.0 + ((v + offset) / (60 * 60 * 24 * 1000));
-                return {
-                  value: (formatter === "time_without_seconds" ? _v % 1 : _v),
-                  metadata: {
-                    style: style
-                  }
-                };
-              } else {
-                return null;
-              }
-              break;
-            case "time":
-              if (v) {
-                offset = moment(v).tz(Dataclips.config.time_zone).utcOffset() * 60 * 1000;
-                _v = 25569.0 + ((v + offset) / (60 * 60 * 24 * 1000));
-                return {
-                  value: _v,
-                  metadata: {
-                    style: time_formatter.id
-                  }
-                };
-              } else {
-                return null;
-              }
-              break;
-            default:
-              return v;
-          }
-        });
-        return data.push(values);
-      };
-    })(this));
-    sheet.setData(data);
-    workbook.addWorksheet(sheet);
-    return ExcelBuilder.Builder.createFile(workbook, {
-      type: "blob"
-    });
   }
 });
 
 
-},{"../vendor/slickgrid/lib/jquery.event.drag-2.2":9,"../vendor/slickgrid/plugins/slick.autotooltips":10,"../vendor/slickgrid/plugins/slick.rowselectionmodel":11,"../vendor/slickgrid/slick.core":12,"../vendor/slickgrid/slick.dataview":13,"../vendor/slickgrid/slick.grid":14,"bootstrap":17,"downloadjs":31,"excel-builder":58,"moment":106,"moment/locale/de":105}],7:[function(require,module,exports){
+},{"../../vendor/modernizr":10,"../../vendor/polyfills/datalist":11,"../../vendor/slickgrid/lib/jquery.event.drag-2.2":12,"../../vendor/slickgrid/plugins/slick.autotooltips":13,"../../vendor/slickgrid/plugins/slick.rowselectionmodel":14,"../../vendor/slickgrid/slick.core":15,"../../vendor/slickgrid/slick.dataview":16,"../../vendor/slickgrid/slick.grid":17,"../filters":2,"../xlsx":9,"downloadjs":34}],8:[function(require,module,exports){
+require("bootstrap");
+
+module.exports = Backbone.View.extend({
+  el: "#filters",
+  events: {
+    "click a.fullscreen": function() {
+      Dataclips.requestFullScreen(document.body);
+      return false;
+    },
+    "click a.reload": function() {
+      Dataclips.reload();
+      return false;
+    },
+    "input input[type=text]": _.debounce(function(event) {
+      return Dataclips.filterArgs.set(event.target.name, $.trim(event.target.value));
+    }),
+    "change input.float[type=number]": _.debounce(function(event) {
+      var value;
+      value = parseFloat(event.target.value);
+      if (_.isNaN(value)) {
+        return Dataclips.filterArgs.unset(event.target.name);
+      } else {
+        return Dataclips.filterArgs.set(event.target.name, value);
+      }
+    }),
+    "change input.integer[type=number]": _.debounce(function(event) {
+      var value;
+      value = parseInt(event.target.value);
+      if (_.isNaN(value)) {
+        return Dataclips.filterArgs.unset(event.target.name);
+      } else {
+        return Dataclips.filterArgs.set(event.target.name, value);
+      }
+    }),
+    "change select.boolean": _.debounce(function(event) {
+      var value;
+      value = event.target.value;
+      if (value === "") {
+        return Dataclips.filterArgs.unset(event.target.name);
+      } else {
+        return Dataclips.filterArgs.set(event.target.name, value === "1");
+      }
+    }),
+    "dp.change .input-group": _.debounce(function(event) {
+      var attrName, value;
+      value = event.date;
+      attrName = $(event.target).attr("rel");
+      if (value != null) {
+        return Dataclips.filterArgs.set(attrName, value);
+      } else {
+        return Dataclips.filterArgs.unset(attrName);
+      }
+    }),
+    "click button.reset": _.debounce(function(event) {
+      var key, type;
+      key = $(event.currentTarget).data("key");
+      Dataclips.resetFilter(key);
+      type = Dataclips.config.schema[key]["type"];
+      switch (type) {
+        case "integer":
+        case "float":
+        case "decimal":
+        case "date":
+        case "datetime":
+        case "time":
+          this.$el.find("input[name=" + key + "_from]").val("");
+          return this.$el.find("input[name=" + key + "_to]").val("");
+        case "text":
+          return this.$el.find("input[name=" + key + "]").val("");
+        case "boolean":
+          return this.$el.find("select[name=" + key + "]").val("");
+      }
+    })
+  }
+});
+
+
+},{"bootstrap":20}],9:[function(require,module,exports){
+// ExcelBuilder
+ExcelBuilder  = require("excel-builder");
+
+module.exports = function() {
+  var data, date_formatter, datetime_formatter, entries_count, keys, sheet, stylesheet, time_formatter, time_without_seconds_formatter, workbook;
+  workbook = ExcelBuilder.Builder.createWorkbook();
+  stylesheet = workbook.getStyleSheet();
+  stylesheet.fills = [{}, {}];
+  sheet = workbook.createWorksheet();
+  date_formatter = {
+    id: 1,
+    numFmtId: 14
+  };
+  time_without_seconds_formatter = {
+    id: 2,
+    numFmtId: 20
+  };
+  time_formatter = {
+    id: 3,
+    numFmtId: 21
+  };
+  datetime_formatter = {
+    id: 4,
+    numFmtId: 22
+  };
+  stylesheet.masterCellFormats.push(date_formatter);
+  stylesheet.masterCellFormats.push(time_without_seconds_formatter);
+  stylesheet.masterCellFormats.push(time_formatter);
+  stylesheet.masterCellFormats.push(datetime_formatter);
+  keys = _.keys(Dataclips.config.schema);
+  data = [];
+  data.push(_.map(keys, function(k) {
+    return Dataclips.config.headers[k];
+  }));
+  entries_count = Dataclips.proxy.get("grid_entries").length;
+  _.each(Dataclips.proxy.get("grid_entries"), (function(_this) {
+    return function(record, i) {
+      var values;
+      values = _.map(Dataclips.config.schema, function(options, k) {
+        var _v, formatter, offset, style, type, v;
+        type = options.type;
+        formatter = options.formatter;
+        v = record[k];
+        switch (type) {
+          case "boolean":
+            return {
+              value: +v
+            };
+          case "date":
+            if (v) {
+              offset = moment(v).tz(Dataclips.config.time_zone).utcOffset() * 60 * 1000;
+              _v = 25569.0 + ((v + offset) / (60 * 60 * 24 * 1000));
+              return {
+                value: _v,
+                metadata: {
+                  style: date_formatter.id
+                }
+              };
+            } else {
+              return null;
+            }
+            break;
+          case "datetime":
+            if (v) {
+              style = (function() {
+                switch (formatter) {
+                  case "time":
+                    return time_formatter.id;
+                  case "time_without_seconds":
+                    return time_without_seconds_formatter.id;
+                  default:
+                    return datetime_formatter.id;
+                }
+              })();
+              offset = moment(v).tz(Dataclips.config.time_zone).utcOffset() * 60 * 1000;
+              _v = 25569.0 + ((v + offset) / (60 * 60 * 24 * 1000));
+              return {
+                value: (formatter === "time_without_seconds" ? _v % 1 : _v),
+                metadata: {
+                  style: style
+                }
+              };
+            } else {
+              return null;
+            }
+            break;
+          case "time":
+            if (v) {
+              offset = moment(v).tz(Dataclips.config.time_zone).utcOffset() * 60 * 1000;
+              _v = 25569.0 + ((v + offset) / (60 * 60 * 24 * 1000));
+              return {
+                value: _v,
+                metadata: {
+                  style: time_formatter.id
+                }
+              };
+            } else {
+              return null;
+            }
+            break;
+          default:
+            return v;
+        }
+      });
+      return data.push(values);
+    };
+  })(this));
+  sheet.setData(data);
+  workbook.addWorksheet(sheet);
+  return ExcelBuilder.Builder.createFile(workbook, {
+    type: "blob"
+  });
+};
+
+},{"excel-builder":61}],10:[function(require,module,exports){
 /*! modernizr 3.3.1 (Custom Build) | MIT *
  * http://modernizr.com/download/?-adownload-datalistelem-setclasses !*/
 !function(e,n,t){function a(e,n){return typeof e===n}function s(){var e,n,t,s,o,i,f;for(var u in r)if(r.hasOwnProperty(u)){if(e=[],n=r[u],n.name&&(e.push(n.name.toLowerCase()),n.options&&n.options.aliases&&n.options.aliases.length))for(t=0;t<n.options.aliases.length;t++)e.push(n.options.aliases[t].toLowerCase());for(s=a(n.fn,"function")?n.fn():n.fn,o=0;o<e.length;o++)i=e[o],f=i.split("."),1===f.length?Modernizr[f[0]]=s:(!Modernizr[f[0]]||Modernizr[f[0]]instanceof Boolean||(Modernizr[f[0]]=new Boolean(Modernizr[f[0]])),Modernizr[f[0]][f[1]]=s),l.push((s?"":"no-")+f.join("-"))}}function o(e){var n=u.className,t=Modernizr._config.classPrefix||"";if(c&&(n=n.baseVal),Modernizr._config.enableJSClass){var a=new RegExp("(^|\\s)"+t+"no-js(\\s|$)");n=n.replace(a,"$1"+t+"js$2")}Modernizr._config.enableClasses&&(n+=" "+t+e.join(" "+t),c?u.className.baseVal=n:u.className=n)}function i(){return"function"!=typeof n.createElement?n.createElement(arguments[0]):c?n.createElementNS.call(n,"http://www.w3.org/2000/svg",arguments[0]):n.createElement.apply(n,arguments)}var l=[],r=[],f={_version:"3.3.1",_config:{classPrefix:"",enableClasses:!0,enableJSClass:!0,usePrefixes:!0},_q:[],on:function(e,n){var t=this;setTimeout(function(){n(t[e])},0)},addTest:function(e,n,t){r.push({name:e,fn:n,options:t})},addAsyncTest:function(e){r.push({name:null,fn:e})}},Modernizr=function(){};Modernizr.prototype=f,Modernizr=new Modernizr;var u=n.documentElement,c="svg"===u.nodeName.toLowerCase(),p=i("input"),d="autocomplete autofocus list placeholder max min multiple pattern required step".split(" "),m={};Modernizr.input=function(n){for(var t=0,a=n.length;a>t;t++)m[n[t]]=!!(n[t]in p);return m.list&&(m.list=!(!i("datalist")||!e.HTMLDataListElement)),m}(d),Modernizr.addTest("datalistelem",Modernizr.input.list),Modernizr.addTest("adownload",!e.externalHost&&"download"in i("a")),s(),o(l),delete f.addTest,delete f.addAsyncTest;for(var g=0;g<Modernizr._q.length;g++)Modernizr._q[g]();e.Modernizr=Modernizr}(window,document);
-},{}],8:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 (function($) {
 
   // Make jQuery's :contains case insensitive (like HTML5 datalist)
@@ -895,7 +922,7 @@ module.exports = Backbone.View.extend({
   };
 })(jQuery);
 
-},{}],9:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 /*! 
  * jquery.event.drag - v 2.2
  * Copyright (c) 2010 Three Dub Media - http://threedubmedia.com
@@ -1298,7 +1325,7 @@ $event.fixHooks.touchcancel = {
 $special.draginit = $special.dragstart = $special.dragend = drag;
 
 })( jQuery );
-},{}],10:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 (function ($) {
   // Register namespace
   $.extend(true, window, {
@@ -1382,7 +1409,7 @@ $special.draginit = $special.dragstart = $special.dragend = drag;
     });
   }
 })(jQuery);
-},{}],11:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 (function ($) {
   // register namespace
   $.extend(true, window, {
@@ -1572,7 +1599,7 @@ $special.draginit = $special.dragstart = $special.dragend = drag;
     });
   }
 })(jQuery);
-},{}],12:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 /***
  * Contains core SlickGrid classes.
  * @module Core
@@ -2058,7 +2085,7 @@ $special.draginit = $special.dragstart = $special.dragend = drag;
 
 
 
-},{}],13:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 (function ($) {
   $.extend(true, window, {
     Slick: {
@@ -3201,7 +3228,7 @@ $special.draginit = $special.dragstart = $special.dragend = drag;
 
 })(jQuery);
 
-},{}],14:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 /**
  * @license
  * (c) 2009-2013 Michael Leibman
@@ -6798,7 +6825,7 @@ if (typeof Slick === "undefined") {
   }
 }(jQuery));
 
-},{}],15:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 (function (global){
 //     Backbone.js 1.3.3
 
@@ -8722,7 +8749,7 @@ if (typeof Slick === "undefined") {
 });
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"jquery":61,"underscore":110}],16:[function(require,module,exports){
+},{"jquery":64,"underscore":113}],19:[function(require,module,exports){
 'use strict'
 
 exports.byteLength = byteLength
@@ -8838,7 +8865,7 @@ function fromByteArray (uint8) {
   return parts.join('')
 }
 
-},{}],17:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 // This file is autogenerated via the `commonjs` Grunt task. You can require() this file in a CommonJS environment.
 require('../../js/transition.js')
 require('../../js/alert.js')
@@ -8852,7 +8879,7 @@ require('../../js/popover.js')
 require('../../js/scrollspy.js')
 require('../../js/tab.js')
 require('../../js/affix.js')
-},{"../../js/affix.js":18,"../../js/alert.js":19,"../../js/button.js":20,"../../js/carousel.js":21,"../../js/collapse.js":22,"../../js/dropdown.js":23,"../../js/modal.js":24,"../../js/popover.js":25,"../../js/scrollspy.js":26,"../../js/tab.js":27,"../../js/tooltip.js":28,"../../js/transition.js":29}],18:[function(require,module,exports){
+},{"../../js/affix.js":21,"../../js/alert.js":22,"../../js/button.js":23,"../../js/carousel.js":24,"../../js/collapse.js":25,"../../js/dropdown.js":26,"../../js/modal.js":27,"../../js/popover.js":28,"../../js/scrollspy.js":29,"../../js/tab.js":30,"../../js/tooltip.js":31,"../../js/transition.js":32}],21:[function(require,module,exports){
 /* ========================================================================
  * Bootstrap: affix.js v3.3.7
  * http://getbootstrap.com/javascript/#affix
@@ -9016,7 +9043,7 @@ require('../../js/affix.js')
 
 }(jQuery);
 
-},{}],19:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 /* ========================================================================
  * Bootstrap: alert.js v3.3.7
  * http://getbootstrap.com/javascript/#alerts
@@ -9112,7 +9139,7 @@ require('../../js/affix.js')
 
 }(jQuery);
 
-},{}],20:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 /* ========================================================================
  * Bootstrap: button.js v3.3.7
  * http://getbootstrap.com/javascript/#buttons
@@ -9239,7 +9266,7 @@ require('../../js/affix.js')
 
 }(jQuery);
 
-},{}],21:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 /* ========================================================================
  * Bootstrap: carousel.js v3.3.7
  * http://getbootstrap.com/javascript/#carousel
@@ -9478,7 +9505,7 @@ require('../../js/affix.js')
 
 }(jQuery);
 
-},{}],22:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 /* ========================================================================
  * Bootstrap: collapse.js v3.3.7
  * http://getbootstrap.com/javascript/#collapse
@@ -9692,7 +9719,7 @@ require('../../js/affix.js')
 
 }(jQuery);
 
-},{}],23:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 /* ========================================================================
  * Bootstrap: dropdown.js v3.3.7
  * http://getbootstrap.com/javascript/#dropdowns
@@ -9859,7 +9886,7 @@ require('../../js/affix.js')
 
 }(jQuery);
 
-},{}],24:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 /* ========================================================================
  * Bootstrap: modal.js v3.3.7
  * http://getbootstrap.com/javascript/#modals
@@ -10200,7 +10227,7 @@ require('../../js/affix.js')
 
 }(jQuery);
 
-},{}],25:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 /* ========================================================================
  * Bootstrap: popover.js v3.3.7
  * http://getbootstrap.com/javascript/#popovers
@@ -10310,7 +10337,7 @@ require('../../js/affix.js')
 
 }(jQuery);
 
-},{}],26:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 /* ========================================================================
  * Bootstrap: scrollspy.js v3.3.7
  * http://getbootstrap.com/javascript/#scrollspy
@@ -10484,7 +10511,7 @@ require('../../js/affix.js')
 
 }(jQuery);
 
-},{}],27:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 /* ========================================================================
  * Bootstrap: tab.js v3.3.7
  * http://getbootstrap.com/javascript/#tabs
@@ -10641,7 +10668,7 @@ require('../../js/affix.js')
 
 }(jQuery);
 
-},{}],28:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 /* ========================================================================
  * Bootstrap: tooltip.js v3.3.7
  * http://getbootstrap.com/javascript/#tooltip
@@ -11163,7 +11190,7 @@ require('../../js/affix.js')
 
 }(jQuery);
 
-},{}],29:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 /* ========================================================================
  * Bootstrap: transition.js v3.3.7
  * http://getbootstrap.com/javascript/#transitions
@@ -11224,7 +11251,7 @@ require('../../js/affix.js')
 
 }(jQuery);
 
-},{}],30:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 (function (global){
 /*!
  * The buffer module from node.js, for the browser.
@@ -13017,7 +13044,7 @@ function isnan (val) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"base64-js":16,"ieee754":59,"isarray":60}],31:[function(require,module,exports){
+},{"base64-js":19,"ieee754":62,"isarray":63}],34:[function(require,module,exports){
 //download.js v4.2, by dandavis; 2008-2016. [MIT] see http://danml.com/download.html for tests/usage
 // v1 landed a FF+Chrome compat way of downloading strings to local un-named files, upgraded to use a hidden frame and optional mime
 // v2 added named files via a[download], msSaveBlob, IE (10+) support, and window.URL support for larger+faster saves than dataURLs
@@ -13186,7 +13213,7 @@ function isnan (val) {
 	}; /* end download() */
 }));
 
-},{}],32:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -25541,7 +25568,7 @@ function isnan (val) {
 }.call(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],33:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 var util = require('../util');
@@ -25607,7 +25634,7 @@ _.extend(AbsoluteAnchor.prototype, {
     }
 });
 module.exports = AbsoluteAnchor;
-},{"../util":54,"lodash":32}],34:[function(require,module,exports){
+},{"../util":57,"lodash":35}],37:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 //var util = require('../util');
@@ -25618,7 +25645,7 @@ _.extend(Chart.prototype, {
 
 });
 module.exports = Chart;
-},{"lodash":32}],35:[function(require,module,exports){
+},{"lodash":35}],38:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 var util = require('../util');
@@ -25689,7 +25716,7 @@ _.extend(OneCellAnchor.prototype, {
     }
 });
 module.exports = OneCellAnchor;
-},{"../util":54,"lodash":32}],36:[function(require,module,exports){
+},{"../util":57,"lodash":35}],39:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 var util = require('../util');
@@ -25797,7 +25824,7 @@ _.extend(Picture.prototype, {
 
 module.exports = Picture;
 
-},{"../util":54,"./index":38,"lodash":32}],37:[function(require,module,exports){
+},{"../util":57,"./index":41,"lodash":35}],40:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 var util = require('../util');
@@ -25876,7 +25903,7 @@ _.extend(TwoCellAnchor.prototype, {
 });
 module.exports = TwoCellAnchor;
 
-},{"../util":54,"lodash":32}],38:[function(require,module,exports){
+},{"../util":57,"lodash":35}],41:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 var AbsoluteAnchor = require('./AbsoluteAnchor');
@@ -25927,7 +25954,7 @@ Object.defineProperties(Drawing, {
 
 module.exports = Drawing;
 
-},{"./AbsoluteAnchor":33,"./Chart":34,"./OneCellAnchor":35,"./Picture":36,"./TwoCellAnchor":37,"lodash":32}],39:[function(require,module,exports){
+},{"./AbsoluteAnchor":36,"./Chart":37,"./OneCellAnchor":38,"./Picture":39,"./TwoCellAnchor":40,"lodash":35}],42:[function(require,module,exports){
 /**
  * @module Excel/Drawings
  */
@@ -25976,7 +26003,7 @@ _.extend(Drawings.prototype, {
 });
 
 module.exports = Drawings;
-},{"./RelationshipManager":43,"./util":54,"lodash":32}],40:[function(require,module,exports){
+},{"./RelationshipManager":46,"./util":57,"lodash":35}],43:[function(require,module,exports){
 "use strict";
 
 /**
@@ -26025,14 +26052,14 @@ _.extend(Pane.prototype, {
 });
 
 module.exports = Pane;
-},{"lodash":32}],41:[function(require,module,exports){
+},{"lodash":35}],44:[function(require,module,exports){
 /**
  * This is mostly a global spot where all of the relationship managers can get and set
  * path information from/to. 
  * @module Excel/Paths
  */
 module.exports = {};
-},{}],42:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 "use strict";
 
 module.exports = {
@@ -26050,7 +26077,7 @@ module.exports = {
     }
 };
 
-},{}],43:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 var util = require('./util');
@@ -26111,7 +26138,7 @@ _.extend(RelationshipManager.prototype, {
 });
     
 module.exports = RelationshipManager;
-},{"./Paths":41,"./util":54,"lodash":32}],44:[function(require,module,exports){
+},{"./Paths":44,"./util":57,"lodash":35}],47:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 var util = require('./util');
@@ -26167,7 +26194,7 @@ _.extend(sharedStrings.prototype, {
     }
 });
 module.exports = sharedStrings;
-},{"./util":54,"lodash":32}],45:[function(require,module,exports){
+},{"./util":57,"lodash":35}],48:[function(require,module,exports){
 (function (Buffer){
 "use strict";
 
@@ -26264,7 +26291,7 @@ SheetProtection.algorithms = {MD5: 'md5', SHA1: 'sha1', SHA256: 'sha256', SHA384
 
 module.exports = SheetProtection;
 }).call(this,require("buffer").Buffer)
-},{"./util":54,"buffer":30,"lodash":32,"node-forge":107}],46:[function(require,module,exports){
+},{"./util":57,"buffer":33,"lodash":35,"node-forge":110}],49:[function(require,module,exports){
 /**
  * @module Excel/SheetView
  *
@@ -26351,7 +26378,7 @@ _.extend(SheetView.prototype, {
 });
 
 module.exports = SheetView;
-},{"./Pane":40,"./util":54,"lodash":32}],47:[function(require,module,exports){
+},{"./Pane":43,"./util":57,"lodash":35}],50:[function(require,module,exports){
 /**
  * @module Excel/StyleSheet
  */
@@ -27046,7 +27073,7 @@ _.extend(StyleSheet.prototype, {
 });
 module.exports = StyleSheet;
 
-},{"./util":54,"lodash":32}],48:[function(require,module,exports){
+},{"./util":57,"lodash":35}],51:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 var util = require('./util');
@@ -27221,7 +27248,7 @@ _.extend(Table.prototype, {
     }
 });
 module.exports = Table;
-},{"./util":54,"lodash":32}],49:[function(require,module,exports){
+},{"./util":57,"lodash":35}],52:[function(require,module,exports){
 "use strict";
 var Q = require('q');
 var _ = require('lodash');
@@ -27485,7 +27512,7 @@ _.extend(Workbook.prototype, {
     }
 });
 module.exports = Workbook;
-},{"./Paths":41,"./RelationshipManager":43,"./SharedStrings":44,"./StyleSheet":47,"./Worksheet":50,"./XMLDOM":52,"./util":54,"lodash":32,"q":109}],50:[function(require,module,exports){
+},{"./Paths":44,"./RelationshipManager":46,"./SharedStrings":47,"./StyleSheet":50,"./Worksheet":53,"./XMLDOM":55,"./util":57,"lodash":35,"q":112}],53:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 var util = require('./util');
@@ -28061,7 +28088,7 @@ var SheetView = require('./SheetView');
     });
     module.exports = Worksheet;
 
-},{"./RelationshipManager":43,"./SheetView":46,"./util":54,"lodash":32}],51:[function(require,module,exports){
+},{"./RelationshipManager":46,"./SheetView":49,"./util":57,"lodash":35}],54:[function(require,module,exports){
 /* jshint strict: false, node: true */
 /* globals  onmessage: true, importScripts, postMessage */
 "use strict";
@@ -28102,7 +28129,7 @@ var onmessage = function(event) {
 
 
 
-},{}],52:[function(require,module,exports){
+},{}],55:[function(require,module,exports){
 'use strict';
 var _ = require('lodash');
 
@@ -28227,7 +28254,7 @@ _.extend(XMLDOM.XMLNode.prototype, {
 });
 
 module.exports = XMLDOM;
-},{"lodash":32}],53:[function(require,module,exports){
+},{"lodash":35}],56:[function(require,module,exports){
 /* jshint unused: false */
 /* globals  importScripts, JSZip, postMessage */
 
@@ -28260,7 +28287,7 @@ var onmessage = function(event) {
 
 
 
-},{}],54:[function(require,module,exports){
+},{}],57:[function(require,module,exports){
 "use strict";
 var XMLDOM = require('./XMLDOM');
 var _ = require('lodash');
@@ -28387,7 +28414,7 @@ var util = {
 };
 
 module.exports = util;
-},{"./XMLDOM":52,"lodash":32}],55:[function(require,module,exports){
+},{"./XMLDOM":55,"lodash":35}],58:[function(require,module,exports){
 'use strict';
 
 var Workbook = require('../Excel/Workbook');
@@ -28458,11 +28485,11 @@ _.extend(Template.prototype, {
 
 module.exports = Template;
 
-},{"../Excel/Table":48,"../Excel/Workbook":49,"lodash":32}],56:[function(require,module,exports){
+},{"../Excel/Table":51,"../Excel/Workbook":52,"lodash":35}],59:[function(require,module,exports){
 module.exports = {
     BasicReport: require('./BasicReport')
 };
-},{"./BasicReport":55}],57:[function(require,module,exports){
+},{"./BasicReport":58}],60:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 var Workbook = require('./Excel/Workbook');
@@ -28549,7 +28576,7 @@ var Factory = {
 
 
 module.exports = Factory;
-},{"./Excel/Workbook":49,"jszip":71,"lodash":32}],58:[function(require,module,exports){
+},{"./Excel/Workbook":52,"jszip":74,"lodash":35}],61:[function(require,module,exports){
 var _ = require('lodash');
 var EBExport = module.exports = {
     Drawings: require('./Excel/Drawings'),
@@ -28581,7 +28608,7 @@ try {
     //Silently ignore?
     console.info("Not attaching EB to window");
 }
-},{"./Excel/Drawing/index":38,"./Excel/Drawings":39,"./Excel/Pane":40,"./Excel/Paths":41,"./Excel/Positioning":42,"./Excel/RelationshipManager":43,"./Excel/SharedStrings":44,"./Excel/SheetProtection":45,"./Excel/SheetView":46,"./Excel/StyleSheet":47,"./Excel/Table":48,"./Excel/Workbook":49,"./Excel/Worksheet":50,"./Excel/WorksheetExportWorker":51,"./Excel/XMLDOM":52,"./Excel/ZipWorker":53,"./Excel/util":54,"./Template":56,"./excel-builder":57,"lodash":32}],59:[function(require,module,exports){
+},{"./Excel/Drawing/index":41,"./Excel/Drawings":42,"./Excel/Pane":43,"./Excel/Paths":44,"./Excel/Positioning":45,"./Excel/RelationshipManager":46,"./Excel/SharedStrings":47,"./Excel/SheetProtection":48,"./Excel/SheetView":49,"./Excel/StyleSheet":50,"./Excel/Table":51,"./Excel/Workbook":52,"./Excel/Worksheet":53,"./Excel/WorksheetExportWorker":54,"./Excel/XMLDOM":55,"./Excel/ZipWorker":56,"./Excel/util":57,"./Template":59,"./excel-builder":60,"lodash":35}],62:[function(require,module,exports){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = nBytes * 8 - mLen - 1
@@ -28667,14 +28694,14 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],60:[function(require,module,exports){
+},{}],63:[function(require,module,exports){
 var toString = {}.toString;
 
 module.exports = Array.isArray || function (arr) {
   return toString.call(arr) == '[object Array]';
 };
 
-},{}],61:[function(require,module,exports){
+},{}],64:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v2.2.4
  * http://jquery.com/
@@ -38490,7 +38517,7 @@ if ( !noGlobal ) {
 return jQuery;
 }));
 
-},{}],62:[function(require,module,exports){
+},{}],65:[function(require,module,exports){
 'use strict';
 var DataReader = require('./dataReader');
 
@@ -38543,7 +38570,7 @@ ArrayReader.prototype.readData = function(size) {
 };
 module.exports = ArrayReader;
 
-},{"./dataReader":67}],63:[function(require,module,exports){
+},{"./dataReader":70}],66:[function(require,module,exports){
 'use strict';
 // private property
 var _keyStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
@@ -38615,7 +38642,7 @@ exports.decode = function(input, utf8) {
 
 };
 
-},{}],64:[function(require,module,exports){
+},{}],67:[function(require,module,exports){
 'use strict';
 function CompressedObject() {
     this.compressedSize = 0;
@@ -38645,7 +38672,7 @@ CompressedObject.prototype = {
 };
 module.exports = CompressedObject;
 
-},{}],65:[function(require,module,exports){
+},{}],68:[function(require,module,exports){
 'use strict';
 exports.STORE = {
     magic: "\x00\x00",
@@ -38660,7 +38687,7 @@ exports.STORE = {
 };
 exports.DEFLATE = require('./flate');
 
-},{"./flate":70}],66:[function(require,module,exports){
+},{"./flate":73}],69:[function(require,module,exports){
 'use strict';
 
 var utils = require('./utils');
@@ -38764,7 +38791,7 @@ module.exports = function crc32(input, crc) {
 };
 // vim: set shiftwidth=4 softtabstop=4:
 
-},{"./utils":83}],67:[function(require,module,exports){
+},{"./utils":86}],70:[function(require,module,exports){
 'use strict';
 var utils = require('./utils');
 
@@ -38874,7 +38901,7 @@ DataReader.prototype = {
 };
 module.exports = DataReader;
 
-},{"./utils":83}],68:[function(require,module,exports){
+},{"./utils":86}],71:[function(require,module,exports){
 'use strict';
 exports.base64 = false;
 exports.binary = false;
@@ -38887,7 +38914,7 @@ exports.comment = null;
 exports.unixPermissions = null;
 exports.dosPermissions = null;
 
-},{}],69:[function(require,module,exports){
+},{}],72:[function(require,module,exports){
 'use strict';
 var utils = require('./utils');
 
@@ -38994,7 +39021,7 @@ exports.isRegExp = function (object) {
 };
 
 
-},{"./utils":83}],70:[function(require,module,exports){
+},{"./utils":86}],73:[function(require,module,exports){
 'use strict';
 var USE_TYPEDARRAY = (typeof Uint8Array !== 'undefined') && (typeof Uint16Array !== 'undefined') && (typeof Uint32Array !== 'undefined');
 
@@ -39012,7 +39039,7 @@ exports.uncompress =  function(input) {
     return pako.inflateRaw(input);
 };
 
-},{"pako":86}],71:[function(require,module,exports){
+},{"pako":89}],74:[function(require,module,exports){
 'use strict';
 
 var base64 = require('./base64');
@@ -39093,7 +39120,7 @@ JSZip.base64 = {
 JSZip.compressions = require('./compressions');
 module.exports = JSZip;
 
-},{"./base64":63,"./compressions":65,"./defaults":68,"./deprecatedPublicUtils":69,"./load":72,"./object":75,"./support":79}],72:[function(require,module,exports){
+},{"./base64":66,"./compressions":68,"./defaults":71,"./deprecatedPublicUtils":72,"./load":75,"./object":78,"./support":82}],75:[function(require,module,exports){
 'use strict';
 var base64 = require('./base64');
 var utf8 = require('./utf8');
@@ -39134,7 +39161,7 @@ module.exports = function(data, options) {
     return this;
 };
 
-},{"./base64":63,"./utf8":82,"./utils":83,"./zipEntries":84}],73:[function(require,module,exports){
+},{"./base64":66,"./utf8":85,"./utils":86,"./zipEntries":87}],76:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 module.exports = function(data, encoding){
@@ -39145,7 +39172,7 @@ module.exports.test = function(b){
 };
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":30}],74:[function(require,module,exports){
+},{"buffer":33}],77:[function(require,module,exports){
 'use strict';
 var Uint8ArrayReader = require('./uint8ArrayReader');
 
@@ -39168,7 +39195,7 @@ NodeBufferReader.prototype.readData = function(size) {
 };
 module.exports = NodeBufferReader;
 
-},{"./uint8ArrayReader":80}],75:[function(require,module,exports){
+},{"./uint8ArrayReader":83}],78:[function(require,module,exports){
 'use strict';
 var support = require('./support');
 var utils = require('./utils');
@@ -40040,7 +40067,7 @@ var out = {
 };
 module.exports = out;
 
-},{"./base64":63,"./compressedObject":64,"./compressions":65,"./crc32":66,"./defaults":68,"./nodeBuffer":73,"./signature":76,"./stringWriter":78,"./support":79,"./uint8ArrayWriter":81,"./utf8":82,"./utils":83}],76:[function(require,module,exports){
+},{"./base64":66,"./compressedObject":67,"./compressions":68,"./crc32":69,"./defaults":71,"./nodeBuffer":76,"./signature":79,"./stringWriter":81,"./support":82,"./uint8ArrayWriter":84,"./utf8":85,"./utils":86}],79:[function(require,module,exports){
 'use strict';
 exports.LOCAL_FILE_HEADER = "PK\x03\x04";
 exports.CENTRAL_FILE_HEADER = "PK\x01\x02";
@@ -40049,7 +40076,7 @@ exports.ZIP64_CENTRAL_DIRECTORY_LOCATOR = "PK\x06\x07";
 exports.ZIP64_CENTRAL_DIRECTORY_END = "PK\x06\x06";
 exports.DATA_DESCRIPTOR = "PK\x07\x08";
 
-},{}],77:[function(require,module,exports){
+},{}],80:[function(require,module,exports){
 'use strict';
 var DataReader = require('./dataReader');
 var utils = require('./utils');
@@ -40088,7 +40115,7 @@ StringReader.prototype.readData = function(size) {
 };
 module.exports = StringReader;
 
-},{"./dataReader":67,"./utils":83}],78:[function(require,module,exports){
+},{"./dataReader":70,"./utils":86}],81:[function(require,module,exports){
 'use strict';
 
 var utils = require('./utils');
@@ -40120,7 +40147,7 @@ StringWriter.prototype = {
 
 module.exports = StringWriter;
 
-},{"./utils":83}],79:[function(require,module,exports){
+},{"./utils":86}],82:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 exports.base64 = true;
@@ -40158,7 +40185,7 @@ else {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":30}],80:[function(require,module,exports){
+},{"buffer":33}],83:[function(require,module,exports){
 'use strict';
 var ArrayReader = require('./arrayReader');
 
@@ -40186,7 +40213,7 @@ Uint8ArrayReader.prototype.readData = function(size) {
 };
 module.exports = Uint8ArrayReader;
 
-},{"./arrayReader":62}],81:[function(require,module,exports){
+},{"./arrayReader":65}],84:[function(require,module,exports){
 'use strict';
 
 var utils = require('./utils');
@@ -40224,7 +40251,7 @@ Uint8ArrayWriter.prototype = {
 
 module.exports = Uint8ArrayWriter;
 
-},{"./utils":83}],82:[function(require,module,exports){
+},{"./utils":86}],85:[function(require,module,exports){
 'use strict';
 
 var utils = require('./utils');
@@ -40433,7 +40460,7 @@ exports.utf8decode = function utf8decode(buf) {
 };
 // vim: set shiftwidth=4 softtabstop=4:
 
-},{"./nodeBuffer":73,"./support":79,"./utils":83}],83:[function(require,module,exports){
+},{"./nodeBuffer":76,"./support":82,"./utils":86}],86:[function(require,module,exports){
 'use strict';
 var support = require('./support');
 var compressions = require('./compressions');
@@ -40779,7 +40806,7 @@ exports.extend = function() {
 };
 
 
-},{"./compressions":65,"./nodeBuffer":73,"./support":79}],84:[function(require,module,exports){
+},{"./compressions":68,"./nodeBuffer":76,"./support":82}],87:[function(require,module,exports){
 'use strict';
 var StringReader = require('./stringReader');
 var NodeBufferReader = require('./nodeBufferReader');
@@ -41061,7 +41088,7 @@ ZipEntries.prototype = {
 // }}} end of ZipEntries
 module.exports = ZipEntries;
 
-},{"./arrayReader":62,"./nodeBufferReader":74,"./object":75,"./signature":76,"./stringReader":77,"./support":79,"./uint8ArrayReader":80,"./utils":83,"./zipEntry":85}],85:[function(require,module,exports){
+},{"./arrayReader":65,"./nodeBufferReader":77,"./object":78,"./signature":79,"./stringReader":80,"./support":82,"./uint8ArrayReader":83,"./utils":86,"./zipEntry":88}],88:[function(require,module,exports){
 'use strict';
 var StringReader = require('./stringReader');
 var utils = require('./utils');
@@ -41382,7 +41409,7 @@ ZipEntry.prototype = {
 };
 module.exports = ZipEntry;
 
-},{"./compressedObject":64,"./object":75,"./stringReader":77,"./support":79,"./utils":83}],86:[function(require,module,exports){
+},{"./compressedObject":67,"./object":78,"./stringReader":80,"./support":82,"./utils":86}],89:[function(require,module,exports){
 // Top level file is just a mixin of submodules & constants
 'use strict';
 
@@ -41398,7 +41425,7 @@ assign(pako, deflate, inflate, constants);
 
 module.exports = pako;
 
-},{"./lib/deflate":87,"./lib/inflate":88,"./lib/utils/common":89,"./lib/zlib/constants":92}],87:[function(require,module,exports){
+},{"./lib/deflate":90,"./lib/inflate":91,"./lib/utils/common":92,"./lib/zlib/constants":95}],90:[function(require,module,exports){
 'use strict';
 
 
@@ -41800,7 +41827,7 @@ exports.deflate = deflate;
 exports.deflateRaw = deflateRaw;
 exports.gzip = gzip;
 
-},{"./utils/common":89,"./utils/strings":90,"./zlib/deflate":94,"./zlib/messages":99,"./zlib/zstream":101}],88:[function(require,module,exports){
+},{"./utils/common":92,"./utils/strings":93,"./zlib/deflate":97,"./zlib/messages":102,"./zlib/zstream":104}],91:[function(require,module,exports){
 'use strict';
 
 
@@ -42220,7 +42247,7 @@ exports.inflate = inflate;
 exports.inflateRaw = inflateRaw;
 exports.ungzip  = inflate;
 
-},{"./utils/common":89,"./utils/strings":90,"./zlib/constants":92,"./zlib/gzheader":95,"./zlib/inflate":97,"./zlib/messages":99,"./zlib/zstream":101}],89:[function(require,module,exports){
+},{"./utils/common":92,"./utils/strings":93,"./zlib/constants":95,"./zlib/gzheader":98,"./zlib/inflate":100,"./zlib/messages":102,"./zlib/zstream":104}],92:[function(require,module,exports){
 'use strict';
 
 
@@ -42324,7 +42351,7 @@ exports.setTyped = function (on) {
 
 exports.setTyped(TYPED_OK);
 
-},{}],90:[function(require,module,exports){
+},{}],93:[function(require,module,exports){
 // String encode/decode helpers
 'use strict';
 
@@ -42511,7 +42538,7 @@ exports.utf8border = function (buf, max) {
   return (pos + _utf8len[buf[pos]] > max) ? pos : max;
 };
 
-},{"./common":89}],91:[function(require,module,exports){
+},{"./common":92}],94:[function(require,module,exports){
 'use strict';
 
 // Note: adler32 takes 12% for level 0 and 2% for level 6.
@@ -42564,7 +42591,7 @@ function adler32(adler, buf, len, pos) {
 
 module.exports = adler32;
 
-},{}],92:[function(require,module,exports){
+},{}],95:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -42634,7 +42661,7 @@ module.exports = {
   //Z_NULL:                 null // Use -1 or null inline, depending on var type
 };
 
-},{}],93:[function(require,module,exports){
+},{}],96:[function(require,module,exports){
 'use strict';
 
 // Note: we can't get significant speed boost here.
@@ -42695,7 +42722,7 @@ function crc32(crc, buf, len, pos) {
 
 module.exports = crc32;
 
-},{}],94:[function(require,module,exports){
+},{}],97:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -44571,7 +44598,7 @@ exports.deflatePrime = deflatePrime;
 exports.deflateTune = deflateTune;
 */
 
-},{"../utils/common":89,"./adler32":91,"./crc32":93,"./messages":99,"./trees":100}],95:[function(require,module,exports){
+},{"../utils/common":92,"./adler32":94,"./crc32":96,"./messages":102,"./trees":103}],98:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -44631,7 +44658,7 @@ function GZheader() {
 
 module.exports = GZheader;
 
-},{}],96:[function(require,module,exports){
+},{}],99:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -44978,7 +45005,7 @@ module.exports = function inflate_fast(strm, start) {
   return;
 };
 
-},{}],97:[function(require,module,exports){
+},{}],100:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -46536,7 +46563,7 @@ exports.inflateSyncPoint = inflateSyncPoint;
 exports.inflateUndermine = inflateUndermine;
 */
 
-},{"../utils/common":89,"./adler32":91,"./crc32":93,"./inffast":96,"./inftrees":98}],98:[function(require,module,exports){
+},{"../utils/common":92,"./adler32":94,"./crc32":96,"./inffast":99,"./inftrees":101}],101:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -46881,7 +46908,7 @@ module.exports = function inflate_table(type, lens, lens_index, codes, table, ta
   return 0;
 };
 
-},{"../utils/common":89}],99:[function(require,module,exports){
+},{"../utils/common":92}],102:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -46915,7 +46942,7 @@ module.exports = {
   '-6':   'incompatible version' /* Z_VERSION_ERROR (-6) */
 };
 
-},{}],100:[function(require,module,exports){
+},{}],103:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -48137,7 +48164,7 @@ exports._tr_flush_block  = _tr_flush_block;
 exports._tr_tally = _tr_tally;
 exports._tr_align = _tr_align;
 
-},{"../utils/common":89}],101:[function(require,module,exports){
+},{"../utils/common":92}],104:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -48186,7 +48213,7 @@ function ZStream() {
 
 module.exports = ZStream;
 
-},{}],102:[function(require,module,exports){
+},{}],105:[function(require,module,exports){
 module.exports={
 	"version": "2015g",
 	"zones": [
@@ -48777,11 +48804,11 @@ module.exports={
 		"Pacific/Pohnpei|Pacific/Ponape"
 	]
 }
-},{}],103:[function(require,module,exports){
+},{}],106:[function(require,module,exports){
 var moment = module.exports = require("./moment-timezone");
 moment.tz.load(require('./data/packed/latest.json'));
 
-},{"./data/packed/latest.json":102,"./moment-timezone":104}],104:[function(require,module,exports){
+},{"./data/packed/latest.json":105,"./moment-timezone":107}],107:[function(require,module,exports){
 //! moment-timezone.js
 //! version : 0.4.1
 //! author : Tim Wood
@@ -49209,7 +49236,7 @@ moment.tz.load(require('./data/packed/latest.json'));
 	return moment;
 }));
 
-},{"moment":106}],105:[function(require,module,exports){
+},{"moment":109}],108:[function(require,module,exports){
 //! moment.js locale configuration
 //! locale : German [de]
 //! author : lluchs : https://github.com/lluchs
@@ -49289,7 +49316,7 @@ return de;
 
 })));
 
-},{"../moment":106}],106:[function(require,module,exports){
+},{"../moment":109}],109:[function(require,module,exports){
 //! moment.js
 //! version : 2.18.1
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
@@ -53754,7 +53781,7 @@ return hooks;
 
 })));
 
-},{}],107:[function(require,module,exports){
+},{}],110:[function(require,module,exports){
 /**
  * Node.js module for Forge.
  *
@@ -53848,7 +53875,7 @@ define([
 });
 })();
 
-},{}],108:[function(require,module,exports){
+},{}],111:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -54034,7 +54061,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],109:[function(require,module,exports){
+},{}],112:[function(require,module,exports){
 (function (process){
 // vim:ts=4:sts=4:sw=4:
 /*!
@@ -56111,7 +56138,7 @@ return Q;
 });
 
 }).call(this,require('_process'))
-},{"_process":108}],110:[function(require,module,exports){
+},{"_process":111}],113:[function(require,module,exports){
 //     Underscore.js 1.8.3
 //     http://underscorejs.org
 //     (c) 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -57661,4 +57688,4 @@ return Q;
   }
 }.call(this));
 
-},{}]},{},[2]);
+},{}]},{},[3]);

@@ -1,0 +1,59 @@
+<div class="modal" id="download-dialog" tabindex="-1">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Download</h4>
+      </div>
+      <div class="modal-body">
+
+        <div>
+
+          <!-- Nav tabs -->
+          <ul class="nav nav-tabs" role="tablist">
+            <li role="presentation" class="active"><a href="#xlsx" role="tab" data-toggle="tab">XLSX</a></li>
+            <li role="presentation"><a href="#csv" role="tab" data-toggle="tab">CSV</a></li>
+          </ul>
+
+          <!-- Tab panes -->
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane in active" id="xlsx">
+              <form class="form-horizontal">
+                <label for="filename_xlsx" class="col-sm-2 control-label">Filename:</label>
+                <div class="input-group col-sm-10">
+                  <input type="text" class="form-control" id="filename_xlsx" name="filename" placeholder="<%= (@insight.name.present? ? @insight.name : @insight.clip_id).parameterize %>" value="<%= (@insight.name.present? ? @insight.name : @insight.clip_id).parameterize %>" required>
+                  <div class="input-group-addon">.xlsx</div>
+                </div>
+              </form>
+            </div>
+
+            <div role="tabpanel" class="tab-pane" id="csv">
+              <form method="get" action="<%= download_insight_url(@insight, I18n.locale) %>" class="form-horizontal">
+                  <label for="filename_csv" class="col-sm-2 control-label">Filename:</label>
+                  <div class="input-group col-sm-10">
+                    <input type="text" class="form-control" id="filename_csv" name="filename" placeholder="<%= (@insight.name.present? ? @insight.name : @insight.clip_id).parameterize %>" value="<%= (@insight.name.present? ? @insight.name : @insight.clip_id).parameterize %>" required>
+                    <div class="input-group-addon">.csv</div>
+                  </div>
+                  <label for="format" class="col-sm-2 control-label">Format:</label>
+                  <div class="input-group col-sm-10">
+                    <select id="format" name="locale" class="form-control form-select">
+                      <option value="de">Continental (separator: semicolon)</option>
+                      <option value="en">International (separator: comma)</option>
+                    </select>
+                  </div>
+              </form>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary">
+          Download
+          <i class='fa fa-circle-o-notch fa-spin fa-fw' style='display: none'></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

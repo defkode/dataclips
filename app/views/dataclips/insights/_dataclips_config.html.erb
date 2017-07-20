@@ -1,0 +1,15 @@
+<script>
+  Dataclips.config = {
+    locale:       '<%= I18n.locale %>',
+    id:           '<%= @clip_id %>',
+    name:         '<%= @insight.name %>',
+    filename:     '<%= (@insight.name.present? ? @insight.name : @insight.clip_id).parameterize %>',
+    url:          '<%= insight_path(@insight) %>',
+    schema:       <%= raw @schema.to_json %>,
+    headers:      <%= raw @headers.to_json %>,
+    time_zone:    '<%= @insight.time_zone %>',
+    theme:        '<%= @clip.theme %>',
+    row_height:   <%= Dataclips::Engine.config.themes[@theme]["row_height"] || 'undefined' %>,
+    translations: <%= raw I18n.t("dictionaries", scope: "dataclips", default: {}).to_json %>
+  };
+</script>
