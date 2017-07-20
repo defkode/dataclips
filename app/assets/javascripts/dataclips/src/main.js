@@ -27,11 +27,11 @@ Dataclips.resetFilter = function(key) {
     case "date":
     case "datetime":
     case "time":
-      this.filterArgs.unset(key + "_from");
-      this.filterArgs.unset(key + "_to");
+      Dataclips.filterArgs.unset(key + "_from");
+      Dataclips.filterArgs.unset(key + "_to");
       break;
     default:
-      this.filterArgs.unset(key);
+      Dataclips.filterArgs.unset(key);
   }
 }
 
@@ -99,6 +99,8 @@ window.addEventListener('message', function(e) {
   if (e.data.fullscreen === true) { Dataclips.requestFullScreen() }
 
   if (e.data.filters) {
+    Dataclips.resetAllFilters();
+
     _.each(e.data.filters, function(value, key) {
       if (Dataclips.config.schema[key] != null) {
         var type = Dataclips.config.schema[key]["type"];
@@ -106,32 +108,32 @@ window.addEventListener('message', function(e) {
           case "boolean":
             if (value != null) {
               $("[name='" + key + "']").val(value === true ? "1" : "0");
-              return this.filterArgs.set(key, value);
+              return Dataclips.filterArgs.set(key, value);
             }
             break;
           case "text":
             if (value != null) {
-              return this.filterArgs.set(key, value);
+              return Dataclips.filterArgs.set(key, value);
             }
             break;
           case "float":
           case "integer":
           case "decimal":
             if (value.from != null) {
-              this.filterArgs.set(key + "_from", value.from);
+              Dataclips.filterArgs.set(key + "_from", value.from);
             }
             if (value.to != null) {
-              return this.filterArgs.set(key + "_to", value.from);
+              return Dataclips.filterArgs.set(key + "_to", value.from);
             }
             break;
           case "date":
           case "datetime":
           case "time":
             if (value.from != null) {
-              this.filterArgs.set(key + "_from", moment(value.from).toDate());
+              Dataclips.filterArgs.set(key + "_from", moment(value.from).toDate());
             }
             if (value.to != null) {
-              return this.filterArgs.set(key + "_to", moment(value.to).toDate());
+              return Dataclips.filterArgs.set(key + "_to", moment(value.to).toDate());
             }
         }
       }

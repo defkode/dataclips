@@ -138,11 +138,11 @@ Dataclips.resetFilter = function(key) {
     case "date":
     case "datetime":
     case "time":
-      this.filterArgs.unset(key + "_from");
-      this.filterArgs.unset(key + "_to");
+      Dataclips.filterArgs.unset(key + "_from");
+      Dataclips.filterArgs.unset(key + "_to");
       break;
     default:
-      this.filterArgs.unset(key);
+      Dataclips.filterArgs.unset(key);
   }
 }
 
@@ -210,6 +210,8 @@ window.addEventListener('message', function(e) {
   if (e.data.fullscreen === true) { Dataclips.requestFullScreen() }
 
   if (e.data.filters) {
+    Dataclips.resetAllFilters();
+
     _.each(e.data.filters, function(value, key) {
       if (Dataclips.config.schema[key] != null) {
         var type = Dataclips.config.schema[key]["type"];
@@ -217,32 +219,32 @@ window.addEventListener('message', function(e) {
           case "boolean":
             if (value != null) {
               $("[name='" + key + "']").val(value === true ? "1" : "0");
-              return this.filterArgs.set(key, value);
+              return Dataclips.filterArgs.set(key, value);
             }
             break;
           case "text":
             if (value != null) {
-              return this.filterArgs.set(key, value);
+              return Dataclips.filterArgs.set(key, value);
             }
             break;
           case "float":
           case "integer":
           case "decimal":
             if (value.from != null) {
-              this.filterArgs.set(key + "_from", value.from);
+              Dataclips.filterArgs.set(key + "_from", value.from);
             }
             if (value.to != null) {
-              return this.filterArgs.set(key + "_to", value.from);
+              return Dataclips.filterArgs.set(key + "_to", value.from);
             }
             break;
           case "date":
           case "datetime":
           case "time":
             if (value.from != null) {
-              this.filterArgs.set(key + "_from", moment(value.from).toDate());
+              Dataclips.filterArgs.set(key + "_from", moment(value.from).toDate());
             }
             if (value.to != null) {
-              return this.filterArgs.set(key + "_to", moment(value.to).toDate());
+              return Dataclips.filterArgs.set(key + "_to", moment(value.to).toDate());
             }
         }
       }
@@ -607,6 +609,49 @@ module.exports = Backbone.View.extend({
           return this.$el.find("select[name=" + key + "]").val("");
       }
     })
+  },
+  render: function() {
+    return this.listenTo(Dataclips.filterArgs, "change", function(model) {
+      return _.each(model.changed, function(value, key) {
+        var fromPicker, toPicker, type;
+        if (Dataclips.config.schema[key] != null) {
+          type = Dataclips.config.schema[key]["type"];
+          switch (type) {
+            case "boolean":
+              if (value != null) {
+                return $("[name='" + key + "']").val(value === true ? "1" : "0");
+              }
+              break;
+            case "text":
+              if (value != null) {
+                return $("[name='" + key + "']").val(value);
+              }
+              break;
+            case "float":
+            case "integer":
+            case "decimal":
+              if (value.from != null) {
+                $("[name='" + key + "_from']").val(value.from);
+              }
+              if (value.to != null) {
+                return $("[name='" + key + "_to']").val(value.to);
+              }
+              break;
+            case "date":
+            case "datetime":
+            case "time":
+              if (value.from != null) {
+                fromPicker = $("[rel='" + key + "_from']");
+                fromPicker.data('DateTimePicker').date(moment(value.from));
+              }
+              if (value.to != null) {
+                toPicker = $("[rel='" + key + "_to']");
+                return toPicker.data('DateTimePicker').date(moment(value.to));
+              }
+          }
+        }
+      });
+    });
   }
 });
 
