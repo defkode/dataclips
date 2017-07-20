@@ -482,18 +482,9 @@ module.exports = Backbone.View.extend({
       return dataView.sort(compareByColumn, args.sortAsc);
     });
     dataView.setFilter(function(item, args) {
-      var query, searchableKeys;
-      if (query = args.search) {
-        searchableKeys = [];
-        _(Dataclips.config.schema).each(function(attrs, key) {
-          if (attrs.type === "text") {
-            return searchableKeys.push(key);
-          }
-        });
-        return _.any(searchableKeys, function(key) {
-          return filters.textFilter(item, key, query);
-        });
-      } else {
+      var query, ref, searchableKeys;
+      query = (ref = args.search) != null ? ref.trim() : void 0;
+      if (_.isEmpty(query)) {
         return _.all(Dataclips.config.schema, function(options, attr) {
           switch (options.type) {
             case "text":
@@ -512,6 +503,16 @@ module.exports = Backbone.View.extend({
             default:
               return true;
           }
+        });
+      } else {
+        searchableKeys = [];
+        _(Dataclips.config.schema).each(function(attrs, key) {
+          if (attrs.type === "text") {
+            return searchableKeys.push(key);
+          }
+        });
+        return _.any(searchableKeys, function(key) {
+          return filters.textFilter(item, key, query);
         });
       }
     });

@@ -120,17 +120,8 @@ module.exports = Backbone.View.extend
 
 
     dataView.setFilter (item, args) ->
-      if query = args.search
-
-        searchableKeys = []
-        _(Dataclips.config.schema).each (attrs, key) ->
-          if attrs.type is "text"
-            searchableKeys.push(key)
-
-        _.any searchableKeys, (key) ->
-          filters.textFilter(item, key, query)
-
-      else
+      query = args.search?.trim()
+      if _.isEmpty(query)
         _.all Dataclips.config.schema, (options, attr) ->
           switch options.type
             when "text"
@@ -144,6 +135,14 @@ module.exports = Backbone.View.extend
               filters.booleanFilter(item, attr, args[attr])
             else
               true
+      else
+        searchableKeys = []
+        _(Dataclips.config.schema).each (attrs, key) ->
+          if attrs.type is "text"
+            searchableKeys.push(key)
+
+        _.any searchableKeys, (key) ->
+          filters.textFilter(item, key, query)
 
     # pageSize, pageNum, totalRows, totalPages
     dataView.onPagingInfoChanged.subscribe (e, args) ->
