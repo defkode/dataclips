@@ -120,19 +120,30 @@ module.exports = Backbone.View.extend
 
 
     dataView.setFilter (item, args) ->
-      _.all Dataclips.config.schema, (options, attr) ->
-        switch options.type
-          when "text"
-            filters.textFilter(item, attr, args[attr])
-          when "integer", "float", "decimal", "datetime", "date"
-            filters.numericFilter(item, attr, {
-              from: args["#{attr}_from"],
-              to:   args["#{attr}_to"]
-            })
-          when "boolean"
-            filters.booleanFilter(item, attr, args[attr])
-          else
-            true
+      if query = args.search
+
+        searchableKeys = []
+        _(Dataclips.config.schema).each (attrs, key) ->
+          if attrs.type is "text"
+            searchableKeys.push(key)
+
+        _.any searchableKeys, (key) ->
+          filters.textFilter(item, key, query)
+
+      else
+        _.all Dataclips.config.schema, (options, attr) ->
+          switch options.type
+            when "text"
+              filters.textFilter(item, attr, args[attr])
+            when "integer", "float", "decimal", "datetime", "date"
+              filters.numericFilter(item, attr, {
+                from: args["#{attr}_from"],
+                to:   args["#{attr}_to"]
+              })
+            when "boolean"
+              filters.booleanFilter(item, attr, args[attr])
+            else
+              true
 
     # pageSize, pageNum, totalRows, totalPages
     dataView.onPagingInfoChanged.subscribe (e, args) ->

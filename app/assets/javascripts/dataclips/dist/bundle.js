@@ -116,7 +116,6 @@ _          = require('underscore');
 moment = require("moment");
 require("moment/locale/de");
 
-
 // Backbone
 Backbone   = require('backbone');
 Backbone.$ = $;
@@ -147,6 +146,7 @@ Dataclips.resetFilter = function(key) {
 }
 
 Dataclips.resetAllFilters = function(){
+  Dataclips.filterArgs.unset("search")
   _.each(Dataclips.config.schema, function(options, key) {
     Dataclips.resetFilter(key)
   });
@@ -249,6 +249,11 @@ window.addEventListener('message', function(e) {
         }
       }
     });
+  } else if  (e.data.search) {
+    var query = e.data.search
+    Dataclips.resetAllFilters();
+    Dataclips.filterArgs.set('search', query);
+
   }
 
 });
@@ -477,25 +482,38 @@ module.exports = Backbone.View.extend({
       return dataView.sort(compareByColumn, args.sortAsc);
     });
     dataView.setFilter(function(item, args) {
-      return _.all(Dataclips.config.schema, function(options, attr) {
-        switch (options.type) {
-          case "text":
-            return filters.textFilter(item, attr, args[attr]);
-          case "integer":
-          case "float":
-          case "decimal":
-          case "datetime":
-          case "date":
-            return filters.numericFilter(item, attr, {
-              from: args[attr + "_from"],
-              to: args[attr + "_to"]
-            });
-          case "boolean":
-            return filters.booleanFilter(item, attr, args[attr]);
-          default:
-            return true;
-        }
-      });
+      var query, searchableKeys;
+      if (query = args.search) {
+        searchableKeys = [];
+        _(Dataclips.config.schema).each(function(attrs, key) {
+          if (attrs.type === "text") {
+            return searchableKeys.push(key);
+          }
+        });
+        return _.any(searchableKeys, function(key) {
+          return filters.textFilter(item, key, query);
+        });
+      } else {
+        return _.all(Dataclips.config.schema, function(options, attr) {
+          switch (options.type) {
+            case "text":
+              return filters.textFilter(item, attr, args[attr]);
+            case "integer":
+            case "float":
+            case "decimal":
+            case "datetime":
+            case "date":
+              return filters.numericFilter(item, attr, {
+                from: args[attr + "_from"],
+                to: args[attr + "_to"]
+              });
+            case "boolean":
+              return filters.booleanFilter(item, attr, args[attr]);
+            default:
+              return true;
+          }
+        });
+      }
     });
     dataView.onPagingInfoChanged.subscribe(function(e, args) {
       var i, ref, results;

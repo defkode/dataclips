@@ -5,7 +5,6 @@ _          = require('underscore');
 moment = require("moment");
 require("moment/locale/de");
 
-
 // Backbone
 Backbone   = require('backbone');
 Backbone.$ = $;
@@ -36,6 +35,7 @@ Dataclips.resetFilter = function(key) {
 }
 
 Dataclips.resetAllFilters = function(){
+  Dataclips.filterArgs.unset("search")
   _.each(Dataclips.config.schema, function(options, key) {
     Dataclips.resetFilter(key)
   });
@@ -138,6 +138,11 @@ window.addEventListener('message', function(e) {
         }
       }
     });
+  } else if  (e.data.search) {
+    var query = e.data.search
+    Dataclips.resetAllFilters();
+    Dataclips.filterArgs.set('search', query);
+
   }
 
 });

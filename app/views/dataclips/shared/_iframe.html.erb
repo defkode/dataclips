@@ -25,6 +25,8 @@
     jFrame.on("dataclips-refresh",    function(){  sendMessage({refresh:    true}) });
     jFrame.on("dataclips-fullscreen", function(){  sendMessage({fullscreen: true}) });
 
+    jFrame.on("dataclips-search", function(e, query){ sendMessage({search: query}) });
+
     jFrame.on("dataclips-filters", function(e, filters){
       sendMessage({filters: filters});
     });
