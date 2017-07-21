@@ -463,7 +463,7 @@ module.exports = Backbone.View.extend({
     });
     grid.onClick.subscribe(function(e, args) {
       console.log("rowClicked", args.row);
-      console.log("columnClicked", args);
+      console.log("cellClicked", args.cell);
       return Dataclips.proxy.set('row-clicked', dataView.getItem(args.row));
     });
     grid.onSort.subscribe(function(e, args) {
