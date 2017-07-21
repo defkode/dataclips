@@ -100,10 +100,16 @@ module.exports = Backbone.View.extend
     $(window).resize ->
       grid.resizeCanvas()
 
+    # grid.setSelectionModel(new Slick.RowSelectionModel)
+
     # grid.onSelectedRowsChanged.subscribe (e, args) ->
     #    console.log(grid.getSelectedRows())
 
-    # grid.setSelectionModel(new Slick.RowSelectionModel)
+
+    grid.onClick.subscribe (e, args) ->
+      console.log("rowClicked", args.row)
+      console.log("cellClicked", args.cell)
+      Dataclips.proxy.set('row-clicked', dataView.getItem(args.row))
 
     grid.onSort.subscribe (e, args) ->
       sortcol = args.sortCol.field
