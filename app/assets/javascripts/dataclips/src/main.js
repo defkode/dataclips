@@ -138,11 +138,10 @@ window.addEventListener('message', function(e) {
         }
       }
     });
-  } else if  (e.data.search) {
+  } else if  (_(e.data).has('search')) {
     var query = e.data.search
     Dataclips.resetAllFilters();
     Dataclips.filterArgs.set('search', query);
-
   }
 
 });
