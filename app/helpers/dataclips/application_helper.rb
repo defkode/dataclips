@@ -24,16 +24,12 @@ module Dataclips
     end
 
     def insight(insight, options = {})
-      width          = options.fetch(:width, "100%")
-      height         = options.fetch(:height, "500")
       id             = options.fetch(:id, dom_id(insight))
       locale         = options.fetch(:locale, I18n.locale)
       sidebar        = options.fetch(:sidebar, true)
 
       render "dataclips/shared/iframe", {
         id:      id,
-        width:   width,
-        height:  height,
         src:     dataclips.insight_path(insight, {locale: locale, sidebar: sidebar ? 1 : 0})
       }
     end

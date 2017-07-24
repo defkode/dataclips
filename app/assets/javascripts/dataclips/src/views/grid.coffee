@@ -44,6 +44,9 @@ module.exports = Backbone.View.extend
         @modal.modal('show')
         $('#xlsx').tab('show')
 
+  initialize: ->
+    Dataclips.resizeGrid()
+
   render: ->
     @listenTo Dataclips.proxy, "change", _.debounce (model) ->
       @$el.find("span.total_entries_count").text(model.get("total_entries_count"))
@@ -91,13 +94,15 @@ module.exports = Backbone.View.extend
           headerCssClass: options.type
           formatter:      Dataclips.Formatters[formatter]
           width:          options.width
+          autoHeight:     true
 
     grid = new Slick.Grid("#grid", dataView, columns, options)
 
     grid.registerPlugin(new Slick.AutoTooltips(enableForHeaderCells: true));
 
 
-    $(window).resize ->
+    $(window).on 'resize', ->
+      Dataclips.resizeGrid()
       grid.resizeCanvas()
 
     # grid.setSelectionModel(new Slick.RowSelectionModel)
@@ -107,8 +112,6 @@ module.exports = Backbone.View.extend
 
 
     grid.onClick.subscribe (e, args) ->
-      console.log("rowClicked", args.row)
-      console.log("cellClicked", args.cell)
       Dataclips.proxy.set('row-clicked', dataView.getItem(args.row))
 
     grid.onSort.subscribe (e, args) ->

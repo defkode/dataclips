@@ -59,6 +59,11 @@ Dataclips.requestFullScreen = function(element) {
 };
 
 
+Dataclips.resizeGrid = function(){
+  var grid    = document.getElementById('grid');
+  grid.style.height = window.innerHeight + 'px';
+};
+
 Dataclips.run = function(){
   Dataclips.collection     = new Records;
   Dataclips.collection.url = this.config.url;
@@ -88,9 +93,11 @@ Dataclips.run = function(){
 
   Dataclips.collection.fetchInBatches(this.config.params);
 
-  this.progress.render();
   this.gridView.render();
+  this.progress.render();
   this.sidebarView.render();
+
+  $(window).trigger('resize');
 };
 
 

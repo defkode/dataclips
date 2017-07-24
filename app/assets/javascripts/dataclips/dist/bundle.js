@@ -170,6 +170,11 @@ Dataclips.requestFullScreen = function(element) {
 };
 
 
+Dataclips.resizeGrid = function(){
+  var grid    = document.getElementById('grid');
+  grid.style.height = window.innerHeight + 'px';
+};
+
 Dataclips.run = function(){
   Dataclips.collection     = new Records;
   Dataclips.collection.url = this.config.url;
@@ -199,9 +204,11 @@ Dataclips.run = function(){
 
   Dataclips.collection.fetchInBatches(this.config.params);
 
-  this.progress.render();
   this.gridView.render();
+  this.progress.render();
   this.sidebarView.render();
+
+  $(window).trigger('resize');
 };
 
 
@@ -411,6 +418,9 @@ module.exports = Backbone.View.extend({
       }
     }
   },
+  initialize: function() {
+    return Dataclips.resizeGrid();
+  },
   render: function() {
     this.listenTo(Dataclips.proxy, "change", _.debounce(function(model) {
       this.$el.find("span.total_entries_count").text(model.get("total_entries_count"));
@@ -450,7 +460,8 @@ module.exports = Backbone.View.extend({
           cssClass: options.type,
           headerCssClass: options.type,
           formatter: Dataclips.Formatters[formatter],
-          width: options.width
+          width: options.width,
+          autoHeight: true
         });
       }
     });
@@ -458,12 +469,11 @@ module.exports = Backbone.View.extend({
     grid.registerPlugin(new Slick.AutoTooltips({
       enableForHeaderCells: true
     }));
-    $(window).resize(function() {
+    $(window).on('resize', function() {
+      Dataclips.resizeGrid();
       return grid.resizeCanvas();
     });
     grid.onClick.subscribe(function(e, args) {
-      console.log("rowClicked", args.row);
-      console.log("cellClicked", args.cell);
       return Dataclips.proxy.set('row-clicked', dataView.getItem(args.row));
     });
     grid.onSort.subscribe(function(e, args) {

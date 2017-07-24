@@ -3,13 +3,7 @@
 <%= render "dataclips_config" %>
 
 <script>
-  $(window).resize(function(){
-    $("#grid, #filters, #sidebar").css("height", $(window).height());
-  });
-
   $(document).ready(function(){
-    $(window).trigger("resize");
-
     Dataclips.proxy = new Backbone.Model({
       total_entries_count: 0,
       percent_loaded:      0,
