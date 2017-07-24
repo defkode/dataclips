@@ -274,7 +274,7 @@ module.exports = Backbone.View.extend({
     this.ctx.lineWidth = 10.0;
 
     this.ctx.beginPath();
-    this.ctx.strokeStyle = '#6F5498';
+    this.ctx.strokeStyle = Dataclips.config.progressbar_color;
     this.ctx.closePath();
     this.ctx.fill();
     this.imd = this.ctx.getImageData(0, 0, 240, 240);
