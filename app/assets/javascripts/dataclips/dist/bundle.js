@@ -146,7 +146,6 @@ Dataclips.resetFilter = function(key) {
 }
 
 Dataclips.resetAllFilters = function(){
-  Dataclips.filterArgs.unset("search")
   _.each(Dataclips.config.schema, function(options, key) {
     Dataclips.resetFilter(key)
   });
@@ -224,42 +223,28 @@ window.addEventListener('message', function(e) {
         var type = Dataclips.config.schema[key]["type"];
         switch (type) {
           case "boolean":
-            if (value != null) {
-              $("[name='" + key + "']").val(value === true ? "1" : "0");
-              return Dataclips.filterArgs.set(key, value);
-            }
+            if (value != null) { Dataclips.filterArgs.set(key, value) }
             break;
           case "text":
-            if (value != null) {
-              return Dataclips.filterArgs.set(key, value);
-            }
+            if (value != null) { Dataclips.filterArgs.set(key, value) }
             break;
           case "float":
           case "integer":
           case "decimal":
-            if (value.from != null) {
-              Dataclips.filterArgs.set(key + "_from", value.from);
-            }
-            if (value.to != null) {
-              return Dataclips.filterArgs.set(key + "_to", value.from);
-            }
+            if (value.from != null) { Dataclips.filterArgs.set(key + "_from", value.from) }
+            if (value.to != null)   { Dataclips.filterArgs.set(key + "_to", value.from) }
             break;
           case "date":
           case "datetime":
           case "time":
-            if (value.from != null) {
-              Dataclips.filterArgs.set(key + "_from", moment(value.from).toDate());
-            }
-            if (value.to != null) {
-              return Dataclips.filterArgs.set(key + "_to", moment(value.to).toDate());
-            }
+            if (value.from != null) { Dataclips.filterArgs.set(key + "_from", moment(value.from).toDate()) }
+            if (value.to != null)   { Dataclips.filterArgs.set(key + "_to", moment(value.to).toDate()) }
+            break;
         }
+      } else {
+        if (key === "query") { Dataclips.filterArgs.set("query", value) }
       }
     });
-  } else if  (_(e.data).has('search')) {
-    var query = e.data.search
-    Dataclips.resetAllFilters();
-    Dataclips.filterArgs.set('search', query);
   }
 
 });
@@ -496,36 +481,37 @@ module.exports = Backbone.View.extend({
       return dataView.sort(compareByColumn, args.sortAsc);
     });
     dataView.setFilter(function(item, args) {
-      var query, ref, searchableKeys;
-      query = (ref = args.search) != null ? ref.trim() : void 0;
+      var and_conditions, query, ref, searchableKeys;
+      query = (ref = args.query) != null ? ref.trim() : void 0;
+      and_conditions = _.all(Dataclips.config.schema, function(options, attr) {
+        switch (options.type) {
+          case "text":
+            return filters.textFilter(item, attr, args[attr]);
+          case "integer":
+          case "float":
+          case "decimal":
+          case "datetime":
+          case "date":
+            return filters.numericFilter(item, attr, {
+              from: args[attr + "_from"],
+              to: args[attr + "_to"]
+            });
+          case "boolean":
+            return filters.booleanFilter(item, attr, args[attr]);
+          default:
+            return true;
+        }
+      });
       if (_.isEmpty(query)) {
-        return _.all(Dataclips.config.schema, function(options, attr) {
-          switch (options.type) {
-            case "text":
-              return filters.textFilter(item, attr, args[attr]);
-            case "integer":
-            case "float":
-            case "decimal":
-            case "datetime":
-            case "date":
-              return filters.numericFilter(item, attr, {
-                from: args[attr + "_from"],
-                to: args[attr + "_to"]
-              });
-            case "boolean":
-              return filters.booleanFilter(item, attr, args[attr]);
-            default:
-              return true;
-          }
-        });
+        return and_conditions;
       } else {
         searchableKeys = [];
         _(Dataclips.config.schema).each(function(attrs, key) {
-          if (attrs.type === "text") {
+          if (attrs.type === "text" && !_(args).has(key)) {
             return searchableKeys.push(key);
           }
         });
-        return _.any(searchableKeys, function(key) {
+        return and_conditions && _.any(searchableKeys, function(key) {
           return filters.textFilter(item, key, query);
         });
       }

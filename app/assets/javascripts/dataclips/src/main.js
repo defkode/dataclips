@@ -35,7 +35,6 @@ Dataclips.resetFilter = function(key) {
 }
 
 Dataclips.resetAllFilters = function(){
-  Dataclips.filterArgs.unset("search")
   _.each(Dataclips.config.schema, function(options, key) {
     Dataclips.resetFilter(key)
   });
@@ -113,42 +112,28 @@ window.addEventListener('message', function(e) {
         var type = Dataclips.config.schema[key]["type"];
         switch (type) {
           case "boolean":
-            if (value != null) {
-              $("[name='" + key + "']").val(value === true ? "1" : "0");
-              return Dataclips.filterArgs.set(key, value);
-            }
+            if (value != null) { Dataclips.filterArgs.set(key, value) }
             break;
           case "text":
-            if (value != null) {
-              return Dataclips.filterArgs.set(key, value);
-            }
+            if (value != null) { Dataclips.filterArgs.set(key, value) }
             break;
           case "float":
           case "integer":
           case "decimal":
-            if (value.from != null) {
-              Dataclips.filterArgs.set(key + "_from", value.from);
-            }
-            if (value.to != null) {
-              return Dataclips.filterArgs.set(key + "_to", value.from);
-            }
+            if (value.from != null) { Dataclips.filterArgs.set(key + "_from", value.from) }
+            if (value.to != null)   { Dataclips.filterArgs.set(key + "_to", value.from) }
             break;
           case "date":
           case "datetime":
           case "time":
-            if (value.from != null) {
-              Dataclips.filterArgs.set(key + "_from", moment(value.from).toDate());
-            }
-            if (value.to != null) {
-              return Dataclips.filterArgs.set(key + "_to", moment(value.to).toDate());
-            }
+            if (value.from != null) { Dataclips.filterArgs.set(key + "_from", moment(value.from).toDate()) }
+            if (value.to != null)   { Dataclips.filterArgs.set(key + "_to", moment(value.to).toDate()) }
+            break;
         }
+      } else {
+        if (key === "query") { Dataclips.filterArgs.set("query", value) }
       }
     });
-  } else if  (_(e.data).has('search')) {
-    var query = e.data.search
-    Dataclips.resetAllFilters();
-    Dataclips.filterArgs.set('search', query);
   }
 
 });

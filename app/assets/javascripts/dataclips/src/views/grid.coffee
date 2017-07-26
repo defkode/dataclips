@@ -129,29 +129,31 @@ module.exports = Backbone.View.extend
 
 
     dataView.setFilter (item, args) ->
-      query = args.search?.trim()
+      query = args.query?.trim()
+
+      and_conditions = _.all Dataclips.config.schema, (options, attr) ->
+        switch options.type
+          when "text"
+            filters.textFilter(item, attr, args[attr])
+          when "integer", "float", "decimal", "datetime", "date"
+            filters.numericFilter(item, attr, {
+              from: args["#{attr}_from"],
+              to:   args["#{attr}_to"]
+            })
+          when "boolean"
+            filters.booleanFilter(item, attr, args[attr])
+          else
+            true
+
       if _.isEmpty(query)
-        _.all Dataclips.config.schema, (options, attr) ->
-          switch options.type
-            when "text"
-              filters.textFilter(item, attr, args[attr])
-            when "integer", "float", "decimal", "datetime", "date"
-              filters.numericFilter(item, attr, {
-                from: args["#{attr}_from"],
-                to:   args["#{attr}_to"]
-              })
-            when "boolean"
-              filters.booleanFilter(item, attr, args[attr])
-            else
-              true
+         and_conditions
       else
         searchableKeys = []
         _(Dataclips.config.schema).each (attrs, key) ->
-          if attrs.type is "text"
+          if attrs.type is "text" && !_(args).has(key)
             searchableKeys.push(key)
 
-        _.any searchableKeys, (key) ->
-          filters.textFilter(item, key, query)
+        and_conditions && _.any searchableKeys, (key) -> filters.textFilter(item, key, query)
 
     # pageSize, pageNum, totalRows, totalPages
     dataView.onPagingInfoChanged.subscribe (e, args) ->
