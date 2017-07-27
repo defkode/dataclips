@@ -3,7 +3,6 @@ _          = require('underscore');
 
 // Moment
 moment = require("moment");
-require("moment/locale/de");
 
 // Backbone
 Backbone   = require('backbone');

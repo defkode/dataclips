@@ -26,7 +26,6 @@
     jFrame.on("dataclips-fullscreen", function(){  sendMessage({fullscreen: true}) });
 
     jFrame.on("dataclips-filters", function(e, filters){
-      console.log("filters-changed", filters);
       sendMessage({filters: filters});
     });
   } else {

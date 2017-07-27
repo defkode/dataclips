@@ -114,7 +114,6 @@ _          = require('underscore');
 
 // Moment
 moment = require("moment");
-require("moment/locale/de");
 
 // Backbone
 Backbone   = require('backbone');
@@ -250,7 +249,7 @@ window.addEventListener('message', function(e) {
 });
 
 
-},{"./dataclips":1,"./progress":4,"./records":6,"./views/grid":7,"./views/sidebar":8,"backbone":18,"jquery":64,"moment":109,"moment/locale/de":108,"underscore":113}],4:[function(require,module,exports){
+},{"./dataclips":1,"./progress":4,"./records":6,"./views/grid":7,"./views/sidebar":8,"backbone":18,"jquery":64,"moment":108,"underscore":112}],4:[function(require,module,exports){
 module.exports = Backbone.View.extend({
   el: "#progress",
   initialize: function(options){
@@ -308,7 +307,7 @@ module.exports = Backbone.Model.extend({
   }
 });
 
-},{"moment":109,"moment-timezone":106}],6:[function(require,module,exports){
+},{"moment":108,"moment-timezone":106}],6:[function(require,module,exports){
 Record  = require('./record');
 
 module.exports = Backbone.Collection.extend({
@@ -8813,7 +8812,7 @@ if (typeof Slick === "undefined") {
 });
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"jquery":64,"underscore":113}],19:[function(require,module,exports){
+},{"jquery":64,"underscore":112}],19:[function(require,module,exports){
 'use strict'
 
 exports.byteLength = byteLength
@@ -26355,7 +26354,7 @@ SheetProtection.algorithms = {MD5: 'md5', SHA1: 'sha1', SHA256: 'sha256', SHA384
 
 module.exports = SheetProtection;
 }).call(this,require("buffer").Buffer)
-},{"./util":57,"buffer":33,"lodash":35,"node-forge":110}],49:[function(require,module,exports){
+},{"./util":57,"buffer":33,"lodash":35,"node-forge":109}],49:[function(require,module,exports){
 /**
  * @module Excel/SheetView
  *
@@ -27576,7 +27575,7 @@ _.extend(Workbook.prototype, {
     }
 });
 module.exports = Workbook;
-},{"./Paths":44,"./RelationshipManager":46,"./SharedStrings":47,"./StyleSheet":50,"./Worksheet":53,"./XMLDOM":55,"./util":57,"lodash":35,"q":112}],53:[function(require,module,exports){
+},{"./Paths":44,"./RelationshipManager":46,"./SharedStrings":47,"./StyleSheet":50,"./Worksheet":53,"./XMLDOM":55,"./util":57,"lodash":35,"q":111}],53:[function(require,module,exports){
 "use strict";
 var _ = require('lodash');
 var util = require('./util');
@@ -49300,87 +49299,7 @@ moment.tz.load(require('./data/packed/latest.json'));
 	return moment;
 }));
 
-},{"moment":109}],108:[function(require,module,exports){
-//! moment.js locale configuration
-//! locale : German [de]
-//! author : lluchs : https://github.com/lluchs
-//! author: Menelion Elensúle: https://github.com/Oire
-//! author : Mikolaj Dadela : https://github.com/mik01aj
-
-;(function (global, factory) {
-   typeof exports === 'object' && typeof module !== 'undefined'
-       && typeof require === 'function' ? factory(require('../moment')) :
-   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
-   factory(global.moment)
-}(this, (function (moment) { 'use strict';
-
-
-function processRelativeTime(number, withoutSuffix, key, isFuture) {
-    var format = {
-        'm': ['eine Minute', 'einer Minute'],
-        'h': ['eine Stunde', 'einer Stunde'],
-        'd': ['ein Tag', 'einem Tag'],
-        'dd': [number + ' Tage', number + ' Tagen'],
-        'M': ['ein Monat', 'einem Monat'],
-        'MM': [number + ' Monate', number + ' Monaten'],
-        'y': ['ein Jahr', 'einem Jahr'],
-        'yy': [number + ' Jahre', number + ' Jahren']
-    };
-    return withoutSuffix ? format[key][0] : format[key][1];
-}
-
-var de = moment.defineLocale('de', {
-    months : 'Januar_Februar_März_April_Mai_Juni_Juli_August_September_Oktober_November_Dezember'.split('_'),
-    monthsShort : 'Jan._Febr._Mrz._Apr._Mai_Jun._Jul._Aug._Sept._Okt._Nov._Dez.'.split('_'),
-    monthsParseExact : true,
-    weekdays : 'Sonntag_Montag_Dienstag_Mittwoch_Donnerstag_Freitag_Samstag'.split('_'),
-    weekdaysShort : 'So._Mo._Di._Mi._Do._Fr._Sa.'.split('_'),
-    weekdaysMin : 'So_Mo_Di_Mi_Do_Fr_Sa'.split('_'),
-    weekdaysParseExact : true,
-    longDateFormat : {
-        LT: 'HH:mm',
-        LTS: 'HH:mm:ss',
-        L : 'DD.MM.YYYY',
-        LL : 'D. MMMM YYYY',
-        LLL : 'D. MMMM YYYY HH:mm',
-        LLLL : 'dddd, D. MMMM YYYY HH:mm'
-    },
-    calendar : {
-        sameDay: '[heute um] LT [Uhr]',
-        sameElse: 'L',
-        nextDay: '[morgen um] LT [Uhr]',
-        nextWeek: 'dddd [um] LT [Uhr]',
-        lastDay: '[gestern um] LT [Uhr]',
-        lastWeek: '[letzten] dddd [um] LT [Uhr]'
-    },
-    relativeTime : {
-        future : 'in %s',
-        past : 'vor %s',
-        s : 'ein paar Sekunden',
-        m : processRelativeTime,
-        mm : '%d Minuten',
-        h : processRelativeTime,
-        hh : '%d Stunden',
-        d : processRelativeTime,
-        dd : processRelativeTime,
-        M : processRelativeTime,
-        MM : processRelativeTime,
-        y : processRelativeTime,
-        yy : processRelativeTime
-    },
-    dayOfMonthOrdinalParse: /\d{1,2}\./,
-    ordinal : '%d.',
-    week : {
-        dow : 1, // Monday is the first day of the week.
-        doy : 4  // The week that contains Jan 4th is the first week of the year.
-    }
-});
-
-return de;
-
-})));
-
-},{"../moment":109}],109:[function(require,module,exports){
+},{"moment":108}],108:[function(require,module,exports){
 //! moment.js
 //! version : 2.18.1
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
@@ -53845,7 +53764,7 @@ return hooks;
 
 })));
 
-},{}],110:[function(require,module,exports){
+},{}],109:[function(require,module,exports){
 /**
  * Node.js module for Forge.
  *
@@ -53939,7 +53858,7 @@ define([
 });
 })();
 
-},{}],111:[function(require,module,exports){
+},{}],110:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -54125,7 +54044,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],112:[function(require,module,exports){
+},{}],111:[function(require,module,exports){
 (function (process){
 // vim:ts=4:sts=4:sw=4:
 /*!
@@ -56202,7 +56121,7 @@ return Q;
 });
 
 }).call(this,require('_process'))
-},{"_process":111}],113:[function(require,module,exports){
+},{"_process":110}],112:[function(require,module,exports){
 //     Underscore.js 1.8.3
 //     http://underscorejs.org
 //     (c) 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
