@@ -101,7 +101,7 @@ Dataclips.run = function(){
 
 window.addEventListener('message', function(e) {
   if (e.data.refresh    === true) { Dataclips.reload() }
-  if (e.data.fullscreen === true) { Dataclips.requestFullScreen() }
+  if (e.data.fullscreen === true) { Dataclips.requestFullScreen(document.body) }
 
   if (e.data.filters) {
     Dataclips.resetAllFilters();
