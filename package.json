@@ -26,7 +26,8 @@
     "excel-builder": "2.0.0",
     "font-awesome": "^4.6.1",
     "jquery": "^2.2.3",
-    "moment": "^2.13.0"
+    "moment": "^2.13.0",
+    "rails-ujs": "^5.1.2"
   },
   "devDependencies": {
     "browserify": "^13.0.0",

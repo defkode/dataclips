@@ -58,6 +58,8 @@ module.exports = Backbone.View.extend
 
     @modal = $("#download-dialog").modal('hide')
 
+    Rails.start()
+
 
   configureSlickGrid: ->
     options =
