@@ -2,6 +2,7 @@
 <html>
 <head>
   <title><%= yield :title %></title>
+  <%= csrf_meta_tags %>
   <%= stylesheet_link_tag *Dataclips::Engine.config.themes[@theme]["css"], media: "all" %>
   <%= javascript_include_tag "dataclips/dist/bundle.js", "dataclips/vendor/bootstrap-datetimepicker.min" %>
   <% if Dataclips::Engine.config.include_js.present? %>
