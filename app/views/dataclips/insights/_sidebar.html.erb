@@ -40,7 +40,7 @@
           <i class="fa fa-expand"></i>
         </a>
 
-        <a href="<%= download_insight_url(@insight, I18n.locale) %>" class="download">
+        <a href="<%= dataclips.export_insight_path(@insight, locale: I18n.locale, format: :csv) %>" class="download">
           <i class="fa fa-download"></i>
         </a>
       </div>

@@ -28,7 +28,7 @@
             </div>
 
             <div role="tabpanel" class="tab-pane" id="csv">
-              <form method="get" action="<%= download_insight_url(@insight, I18n.locale) %>" class="form-horizontal">
+              <form method="get" action="<%= dataclips.export_insight_path(@insight, locale: I18n.locale) %>" class="form-horizontal">
                   <label for="filename_csv" class="col-sm-2 control-label">Filename:</label>
                   <div class="input-group col-sm-10">
                     <input type="text" class="form-control" id="filename_csv" name="filename" placeholder="<%= (@insight.name.present? ? @insight.name : @insight.clip_id).parameterize %>" value="<%= (@insight.name.present? ? @insight.name : @insight.clip_id).parameterize %>" required>
