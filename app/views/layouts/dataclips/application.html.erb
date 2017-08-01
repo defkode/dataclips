@@ -8,6 +8,10 @@
   <% if Dataclips::Engine.config.include_js.present? %>
     <%= javascript_include_tag Dataclips::Engine.config.include_js %>
   <% end %>
+
+  <% if asset_exist?("dataclips/#{@clip_id}.js") %>
+    <%= javascript_include_tag "dataclips/#{@clip_id}.js" %>
+  <% end %>
 </head>
 <body class="theme-<%= @theme %> <%= ('with-sidebar' if @sidebar) %>">
 <%= yield %>
