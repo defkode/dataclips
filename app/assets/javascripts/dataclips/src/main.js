@@ -1,6 +1,5 @@
 $          = jQuery = require('jquery');
 _          = require('underscore');
-
 // Moment
 moment = require("moment");
 

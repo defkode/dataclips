@@ -1,3 +1,5 @@
+Rails = require('rails-ujs');
+
 require('../../vendor/slickgrid/lib/jquery.event.drag-2.2');
 
 require('../../vendor/slickgrid/slick.core');
