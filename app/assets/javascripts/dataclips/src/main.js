@@ -13,10 +13,10 @@ Records           = require('./records');
 
 Dataclips.Progress    = require('./progress');
 Dataclips.GridView    = require('./views/grid');
-Dataclips.SidebarView = require('./views/sidebar')
+Dataclips.SidebarView = require('./views/sidebar');
 
 Dataclips.resetFilter = function(key) {
-  var type = Dataclips.config.schema[key]["type"];
+  var type = Dataclips.config.schema[key].type;
 
   switch (type) {
     case "integer":
@@ -31,11 +31,11 @@ Dataclips.resetFilter = function(key) {
     default:
       Dataclips.filterArgs.unset(key);
   }
-}
+};
 
 Dataclips.resetAllFilters = function(){
   _.each(Dataclips.config.schema, function(options, key) {
-    Dataclips.resetFilter(key)
+    Dataclips.resetFilter(key);
   });
 };
 
@@ -63,11 +63,11 @@ Dataclips.resizeGrid = function(){
 };
 
 Dataclips.run = function(){
-  Dataclips.collection     = new Records;
+  Dataclips.collection     = new Records();
   Dataclips.collection.url = this.config.url;
 
   this.gridView      = new Dataclips.GridView({collection: Dataclips.collection});
-  this.sidebarView   = new Dataclips.SidebarView;
+  this.sidebarView   = new Dataclips.SidebarView();
   this.progress      = new Dataclips.Progress();
 
   Dataclips.collection.on("reset", function() {
@@ -100,40 +100,39 @@ Dataclips.run = function(){
 
 
 window.addEventListener('message', function(e) {
-  if (e.data.refresh    === true) { Dataclips.reload() }
-  if (e.data.fullscreen === true) { Dataclips.requestFullScreen(document.body) }
+  if (e.data.refresh    === true) { Dataclips.reload(); }
+  if (e.data.fullscreen === true) { Dataclips.requestFullScreen(document.body); }
 
   if (e.data.filters) {
     Dataclips.resetAllFilters();
 
     _.each(e.data.filters, function(value, key) {
       if (Dataclips.config.schema[key] != null) {
-        var type = Dataclips.config.schema[key]["type"];
+        var type = Dataclips.config.schema[key].type;
         switch (type) {
           case "boolean":
-            if (value != null) { Dataclips.filterArgs.set(key, value) }
+            if (value != null) { Dataclips.filterArgs.set(key, value); }
             break;
           case "text":
-            if (value != null) { Dataclips.filterArgs.set(key, value) }
+            if (value != null) { Dataclips.filterArgs.set(key, value); }
             break;
           case "float":
           case "integer":
           case "decimal":
-            if (value.from != null) { Dataclips.filterArgs.set(key + "_from", value.from) }
-            if (value.to != null)   { Dataclips.filterArgs.set(key + "_to", value.from) }
+            if (value.from != null) { Dataclips.filterArgs.set(key + "_from", value.from); }
+            if (value.to != null)   { Dataclips.filterArgs.set(key + "_to", value.from); }
             break;
           case "date":
           case "datetime":
           case "time":
-            if (value.from != null) { Dataclips.filterArgs.set(key + "_from", moment(value.from).toDate()) }
-            if (value.to != null)   { Dataclips.filterArgs.set(key + "_to", moment(value.to).toDate()) }
+            if (value.from != null) { Dataclips.filterArgs.set(key + "_from", moment(value.from).toDate()); }
+            if (value.to != null)   { Dataclips.filterArgs.set(key + "_to", moment(value.to).toDate()); }
             break;
         }
       } else {
-        if (key === "query") { Dataclips.filterArgs.set("query", value) }
+        if (key === "query") { Dataclips.filterArgs.set("query", value); }
       }
     });
   }
 
 });
-
