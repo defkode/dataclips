@@ -170,6 +170,12 @@ Dataclips.requestFullScreen = function(element) {
 Dataclips.resizeGrid = function(){
   var grid    = document.getElementById('grid');
   grid.style.height = window.innerHeight + 'px';
+
+  var sidebar = document.getElementById('sidebar');
+  if (sidebar) {
+    sidebar.style.height = window.innerHeight + 'px';
+  }
+
 };
 
 Dataclips.run = function(){
