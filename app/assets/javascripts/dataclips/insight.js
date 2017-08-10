@@ -12,6 +12,7 @@ $.widget("dataclips.insight", {
   },
   _init: function(){
     this.filters = {};
+
     this.frameWindow = this.element.get(0).contentWindow;
 
     var self = this;
@@ -24,7 +25,13 @@ $.widget("dataclips.insight", {
       frame.height = options.adjustHeight() || 500;
     };
     window.addEventListener('resize', resizeIframe, true);
-    frame.addEventListener('load', resizeIframe, true);
+    
+    frame.addEventListener('load', function(){
+      self.setFilter(self.options.defaultFilter);
+      resizeIframe();
+      self._trigger("load");
+    }, true);
+    
 
     // communication
     window.addEventListener('message', function (e) {
