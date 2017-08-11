@@ -8,7 +8,7 @@ $.widget("dataclips.insight", {
       .attr("scrolling", "no")
       .attr("frameborder", "no")
       .prop("allowfullscreen", true)
-      .attr("src", this.options.src);
+      .attr("src", this.options.src + '?format=html');
   },
   _init: function(){
     this.filters = {};
@@ -25,13 +25,13 @@ $.widget("dataclips.insight", {
       frame.height = options.adjustHeight() || 500;
     };
     window.addEventListener('resize', resizeIframe, true);
-    
+
     frame.addEventListener('load', function(){
       self.setFilter(self.options.defaultFilter);
       resizeIframe();
       self._trigger("load");
     }, true);
-    
+
 
     // communication
     window.addEventListener('message', function (e) {
