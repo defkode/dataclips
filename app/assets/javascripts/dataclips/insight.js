@@ -56,7 +56,19 @@ $.widget("dataclips.insight", {
   },
 
   setFilter: function(filters) {
-    this.filters = $.extend(this.filters, filters);
-    this._sendMessage({filters: this.filters});
+    // $.extend({date_of_order: {from: X}}, {date_of_order: {to: Y}})
+    // {date_of_order: {to: Y}}
+    if (filters !== undefined) {
+      Object.keys(filters).forEach(function(key) {
+        if (typeof(filters[key]) === 'object' && typeof(this.filters[key]) === 'object') {
+          // merge nested objects values
+          return this.filters[key] = $.extend(this.filters[key], filters[key]);
+        } else {
+          // replace value
+          return this.filters[key] = filters[key];
+        };
+      }.bind(this));
+      this._sendMessage({filters: this.filters});
+    };
   }
 });
