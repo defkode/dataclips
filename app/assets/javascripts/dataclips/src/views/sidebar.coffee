@@ -1,4 +1,5 @@
 require("bootstrap")
+require("moment/locale/de");
 
 module.exports = Backbone.View.extend
   el: "#filters"
