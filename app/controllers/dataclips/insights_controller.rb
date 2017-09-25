@@ -63,6 +63,11 @@ module Dataclips
         end
 
         format.json do
+          if @connection.present?
+            ActiveRecord::Base.establish_connection Rails.configuration.database_configuration["dataclips_#{@connection}"]
+          else
+            ActiveRecord::Base.establish_connection Rails.configuration.database_configuration[Rails.env]
+          end
           render_json_records(@query, @schema, params[:page], @per_page)
         end
       end
@@ -96,9 +101,10 @@ module Dataclips
 
       @clip      = Clip.new(@clip_id, @insight.schema)
 
-      @schema    = @clip.schema
-      @query     = @clip.query(@insight.params)
-      @per_page  = @clip.per_page
+      @schema     = @clip.schema
+      @connection = @clip.connection
+      @query      = @clip.query(@insight.params)
+      @per_page   = @clip.per_page
 
       @headers   = localize_headers(@clip_id, @schema.keys)
     end

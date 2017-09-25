@@ -1,5 +1,6 @@
 module Dataclips
   class Insight < ActiveRecord::Base
+    establish_connection Rails.configuration.database_configuration[Rails.env]
     class FileNotFound < ArgumentError; end
 
     validates :clip_id, presence: true
@@ -23,7 +24,7 @@ module Dataclips
     def self.get!(clip_id, params = {}, options = {})
       schema    = options[:schema]
 
-      clip      = Clip.new(clip_id, schema) 
+      clip      = Clip.new(clip_id, schema)
       name      = options.fetch(:name, clip.name || clip_id)
 
       checksum = calculate_checksum(clip_id, params, schema)
@@ -31,7 +32,7 @@ module Dataclips
         return insight
       else
         hash_id = SecureRandom.urlsafe_base64(6)
-        
+
         if basic_auth = options[:basic_auth]
           if basic_auth[:username].present? && basic_auth[:password].present?
             basic_auth_credentials = [basic_auth[:username], basic_auth[:password]].join(":")
