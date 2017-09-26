@@ -26,6 +26,12 @@ module Dataclips
 
       response.stream.write CSV.generate(csv_options) { |csv| csv << @headers.values}
 
+      if @connection.present?
+        ActiveRecord::Base.establish_connection Rails.configuration.database_configuration["dataclips_#{@connection}"]
+      else
+        ActiveRecord::Base.establish_connection Rails.configuration.database_configuration[Rails.env]
+      end
+
       paginator = Dataclips::Paginator.new(@query, @schema)
 
       records = paginator.paginate(1)
