@@ -19,7 +19,7 @@ module.exports = Backbone.Collection.extend({
     };
 
     this.fetch({
-      data: defaultParams,
+      data: _({timestamp: new Date().getTime()}).extend(defaultParams),
       success: function(collection, data) {
         collection.trigger("batchInsert", data);
         fetchNextPage(collection, data.page, data.total_pages);
