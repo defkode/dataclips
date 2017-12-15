@@ -79,8 +79,7 @@ Dataclips.run = function(){
     Dataclips.proxy.clear();
   });
 
-  Dataclips.collection.on("batchInsert", function(data){
-    var total_entries_count = data.total_entries_count;
+  Dataclips.collection.on("batchInsert", function(records, total_entries_count){
     var entries_count       = Dataclips.collection.size();
     var percent_loaded      = entries_count > 0 ? (entries_count / total_entries_count) : total_entries_count === 0 ? 1 : 0;
 
@@ -90,7 +89,7 @@ Dataclips.run = function(){
       total_entries_count: total_entries_count,
       entries_count:       entries_count,
       percent_loaded:      percent_loaded,
-      batch:               data.records
+      batch:               records
     });
   });
 

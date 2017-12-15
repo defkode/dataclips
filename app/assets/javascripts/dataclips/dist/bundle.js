@@ -190,8 +190,7 @@ Dataclips.run = function(){
     Dataclips.proxy.clear();
   });
 
-  Dataclips.collection.on("batchInsert", function(data){
-    var total_entries_count = data.total_entries_count;
+  Dataclips.collection.on("batchInsert", function(records, total_entries_count){
     var entries_count       = Dataclips.collection.size();
     var percent_loaded      = entries_count > 0 ? (entries_count / total_entries_count) : total_entries_count === 0 ? 1 : 0;
 
@@ -201,7 +200,7 @@ Dataclips.run = function(){
       total_entries_count: total_entries_count,
       entries_count:       entries_count,
       percent_loaded:      percent_loaded,
-      batch:               data.records
+      batch:               records
     });
   });
 
@@ -292,10 +291,10 @@ module.exports = Backbone.Model.extend({
     var attributes = {};
     var schema = Dataclips.config.schema;
 
-    var key, value, hasProp = {}.hasOwnProperty;
-
     for (key in options) {
-      if (!hasProp.call(options, key)) continue;
+      if (!Object.hasOwnProperty.call(options, key)) continue;
+      if (schema[key] === undefined) continue;
+
       value = options[key];
       var type = schema[key].type;
       if (type === "date" || type === "time" || type === "datetime") {
@@ -319,34 +318,35 @@ module.exports = Backbone.Collection.extend({
   fetchInBatches: function(defaultParams) {
     if (defaultParams == null) { defaultParams = {}; }
 
-    var fetchNextPage = function(collection, current_page, total_pages) {
+    var onSuccess = function(collection, records, options) {
+      var total_entries_count = parseInt(options.xhr.getResponseHeader('x-total-count'), 10);
+      var current_page        = parseInt(options.xhr.getResponseHeader('x-page'), 10);
+      var total_pages         = parseInt(options.xhr.getResponseHeader('x-total-pages'), 10);
+
+      collection.trigger("batchInsert", records, total_entries_count);
+
       if (current_page < total_pages) {
-        collection.fetch({
-          data: _({page: current_page + 1}).extend(defaultParams),
-          remove: false,
-          success: function(collection, data) {
-            collection.trigger("batchInsert", data);
-            fetchNextPage(collection, data.page, data.total_pages);
-          }
-        })
+        fetchNextPage(collection, current_page + 1);
       }
+    }
+
+    var fetchNextPage = function(collection, page) {
+      collection.fetch({
+        data: _({page: page}).extend(defaultParams),
+        remove: false,
+        success: onSuccess
+      })
     };
 
     this.fetch({
       data: defaultParams,
-      success: function(collection, data) {
-        collection.trigger("batchInsert", data);
-        fetchNextPage(collection, data.page, data.total_pages);
-      },
+      success: onSuccess,
       error: function(collection, response) {
         if (response.status) {
           alert(response.responseText);
         }
       }
     });
-  },
-  parse: function(data) {
-    return data.records;
   }
 });
 

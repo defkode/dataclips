@@ -6,10 +6,10 @@ module.exports = Backbone.Model.extend({
     var attributes = {};
     var schema = Dataclips.config.schema;
 
-    var key, value, hasProp = {}.hasOwnProperty;
-
     for (key in options) {
-      if (!hasProp.call(options, key)) continue;
+      if (!Object.hasOwnProperty.call(options, key)) continue;
+      if (schema[key] === undefined) continue;
+
       value = options[key];
       var type = schema[key].type;
       if (type === "date" || type === "time" || type === "datetime") {

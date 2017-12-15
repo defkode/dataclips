@@ -68,26 +68,23 @@ module Dataclips
     end
 
     def paginate(page = 1)
-      WillPaginate::Collection.create(page, per_page) do |pager|
-        results = connection.execute <<-SQL
-          WITH insight AS (#{query})
-            SELECT
-              COUNT(*) OVER () AS _total_entries_count,
-              *
-            FROM insight
-            LIMIT #{pager.per_page} OFFSET #{pager.offset};
-        SQL
+      offset = (page - 1) * per_page
 
-        if pager.total_entries.nil?
-          pager.total_entries = results.none? ? 0 : results.first["_total_entries_count"].to_i
-        end
+      connection.execute <<-SQL
+        WITH insight AS (#{query}), stats AS (
+          SELECT
+           #{page}                                 AS page,
+           COUNT(*)                                AS total_count,
+           CEIL(COUNT(*) / #{per_page}::numeric)   AS total_pages
+          FROM insight
+        )
 
-        records = results.map do |record|
-          type_cast record.except("_total_entries_count").symbolize_keys
-        end
-
-        pager.replace records
-      end
+        SELECT
+          stats.*,
+          row_to_json(insight) AS json
+        FROM insight, stats
+        OFFSET #{offset} LIMIT #{per_page};
+      SQL
     end
   end
 end

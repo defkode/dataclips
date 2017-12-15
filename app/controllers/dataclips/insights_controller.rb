@@ -74,12 +74,10 @@ module Dataclips
           else
             ActiveRecord::Base.establish_connection Rails.configuration.database_configuration[Rails.env]
           end
-          render_json_records(@query, @schema, params[:page], @per_page)
+          page = params[:page].present? ? params[:page].to_i : 1
+          render_json_records(@query, @schema, page, @per_page)
         end
       end
-    end
-
-    def index
     end
 
     protected
@@ -117,14 +115,14 @@ module Dataclips
 
     def render_json_records(query, schema, page, per_page)
       paginator = Dataclips::Paginator.new(query, schema, per_page)
-      records = paginator.paginate(page || 1)
 
-      render json: {
-        page:                records.current_page,
-        total_pages:         records.total_pages,
-        total_entries_count: records.total_entries,
-        records:             records
-      }
+      pg_result = paginator.paginate(page)
+
+      headers['X-Total-Count'] = pg_result.first['total_count']
+      headers['X-Total-Pages'] = pg_result.first['total_pages']
+      headers['X-Page']        = pg_result.first['page']
+
+      render json: pg_result.map {|r| JSON.parse(r['json'])} # stream
     end
   end
 end
