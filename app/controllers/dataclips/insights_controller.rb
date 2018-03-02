@@ -83,7 +83,8 @@ module Dataclips
 
     def localize_headers(clip_id, keys)
       keys.inject({}) do |memo, key|
-        memo[key] = I18n.t("dataclips.#{clip_id}.schema.#{key}", default: key.to_s)
+        clip_id_path = clip_id.gsub("/", ".")
+        memo[key] = I18n.t("dataclips.#{clip_id_path}.schema.#{key}", default: key.to_s)
         memo
       end
     end
