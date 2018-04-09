@@ -25,6 +25,15 @@ module Dataclips
       @per_page
     end
 
+    def connection
+      if @connection
+        connection_name = "dataclips_#{@connection}_#{Rails.env}".to_sym # dataclips_stats_production
+        ActiveRecord::Base.establish_connection(connection_name).connection
+      else
+        ActiveRecord::Base.connection
+      end
+    end
+
     def theme
       @theme
     end
@@ -59,6 +68,29 @@ module Dataclips
 
     def query(params = {})
       template.render(params.with_indifferent_access)
+    end
+
+    def paginate(page = 1)
+      WillPaginate::Collection.create(page, self.class.per_page) do |pager|
+        results = self.class.connection.execute <<-SQL
+          WITH insight AS (#{query})
+            SELECT
+              COUNT(*) OVER () AS _total_entries_count,
+              *
+            FROM insight
+            LIMIT #{pager.per_page} OFFSET #{pager.offset};
+        SQL
+
+        if pager.total_entries.nil?
+          pager.total_entries = results.none? ? 0 : results.first["_total_entries_count"].to_i
+        end
+
+        records = results.map do |record|
+          type_cast record.except("_total_entries_count").symbolize_keys
+        end
+
+        pager.replace records
+      end
     end
   end
 end
