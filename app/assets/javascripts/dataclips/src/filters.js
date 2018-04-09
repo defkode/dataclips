@@ -54,4 +54,4 @@ module.exports = {
     }
     return item[attr] === query;
   }
-}
+};
