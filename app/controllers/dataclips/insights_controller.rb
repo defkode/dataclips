@@ -26,12 +26,6 @@ module Dataclips
 
       response.stream.write CSV.generate(csv_options) { |csv| csv << @headers.values}
 
-      if @connection.present?
-        ActiveRecord::Base.establish_connection Rails.configuration.database_configuration["dataclips_#{@connection}"]
-      else
-        ActiveRecord::Base.establish_connection Rails.configuration.database_configuration[Rails.env]
-      end
-
       paginator = Dataclips::Paginator.new(@query, @schema)
 
       records = paginator.paginate(1)
@@ -69,15 +63,12 @@ module Dataclips
         end
 
         format.json do
-          if @connection.present?
-            ActiveRecord::Base.establish_connection Rails.configuration.database_configuration["dataclips_#{@connection}"]
-          else
-            ActiveRecord::Base.establish_connection Rails.configuration.database_configuration[Rails.env]
-          end
-          page = params[:page].present? ? params[:page].to_i : 1
-          render_json_records(@query, @schema, page, @per_page)
+          render_json_records(@query, @schema, params[:page], @per_page)
         end
       end
+    end
+
+    def index
     end
 
     protected
@@ -105,24 +96,23 @@ module Dataclips
 
       @clip      = Clip.new(@clip_id, @insight.schema)
 
-      @schema     = @clip.schema
-      @connection = @clip.connection
-      @query      = @clip.query(@insight.params)
-      @per_page   = @clip.per_page
+      @schema    = @clip.schema
+      @query     = @clip.query(@insight.params)
+      @per_page  = @clip.per_page
 
       @headers   = localize_headers(@clip_id, @schema.keys)
     end
 
     def render_json_records(query, schema, page, per_page)
       paginator = Dataclips::Paginator.new(query, schema, per_page)
+      records = paginator.paginate(page || 1)
 
-      pg_result = paginator.paginate(page)
-
-      headers['X-Total-Count'] = pg_result.first['total_count']
-      headers['X-Total-Pages'] = pg_result.first['total_pages']
-      headers['X-Page']        = pg_result.first['page']
-
-      render json: pg_result.map {|r| JSON.parse(r['json'])} # stream
+      render json: {
+        page:                records.current_page,
+        total_pages:         records.total_pages,
+        total_entries_count: records.total_entries,
+        records:             records
+      }
     end
   end
 end
