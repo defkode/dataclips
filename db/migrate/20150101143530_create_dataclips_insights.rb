@@ -5,7 +5,7 @@ class CreateDataclipsInsights < ActiveRecord::Migration
       t.string  :schema
       t.string  :hash_id, null: false
       t.string  :checksum, null: false
-      t.string  :time_zone
+      t.string  :time_zone, null: false
       t.string  :name
       t.string  :basic_auth_credentials
 
