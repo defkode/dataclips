@@ -46,11 +46,12 @@ module Dataclips
       }.transform_values { |v| v.respond_to?(:call) ? v.call : v }
 
       schema    = options[:schema]
+      time_zone = options[:time_zone]
 
       clip      = Clip.new(clip_id, schema)
       name      = options.fetch(:name, clip.name || clip_id)
+      checksum = calculate_checksum(clip_id, params, schema, time_zone)
 
-      checksum = calculate_checksum(clip_id, params, schema)
       if insight = Dataclips::Insight.find_by(clip_id: clip_id, checksum: checksum)
         return insight
       else
@@ -68,7 +69,8 @@ module Dataclips
           name:      name,
           params:    params,
           schema:    schema,
-          basic_auth_credentials: basic_auth_credentials
+          basic_auth_credentials: basic_auth_credentials,
+          time_zone: time_zone
         })
       end
     end
@@ -77,12 +79,12 @@ module Dataclips
       read_attribute(:time_zone) || Rails.configuration.time_zone
     end
 
-    def self.calculate_checksum(clip_id, params, schema)
-      Digest::MD5.hexdigest Marshal.dump({clip_id: clip_id, params: params, schema: schema}.to_json)
+    def self.calculate_checksum(clip_id, params, schema, time_zone)
+      Digest::MD5.hexdigest Marshal.dump({clip_id: clip_id, params: params, schema: schema, time_zone: time_zone}.to_json)
     end
 
     def set_checksum
-      self.checksum = self.class.calculate_checksum(clip_id, params, schema)
+      self.checksum = self.class.calculate_checksum(clip_id, params, schema, time_zone)
     end
   end
 end
