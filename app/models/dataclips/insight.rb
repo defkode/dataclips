@@ -24,6 +24,7 @@ module Dataclips
     validates :clip_id, presence: true
     validates :hash_id, presence: true, uniqueness: true
     validates :checksum, presence: true, uniqueness: true
+    validates :time_zone, presence: true
 
     before_validation :set_checksum
 
@@ -46,7 +47,7 @@ module Dataclips
       }.transform_values { |v| v.respond_to?(:call) ? v.call : v }
 
       schema    = options[:schema]
-      time_zone = options[:time_zone]
+      time_zone = options[:time_zone] || Rails.configuration.time_zone
 
       clip      = Clip.new(clip_id, schema)
       name      = options.fetch(:name, clip.name || clip_id)
@@ -73,10 +74,6 @@ module Dataclips
           time_zone: time_zone
         })
       end
-    end
-
-    def time_zone
-      read_attribute(:time_zone) || Rails.configuration.time_zone
     end
 
     def self.calculate_checksum(clip_id, params, schema)
