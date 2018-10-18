@@ -5,7 +5,7 @@ PATH
       font-awesome-rails (~> 4.3)
       liquid (~> 4.0.0)
       pg (>= 1)
-      rails (>= 5)
+      rails (>= 5.1.6)
       will_paginate (~> 3.0)
 
 GEM
