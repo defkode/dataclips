@@ -20,39 +20,25 @@ module Dataclips
         memo[key] = case schema_key["type"]
           when "text"
             type_caster = ActiveRecord::Type::String.new
-            type_caster.respond_to?(:cast) ?
-              type_caster.cast(value) :
-              type_caster.type_cast_from_database(value)
+            type_caster.cast(value)
           when "integer"
             type_caster = ActiveRecord::Type::Integer.new
-            type_caster.respond_to?(:cast) ?
-              type_caster.cast(value) :
-              type_caster.type_cast_from_database(value)
+            type_caster.cast(value)
           when "float"
             type_caster = ActiveRecord::Type::Float.new
-            type_caster.respond_to?(:cast) ?
-              type_caster.cast(value) :
-              type_caster.type_cast_from_database(value)
+            type_caster.cast(value)
           when "datetime"
             type_caster = ActiveRecord::Type::DateTime.new
-            type_caster.respond_to?(:cast) ?
-              type_caster.cast(value) :
-              type_caster.type_cast_from_database(value)
+            type_caster.cast(value)
           when "time"
             type_caster = ActiveRecord::Type::Time.new
-            type_caster.respond_to?(:cast) ?
-              type_caster.cast(value) :
-              type_caster.type_cast_from_database(value)
+            type_caster.cast(value)
           when "date"
             type_caster = ActiveRecord::Type::Date.new
-            type_caster.respond_to?(:cast) ?
-              type_caster.cast(value) :
-              type_caster.type_cast_from_database(value)
+            type_caster.cast(value)
           when "boolean"
             type_caster = ActiveRecord::Type::Boolean.new
-            type_caster.respond_to?(:cast) ?
-              type_caster.cast(value) :
-              type_caster.type_cast_from_database(value)
+            type_caster.cast(value)
           else value
           end
         memo
