@@ -11,8 +11,8 @@ Dataclips         = require('./dataclips');
 Records           = require('./records');
 
 Dataclips.Progress    = require('./progress');
-Dataclips.GridView    = require('./views/grid');
-Dataclips.SidebarView = require('./views/sidebar');
+Dataclips.GridView    = require('./views/grid.coffee');
+Dataclips.SidebarView = require('./views/sidebar.coffee');
 
 Dataclips.resetFilter = function(key) {
   var type = Dataclips.config.schema[key].type;

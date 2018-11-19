@@ -16,6 +16,10 @@ module.exports = Backbone.Model.extend({
         if (value != null) {
           attributes[key] = parseInt(moment(value).format('x'));
         }
+      } else if (type === "text") {
+        var temp = document.createElement('div');
+        temp.textContent = value;
+        attributes[key] = temp.innerHTML;
       } else {
         attributes[key] = value;
       }

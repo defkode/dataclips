@@ -1,5 +1,5 @@
 // ExcelBuilder
-ExcelBuilder  = require("excel-builder");
+ExcelBuilder  = require("excel-builder-webpack");
 
 module.exports = function() {
   var data, date_formatter, datetime_formatter, entries_count, keys, sheet, stylesheet, time_formatter, time_without_seconds_formatter, workbook;
