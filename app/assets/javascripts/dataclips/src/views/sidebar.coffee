@@ -38,14 +38,14 @@ module.exports = Backbone.View.extend
 
     "dp.change .input-group": _.debounce (event) ->
       value = event.date
-      attrName = $(event.target).attr("rel")
+      attrName = Backbone.$(event.target).attr("rel")
       if value?
         Dataclips.filterArgs.set(attrName, value)
       else
         Dataclips.filterArgs.unset(attrName)
 
     "click button.reset": _.debounce (event) ->
-      key = $(event.currentTarget).data("key")
+      key = Backbone.$(event.currentTarget).data("key")
       Dataclips.resetFilter(key)
 
       type = Dataclips.config.schema[key]["type"]
@@ -68,21 +68,21 @@ module.exports = Backbone.View.extend
           switch type
             when "boolean"
               if value?
-                $("[name='#{key}']").val(if value is true then "1" else "0")
+                Backbone.$("[name='#{key}']").val(if value is true then "1" else "0")
             when "text"
               if value?
-                $("[name='#{key}']").val(value)
+                Backbone.$("[name='#{key}']").val(value)
             when "float", "integer", "decimal"
               if value.from?
-                $("[name='#{key}_from']").val(value.from)
+                Backbone.$("[name='#{key}_from']").val(value.from)
               if value.to?
-                $("[name='#{key}_to']").val(value.to)
+                Backbone.$("[name='#{key}_to']").val(value.to)
             when "date", "datetime", "time"
               if value.from?
-                fromPicker = $("[rel='#{key}_from']")
+                fromPicker = Backbone.$("[rel='#{key}_from']")
                 fromPicker.data('DateTimePicker').date(moment(value.from))
 
               if value.to?
-                toPicker = $("[rel='#{key}_to']")
+                toPicker = Backbone.$("[rel='#{key}_to']")
                 toPicker.data('DateTimePicker').date(moment(value.to))
 

@@ -28,9 +28,8 @@ module.exports = {
   },
   plugins: [
     new webpack.ProvidePlugin({
-      _: 'underscore',
-      Backbone: 'backbone',
-      moment: 'moment-timezone'
+      _:        'underscore',
+      Backbone: 'backbone'
     })
 
   ]

@@ -24,11 +24,11 @@ module.exports = Backbone.View.extend
 
   events:
     "click #download-dialog .btn.btn-primary": _.debounce (e) ->
-      button = $(e.target)
+      button = Backbone.$(e.target)
 
       if @$el.find(".tab-pane.active").attr("id") is "xlsx"
         button.prop("disabled", true).blur().find("i").show()
-        filename = $('#filename_xlsx').val() + '.xlsx'
+        filename = Backbone.$('#filename_xlsx').val() + '.xlsx'
         setTimeout =>
           Dataclips.buildXLSX().then (file) =>
             @modal.modal('hide');
@@ -38,13 +38,13 @@ module.exports = Backbone.View.extend
       else
         # csv
         @modal.modal('hide')
-        $("#download-dialog form").submit()
+        Backbone.$("#download-dialog form").submit()
 
     "click a.download": (e) ->
       if Modernizr.adownload
         e.preventDefault()
         @modal.modal('show')
-        $('#xlsx').tab('show')
+        Backbone.$('#xlsx').tab('show')
 
   initialize: ->
     Dataclips.resizeGrid()
@@ -105,7 +105,7 @@ module.exports = Backbone.View.extend
     grid.registerPlugin(new Slick.AutoTooltips(enableForHeaderCells: true));
 
 
-    $(window).on 'resize', ->
+    Backbone.$(window).on 'resize', ->
       Dataclips.resizeGrid()
       grid.resizeCanvas()
 
@@ -185,7 +185,7 @@ module.exports = Backbone.View.extend
 
 
     unless Modernizr.input.list
-      $('input[list]').relevantDropdown({
+      Backbone.$('input[list]').relevantDropdown({
         fadeOutSpeed: 0
       })
 
