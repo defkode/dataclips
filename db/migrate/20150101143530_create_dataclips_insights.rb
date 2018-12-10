@@ -1,4 +1,4 @@
-class CreateDataclipsInsights < ActiveRecord::Migration
+class CreateDataclipsInsights < ActiveRecord::Migration[5.2]
   def change
     create_table :dataclips_insights do |t|
       t.string  :clip_id, null: false
