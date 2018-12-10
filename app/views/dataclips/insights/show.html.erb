@@ -3,21 +3,16 @@
 <h3>Supplier Orders</h3>
 
 <script type="text/javascript">
-  window.idCounter = 0;
-  var uniqueId = function(namespace) {
-    var id = ++idCounter + 'namespace';
-    return id + namespace
-  };
-
   window.fetchInBatches = function(page = 1, url, table) {
-    $.getJSON(url, {page: page}, function(data){
+    fetch(url + '?page=' + page).then(function(response) {
+      return response.json()
+    }).then(function(data) {
       var currentPage = data[0].page
       var total_count = data[0].total_count
       var total_pages = parseInt(data[0].total_pages, 10)
 
       var records = data.map(function(i){
         record = JSON.parse(i.record)
-        record._key  = uniqueId('orders');
         return record;
       })
       table.addData(records);
@@ -32,20 +27,26 @@
 <div id='<%= dom_id(@insight) %>'></div>
 <script>
 
+  var calculateAvailableWidth = function(){
+    var container = document.getElementById('<%= dom_id(@insight) %>');
+    return container.clientWidth
+  };
+
   var t1 = Reactable.init({
-    htmlId:   "orders",
-    schema:   <%= raw @schema.to_json %>,
+    htmlId:   '<%= dom_id(@insight) %>',
+    schema:   <%= raw File.read("#{Rails.root}/app/dataclips/#{@insight.clip_id}.js") %>,
     limit:    15,
     control: false
   })
 
   t1.render();
-  t1.updateTableWidth($('.container').width());
+  console.log(calculateAvailableWidth())
+  t1.updateTableWidth(calculateAvailableWidth());
 
-  fetchInBatches(1, '<%= reactable_insight_path(@orders) %>', t1);
+  fetchInBatches(1, '<%= dataclips.insight_path(@insight) %>', t1);
 
   window.addEventListener('resize', function(){
-    t1.updateTableWidth(window.width);
+    t1.updateTableWidth(calculateAvailableWidth());
   });
 
 </script>
