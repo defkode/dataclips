@@ -3,17 +3,8 @@
 <head>
   <title><%= yield :title %></title>
   <%= csrf_meta_tags %>
-  <%= stylesheet_link_tag *Dataclips::Engine.config.themes[@theme]["css"], media: "all" %>
-  <%= javascript_include_tag "dataclips/dist/bundle.js", "dataclips/vendor/bootstrap-datetimepicker.min" %>
-  <% if Dataclips::Engine.config.include_js.present? %>
-    <%= javascript_include_tag Dataclips::Engine.config.include_js %>
-  <% end %>
-
-  <% if asset_exist?("dataclips/#{@clip_id}.js") %>
-    <%= javascript_include_tag "dataclips/#{@clip_id}.js" %>
-  <% end %>
 </head>
-<body class="theme-<%= @theme %> <%= ('with-sidebar' if @sidebar) %>">
+<body>
 <%= yield %>
 </body>
 </html>

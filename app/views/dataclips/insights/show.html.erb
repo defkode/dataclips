@@ -1,40 +1,51 @@
 <% content_for :title, @insight.name  %>
 
-<%= render "dataclips_config" %>
+<h3>Supplier Orders</h3>
 
-<script>
-  $(document).ready(function(){
-    Dataclips.proxy = new Backbone.Model({
-      total_entries_count: 0,
-      percent_loaded:      0,
-      entries:             [],
-      entries_count:       0,
-      grid_entries:        [],
-      grid_entries_count:  0
-    });
+<script type="text/javascript">
+  window.idCounter = 0;
+  var uniqueId = function(namespace) {
+    var id = ++idCounter + 'namespace';
+    return id + namespace
+  };
 
-    Dataclips.filterArgs = new Backbone.Model;
+  window.fetchInBatches = function(page = 1, url, table) {
+    $.getJSON(url, {page: page}, function(data){
+      var currentPage = data[0].page
+      var total_count = data[0].total_count
+      var total_pages = parseInt(data[0].total_pages, 10)
 
-    Dataclips.proxy.on("change", _.debounce(function(model){
-      // model.toJSON must contain only JS primitives (not functions)
-      try { window.parent.postMessage(model.toJSON(), "*") } catch(err) {
-        debugger
+      var records = data.map(function(i){
+        record = JSON.parse(i.record)
+        record._key  = uniqueId('orders');
+        return record;
+      })
+      table.addData(records);
+      if (currentPage < total_pages) {
+        fetchInBatches(currentPage + 1, url, table);
       }
-    }));
-    Dataclips.run();
-  });
+    });
+  }
 </script>
 
-<div id="grid"></div>
 
-<div id="counters">
- <span class="grid_entries_count">0</span> / <span class="total_entries_count">0</span>
-</div>
+<div id='<%= dom_id(@insight) %>'></div>
+<script>
 
-<% if @sidebar %>
-  <%= render "sidebar" %>
-  <%= render "download_modal" %>
-<% end %>
+  var t1 = Reactable.init({
+    htmlId:   "orders",
+    schema:   <%= raw @schema.to_json %>,
+    limit:    15,
+    control: false
+  })
 
-<canvas id="progress" width="240" height="240"></canvas>
-<div id="modal"></div>
+  t1.render();
+  t1.updateTableWidth($('.container').width());
+
+  fetchInBatches(1, '<%= reactable_insight_path(@orders) %>', t1);
+
+  window.addEventListener('resize', function(){
+    t1.updateTableWidth(window.width);
+  });
+
+</script>
