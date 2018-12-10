@@ -1,15 +1,17 @@
 class CreateDataclipsInsights < ActiveRecord::Migration[5.2]
   def change
     create_table :dataclips_insights do |t|
-      t.string  :clip_id, null: false
-      t.string  :schema
       t.string  :hash_id, null: false
+
+      t.string  :clip_id, null: false
+      t.json    :params
+
       t.string  :checksum, null: false
       t.string  :time_zone, null: false
       t.string  :name
+      t.string  :connection
+      t.string  :schema
       t.string  :basic_auth_credentials
-
-      t.json    :params
       t.datetime :last_viewed_at
       t.timestamps
     end
