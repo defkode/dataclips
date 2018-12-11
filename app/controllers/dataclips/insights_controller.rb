@@ -13,26 +13,16 @@ module Dataclips
 
           sql       = clip.query(insight.params)
 
-          connection = if insight.connection.present?
-            connection_name = "dataclips_#{insight.connection}"
-            with_connection(connection_name) do
-              paginator = PgClip::Paginator.new(sql, ActiveRecord::Base.connection)
-              if params[:page].present?
-                render json: paginator.execute_paginated_query(sql, page: params['page']&.to_i || 1, per_page: 25_000)
-              else
-                render json: paginator.execute_query(sql)
-              end
-            end
-          else
+          connection_name = insight.connection.present? ? "dataclips_#{insight.connection}" : Rails.env
+          with_connection(connection_name) do
             paginator = PgClip::Paginator.new(sql, ActiveRecord::Base.connection)
-            if params[:page].present?
-              render json: paginator.execute_paginated_query(sql, page: params['page']&.to_i || 1, per_page: 25_000)
+            if per_page = insight.per_page
+              render json: paginator.execute_paginated_query(sql, page: params['page']&.to_i || 1, per_page: insight.per_page)
             else
               render json: paginator.execute_query(sql)
             end
           end
         end
-
 
         format.html do
           @insight = Dataclips::Insight.find_by_hash_id!(params[:id])
