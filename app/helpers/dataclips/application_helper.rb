@@ -1,9 +1,19 @@
 module Dataclips::ApplicationHelper
-  def asset_exist?(path)
-    if Rails.configuration.assets.compile
-      Rails.application.precompiled_assets.include? path
-    else
-      Rails.application.assets_manifest.assets[path].present?
+  def dataclips_insight_config(insight)
+    {
+      url:      dataclips.data_insight_path(insight),
+      dom_id:   dom_id(insight),
+      per_page: insight.per_page,
+      schema:   load_dataclip_insight_schema(insight)
+    }
+  end
+
+  def load_dataclip_insight_schema(insight)
+    file = File.read "#{Rails.root}/app/dataclips/#{@insight.clip_id}.json"
+    schema = JSON.parse(file)
+    schema.keys.each do |key|
+      schema[key]['label'] = t("dataclips.#{insight.clip_id}.#{key}", default: key)
     end
+    schema
   end
 end

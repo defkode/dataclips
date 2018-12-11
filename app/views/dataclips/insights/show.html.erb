@@ -1,67 +1,45 @@
 <% content_for :title, @insight.name  %>
 <div id='<%= dom_id(@insight) %>'></div>
 
-<script type="text/javascript">
-  window.fetchData = function(url, table) {
-    fetch(url).then(function(response) {
-      return response.json()
-    }).then(function(data) {
-      console.log(data);
-      var records = data.map(function(i){
-        record = JSON.parse(i.record)
-        return record;
-      })
-      table.addData(records);
-    });
-  }
-
-  window.fetchInBatches = function(page = 1, url, table) {
-    fetch(url + '?page=' + page).then(function(response) {
-      return response.json()
-    }).then(function(data) {
-      var currentPage = data[0].page
-      var total_count = data[0].total_count
-      var total_pages = parseInt(data[0].total_pages, 10)
-
-      var records = data.map(function(i){
-        record = JSON.parse(i.record)
-        return record;
-      })
-      table.addData(records);
-      if (currentPage < total_pages) {
-        fetchInBatches(currentPage + 1, url, table);
-      }
-    });
-  }
-</script>
-
 <script>
-  var config = {
-    url:     '<%= dataclips.insight_path(@insight) %>',
-    domId:   '<%= dom_id(@insight) %>',
-    perPage: <%= @insight.per_page.to_json %>
-  };
+  var config = <%= raw dataclips_insight_config(@insight).to_json %>
 </script>
+<% if File.exists?("#{Rails.root}/app/dataclips/#{@insight.clip_id}.js") %>
+  <script>
+    <%= raw File.read("#{Rails.root}/app/dataclips/#{@insight.clip_id}.js") %>
+  </script>
+<% end %>
 <script>
 
   var calculateAvailableWidth = function(){
-    var container = document.getElementById(config.domId);
+    var container = document.getElementById(config.dom_id);
     return container.clientWidth
   };
 
+  for(key in config.schema){
+    var formatter = config.schema[key]['formatter']
+    if (formatter) {
+      if (window[formatter]) {
+        config.schema[key]['formatter'] = window[formatter]
+      } else {
+        delete config.schema[key]['formatter']
+      }
+    }
+  }
+
   var table = Reactable.init({
-    htmlId:   config.domId,
-    schema:   <%= raw File.read("#{Rails.root}/app/dataclips/#{@insight.clip_id}.js") %>,
-    limit:    15
+    htmlId:   config.dom_id,
+    schema:   config.schema,
+    limit:    parseInt(window.innerHeight / 30) - 2
   });
 
   table.updateTableWidth(calculateAvailableWidth());
   table.render();
 
   if (config.perPage) {
-    fetchInBatches(1, config.url, table);
+    Dataclips.fetchInBatches(1, config.url, table);
   } else {
-    fetchData(config.url, table);
+    Dataclips.fetchData(config.url, table);
   }
 
   window.addEventListener('resize', function(){
