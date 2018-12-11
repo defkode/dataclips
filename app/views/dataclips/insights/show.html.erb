@@ -36,7 +36,7 @@
   table.updateTableWidth(calculateAvailableWidth());
   table.render();
 
-  if (config.perPage) {
+  if (config.per_page) {
     Dataclips.fetchInBatches(1, config.url, table);
   } else {
     Dataclips.fetchData(config.url, table);

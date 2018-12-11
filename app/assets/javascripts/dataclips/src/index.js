@@ -4,7 +4,6 @@ Dataclips.fetchData = function(url, table) {
   fetch(url).then(function(response) {
     return response.json()
   }).then(function(data) {
-    console.log(data);
     var records = data.map(function(i){
       record = JSON.parse(i.record)
       return record;
