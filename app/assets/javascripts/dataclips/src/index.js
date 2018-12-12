@@ -24,7 +24,7 @@ Dataclips.fetchInBatches = function(page = 1, url, table) {
       record = JSON.parse(i.record)
       return record;
     })
-    table.addData(records);
+    table.addData(records, total_count);
     if (currentPage < total_pages) {
       Dataclips.fetchInBatches(currentPage + 1, url, table);
     }
