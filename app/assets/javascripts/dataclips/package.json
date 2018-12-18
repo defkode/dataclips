@@ -4,7 +4,10 @@
   "main": "./src/index.js",
   "author": "Tomasz Mazur",
   "license": "MIT",
-  "dependencies": {},
+  "dependencies": {
+    "excel-builder-webpack": "^1.0.3",
+    "file-saver": "^2.0.0"
+  },
   "devDependencies": {
     "@babel/core": "^7.2.0",
     "@babel/polyfill": "^7.0.0",

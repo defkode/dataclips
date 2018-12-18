@@ -1,49 +1,20 @@
 <% content_for :title, @insight.name  %>
+
+<!-- container -->
 <div id='<%= dom_id(@insight) %>'></div>
 
 <script>
   var config = <%= raw dataclips_insight_config(@insight).to_json %>
 </script>
+
+<!-- custom formatters -->
 <% if File.exists?("#{Rails.root}/app/dataclips/#{@insight.clip_id}.js") %>
   <script>
     <%= raw File.read("#{Rails.root}/app/dataclips/#{@insight.clip_id}.js") %>
   </script>
 <% end %>
+
+<!-- init table -->
 <script>
-
-  var calculateAvailableWidth = function(){
-    var container = document.getElementById(config.dom_id);
-    return container.clientWidth
-  };
-
-  for(key in config.schema){
-    var formatter = config.schema[key]['formatter']
-    if (formatter) {
-      if (window[formatter]) {
-        config.schema[key]['formatter'] = window[formatter]
-      } else {
-        delete config.schema[key]['formatter']
-      }
-    }
-  }
-
-  var table = Reactable.init({
-    htmlId:   config.dom_id,
-    schema:   config.schema,
-    limit:    parseInt(window.innerHeight / 30) - 2
-  });
-
-  table.updateTableWidth(calculateAvailableWidth());
-  table.render();
-
-  if (config.per_page) {
-    Dataclips.fetchInBatches(1, config.url, table);
-  } else {
-    Dataclips.fetchData(config.url, table);
-  }
-
-  window.addEventListener('resize', function(){
-    table.updateTableWidth(calculateAvailableWidth());
-  });
-
+  new Dataclips(config).init();
 </script>
