@@ -63,6 +63,7 @@ export default class Dataclips {
     const time_without_seconds_formatter = {id: 2, numFmtId: 20}
     const time_formatter                 = {id: 3, numFmtId: 21}
     const datetime_formatter             = {id: 4, numFmtId: 22}
+    const duration_formatter             = {id: 5, numFmtId: 46}
 
     const stylesheet = workbook.getStyleSheet()
     stylesheet.fills = [{}, {}]
@@ -70,6 +71,9 @@ export default class Dataclips {
     stylesheet.masterCellFormats.push(time_without_seconds_formatter)
     stylesheet.masterCellFormats.push(time_formatter)
     stylesheet.masterCellFormats.push(datetime_formatter)
+    stylesheet.masterCellFormats.push(duration_formatter)
+
+
 
     const sheet = workbook.createWorksheet()
 
@@ -88,16 +92,23 @@ export default class Dataclips {
             case 'boolean':
               return +value
             case 'datetime':
-              const offset = new Date().getTimezoneOffset() // -60 minutes
               const minMs = 60 * 1000
               const dayMs = (60 * 60 * 24 * 1000)
 
-              const _value = 25569.0 + ((value.ts + (offset * minMs)) / dayMs)
+              const _value = 25569.0 + ((value.ts + (value.offset * minMs)) / dayMs)
 
               return {
-                value:    _value,
+                value: _value,
                 metadata: {
                   style: datetime_formatter.id
+                }
+              }
+            case 'duration':
+
+              return {
+                value: value.as('day'),
+                metadata: {
+                  style: duration_formatter.id
                 }
               }
             default:
