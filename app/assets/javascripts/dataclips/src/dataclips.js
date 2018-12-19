@@ -60,12 +60,8 @@ export default class Dataclips {
     const workbook = Builder.createWorkbook()
 
     const xlsx_number_formats = {
-      date_formatter:                  {id: 1, numFmtId: 14},
-      time_without_seconds_formatter:  {id: 2, numFmtId: 20},
-      time_formatter:                  {id: 3, numFmtId: 21},
-      datetime_formatter:              {id: 4, numFmtId: 22},
-      duration_formatter:              {id: 5, numFmtId: 46},
-      magic_formatter:                 {id: 6, numFmtId: 49}
+      datetime_formatter:  {id: 1, numFmtId: 22},
+      duration_formatter:  {id: 2, numFmtId: 46}
     }
 
     const stylesheet = workbook.getStyleSheet()
@@ -85,13 +81,13 @@ export default class Dataclips {
 
     data.forEach((item) => {
       const row = Object.entries(item).map(([key, value]) => {
-        if (value) {
+        if (value !== null) {
           const type = schema[key].type
 
           switch (type) {
             case 'boolean':
               return {
-                value:  +value
+                value: +value
               }
             case 'datetime':
               const minMs = 60 * 1000
@@ -119,8 +115,6 @@ export default class Dataclips {
 
       rows.push(row)
     })
-
-    console.log(rows)
 
     sheet.setData(rows)
     workbook.addWorksheet(sheet)
