@@ -25,8 +25,7 @@ module Dataclips
       schema    = options[:schema]
       time_zone = options[:time_zone] || Rails.configuration.time_zone
 
-      clip      = Clip.new(clip_id, schema)
-      name      = options.fetch(:name, clip.name || clip_id)
+      name      = options.fetch(:name, clip_id)
       checksum = calculate_checksum(clip_id, params, schema)
 
       if insight = Dataclips::Insight.find_by(clip_id: clip_id, checksum: checksum)
@@ -40,7 +39,7 @@ module Dataclips
           end
         end
 
-        return Dataclips::Insight.create!({
+        Dataclips::Insight.create!({
           clip_id:   clip_id,
           hash_id:   hash_id,
           name:      name,

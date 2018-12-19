@@ -59,21 +59,21 @@ export default class Dataclips {
 
     const workbook = Builder.createWorkbook()
 
-    const date_formatter                 = {id: 1, numFmtId: 14}
-    const time_without_seconds_formatter = {id: 2, numFmtId: 20}
-    const time_formatter                 = {id: 3, numFmtId: 21}
-    const datetime_formatter             = {id: 4, numFmtId: 22}
-    const duration_formatter             = {id: 5, numFmtId: 46}
+    const xlsx_number_formats = {
+      date_formatter:                  {id: 1, numFmtId: 14},
+      time_without_seconds_formatter:  {id: 2, numFmtId: 20},
+      time_formatter:                  {id: 3, numFmtId: 21},
+      datetime_formatter:              {id: 4, numFmtId: 22},
+      duration_formatter:              {id: 5, numFmtId: 46},
+      magic_formatter:                 {id: 6, numFmtId: 49}
+    }
 
     const stylesheet = workbook.getStyleSheet()
-    stylesheet.fills = [{}, {}]
-    stylesheet.masterCellFormats.push(date_formatter)
-    stylesheet.masterCellFormats.push(time_without_seconds_formatter)
-    stylesheet.masterCellFormats.push(time_formatter)
-    stylesheet.masterCellFormats.push(datetime_formatter)
-    stylesheet.masterCellFormats.push(duration_formatter)
+    stylesheet.fills = [{}, {}] // reset weirdo default styles
 
-
+    Object.entries(xlsx_number_formats).forEach(([key, format]) => {
+      stylesheet.masterCellFormats.push(format)
+    })
 
     const sheet = workbook.createWorksheet()
 
@@ -90,7 +90,9 @@ export default class Dataclips {
 
           switch (type) {
             case 'boolean':
-              return +value
+              return {
+                value:  +value
+              }
             case 'datetime':
               const minMs = 60 * 1000
               const dayMs = (60 * 60 * 24 * 1000)
@@ -99,17 +101,13 @@ export default class Dataclips {
 
               return {
                 value: _value,
-                metadata: {
-                  style: datetime_formatter.id
-                }
+                metadata: {style: xlsx_number_formats.datetime_formatter.id}
               }
             case 'duration':
 
               return {
                 value: value.as('day'),
-                metadata: {
-                  style: duration_formatter.id
-                }
+                metadata: {style: xlsx_number_formats.duration_formatter.id}
               }
             default:
               return value
@@ -133,71 +131,6 @@ export default class Dataclips {
       saveAs(blob, filename)
     })
   }
-
-  //
-  //
-  // switch (type) {
-  //         case "boolean":
-  //           return {
-  //             value: +v
-  //           };
-  //         case "date":
-  //           if (v) {
-  //             offset = moment(v).tz(Dataclips.config.time_zone).utcOffset() * 60 * 1000;
-  //             _v = 25569.0 + ((v + offset) / (60 * 60 * 24 * 1000));
-  //             return {
-  //               value: _v,
-  //               metadata: {
-  //                 style: date_formatter.id
-  //               }
-  //             };
-  //           } else {
-  //             return null;
-  //           }
-  //           break;
-  //         case "datetime":
-  //           if (v) {
-  //             style = (function() {
-  //               switch (formatter) {
-  //                 case "time":
-  //                   return time_formatter.id;
-  //                 case "time_without_seconds":
-  //                   return time_without_seconds_formatter.id;
-  //                 default:
-  //                   return datetime_formatter.id;
-  //               }
-  //             })();
-  //             offset = moment(v).tz(Dataclips.config.time_zone).utcOffset() * 60 * 1000;
-  //             _v = 25569.0 + ((v + offset) / (60 * 60 * 24 * 1000));
-  //             return {
-  //               value: (formatter === "time_without_seconds" ? _v % 1 : _v),
-  //               metadata: {
-  //                 style: style
-  //               }
-  //             };
-  //           } else {
-  //             return null;
-  //           }
-  //           break;
-  //         case "time":
-  //           if (v) {
-  //             offset = moment(v).tz(Dataclips.config.time_zone).utcOffset() * 60 * 1000;
-  //             _v = 25569.0 + ((v + offset) / (60 * 60 * 24 * 1000));
-  //             return {
-  //               value: _v,
-  //               metadata: {
-  //                 style: time_formatter.id
-  //               }
-  //             };
-  //           } else {
-  //             return null;
-  //           }
-  //           break;
-  //         default:
-  //           return v;
-  //       }
-  //     });
-
 
   init() {
     const { container, schema, per_page, url, fetchData, fetchDataInBatches, downloadXLSX } = this
@@ -229,7 +162,7 @@ export default class Dataclips {
         if (currentPage < total_pages) {
           fetchDataInBatches(currentPage + 1, url, reactable).then(processBatch)
         }
-        reactable.addData(result.data)
+        reactable.addData(result.data, total_count)
       }
 
       fetchDataInBatches(1, url, reactable).then(processBatch)
