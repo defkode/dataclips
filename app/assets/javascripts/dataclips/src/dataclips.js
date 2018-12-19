@@ -120,9 +120,11 @@ export default class Dataclips {
     workbook.addWorksheet(sheet)
 
     Builder.createFile(workbook, {type: 'blob'}).then((blobData) => {
-      const filename = prompt('filename', suggestedFilename) || suggestedFilename
-      const blob = new Blob( [blobData], {type: "application/octet-stream"} )
-      saveAs(blob, filename)
+      const filename = prompt('filename', suggestedFilename)
+      if (filename !== null) {
+        const blob = new Blob( [blobData], {type: "application/octet-stream"} )
+        saveAs(blob, filename)
+      }
     })
   }
 
@@ -135,13 +137,12 @@ export default class Dataclips {
       limit:       parseInt(window.innerHeight / 30) - 2,
       controls: {
         csv: {
-          onClick: (e) => {
+          onClick: () => {
             const data = reactable.getFilteredData()
             downloadXLSX.bind(this)(data)
           },
-          className: '',
+          className: 'btn',
           key: 'xlsx',
-          disabled: false,
           label: 'Download XLSX',
         }
       }
