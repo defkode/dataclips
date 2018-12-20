@@ -100,11 +100,12 @@ export default class Dataclips {
                 metadata: {style: xlsx_number_formats.datetime_formatter.id}
               }
             case 'duration':
-
+            case 'time':
               return {
                 value: value.as('day'),
                 metadata: {style: xlsx_number_formats.duration_formatter.id}
               }
+
             default:
               return value
           }
