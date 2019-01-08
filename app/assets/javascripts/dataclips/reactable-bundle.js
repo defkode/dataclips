@@ -1,1 +1,0 @@
-/Users/defkode/code/reactable/dist/reactable-bundle.js
