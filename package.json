@@ -5,8 +5,8 @@
   "author": "Tomasz Mazur",
   "license": "MIT",
   "scripts": {
-    "build:dev": "webpack --mode=development --watch --config webpack.config.js",
-    "build:prod": "webpack --mode=production --config webpack.config.js"
+    "build:dev": "webpack --mode=development --watch --config app/assets/javascripts/dataclips/webpack.config.js",
+    "build:prod": "webpack --mode=production --config app/assets/javascripts/dataclips/webpack.config.js"
   },
   "dependencies": {
     "excel-builder-webpack": "^1.0.3",
