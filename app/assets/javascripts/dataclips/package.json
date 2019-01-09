@@ -4,9 +4,14 @@
   "main": "./src/index.js",
   "author": "Tomasz Mazur",
   "license": "MIT",
+  "scripts": {
+    "build:dev": "webpack --mode=development --watch --config webpack.config.js"
+  },
   "dependencies": {
     "excel-builder-webpack": "^1.0.3",
-    "file-saver": "^2.0.0"
+    "file-saver": "^2.0.0",
+    "promise-polyfill": "^8.1.0",
+    "whatwg-fetch": "^3.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.2.0",

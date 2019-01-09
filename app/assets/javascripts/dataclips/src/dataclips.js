@@ -1,7 +1,15 @@
 import { saveAs } from 'file-saver'
+import 'whatwg-fetch'
+import Promise from 'promise-polyfill'
+
 ExcelBuilder = require("excel-builder-webpack")
 
 const { Workbook, Builder } = ExcelBuilder
+
+// To add to window
+if (!window.Promise) {
+  window.Promise = Promise
+}
 
 export default class Dataclips {
   constructor(config) {
