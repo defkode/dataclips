@@ -174,7 +174,8 @@ export default class Dataclips {
       limit:       parseInt(window.innerHeight / 30) - 2,
       controls: {
         csv: {
-          onClick: () => {
+          onClick: (e) => {
+            e.preventDefault()
             const data = reactable.getFilteredData()
             downloadXLSX.bind(this)(data)
           },
