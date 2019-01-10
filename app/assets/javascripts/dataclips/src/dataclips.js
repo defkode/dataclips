@@ -157,10 +157,17 @@ export default class Dataclips {
 
       sheet.setData(rows)
       workbook.addWorksheet(sheet)
+      return new Promise(function(resolve, reject) {
 
-      Builder.createFile(workbook, {type: 'blob'}).then((blobData) => {
-        const blob = new Blob( [blobData], {type: "application/octet-stream"} )
-        saveAs(blob, filename)
+        Builder.createFile(workbook, {type: 'blob'}).then((blobData) => {
+          const blob = new Blob( [blobData], {type: "application/octet-stream"} )
+          saveAs(blob, filename)
+        })
+        resolve(false)
+      })
+    } else {
+      return new Promise(function(resolve, reject) {
+        resolve(false)
       })
     }
   }
@@ -175,9 +182,12 @@ export default class Dataclips {
       controls: {
         csv: {
           onClick: (e) => {
-            e.preventDefault()
+            const button = e.target
+            button.disabled = true
             const data = reactable.getFilteredData()
-            downloadXLSX.bind(this)(data)
+            downloadXLSX.bind(this)(data).then((disabled) => {
+              button.disabled = disabled
+            })
           },
           className: 'btn',
           key: 'xlsx',
