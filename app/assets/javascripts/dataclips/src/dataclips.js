@@ -63,7 +63,7 @@ export default class Dataclips {
                 if (tz) {
                   record[schemaKey] = recordValue
                 } else {
-                  console.warn(`Dataclips: attribute '${schemaKey}' has no TZ information, assuming UTC`)
+                  // console.warn(`Dataclips: attribute '${schemaKey}' has no TZ information, assuming UTC`)
                   record[schemaKey] = `${recordValue}Z` // UTC
                 }
               } else {
@@ -89,105 +89,100 @@ export default class Dataclips {
     })
   }
 
-  downloadXLSX(data) {
-    const { name, schema } = this
-    const suggestedFilename = `${name}.xlsx`
+  downloadXLSX(data, schema, filename) {
+    const workbook = Builder.createWorkbook()
 
-    const filename = prompt('filename', suggestedFilename)
-    if (filename !== null) {
-      const workbook = Builder.createWorkbook()
-
-      const xlsx_number_formats = {
-        datetime_formatter:  {id: 1, numFmtId: 22},
-        duration_formatter:  {id: 2, numFmtId: 46}
-      }
-
-      const stylesheet = workbook.getStyleSheet()
-      stylesheet.fills = [{}, {}] // reset weirdo default styles
-
-      Object.entries(xlsx_number_formats).forEach(([key, format]) => {
-        stylesheet.masterCellFormats.push(format)
-      })
-
-      const sheet = workbook.createWorksheet()
-
-      const headers = Object.keys(schema)
-
-      const rows = []
-
-      rows.push(headers)
-
-      data.forEach((item) => {
-        const row = Object.entries(item).map(([key, value]) => {
-          if (value !== null) {
-            const type = schema[key].type
-
-            switch (type) {
-              case 'boolean':
-                return {
-                  value: +value
-                }
-              case 'datetime':
-                const minMs = 60 * 1000
-                const dayMs = (60 * 60 * 24 * 1000)
-
-                const _value = 25569.0 + ((value.ts + (value.offset * minMs)) / dayMs)
-
-                return {
-                  value: _value,
-                  metadata: {style: xlsx_number_formats.datetime_formatter.id}
-                }
-              case 'duration':
-              case 'time':
-                return {
-                  value: value.as('day'),
-                  metadata: {style: xlsx_number_formats.duration_formatter.id}
-                }
-
-              default:
-                return value
-            }
-          } else {
-            return null
-          }
-        })
-
-        rows.push(row)
-      })
-
-      sheet.setData(rows)
-      workbook.addWorksheet(sheet)
-      return new Promise(function(resolve, reject) {
-
-        Builder.createFile(workbook, {type: 'blob'}).then((blobData) => {
-          const blob = new Blob( [blobData], {type: "application/octet-stream"} )
-          saveAs(blob, filename)
-        })
-        resolve(false)
-      })
-    } else {
-      return new Promise(function(resolve, reject) {
-        resolve(false)
-      })
+    const xlsx_number_formats = {
+      datetime_formatter:  {id: 1, numFmtId: 22},
+      duration_formatter:  {id: 2, numFmtId: 46}
     }
+
+    const stylesheet = workbook.getStyleSheet()
+    stylesheet.fills = [{}, {}] // reset weirdo default styles
+
+    Object.entries(xlsx_number_formats).forEach(([key, format]) => {
+      stylesheet.masterCellFormats.push(format)
+    })
+
+    const sheet = workbook.createWorksheet()
+
+    const headers = Object.keys(schema)
+
+    const rows = []
+
+    rows.push(headers)
+
+    data.forEach((item) => {
+      const row = Object.entries(item).map(([key, value]) => {
+        if (value !== null) {
+          const type = schema[key].type
+
+          switch (type) {
+            case 'boolean':
+              return {
+                value: +value
+              }
+            case 'datetime':
+              const minMs = 60 * 1000
+              const dayMs = (60 * 60 * 24 * 1000)
+
+              const _value = 25569.0 + ((value.ts + (value.offset * minMs)) / dayMs)
+
+              return {
+                value: _value,
+                metadata: {style: xlsx_number_formats.datetime_formatter.id}
+              }
+            case 'duration':
+            case 'time':
+              return {
+                value: value.as('day'),
+                metadata: {style: xlsx_number_formats.duration_formatter.id}
+              }
+
+            default:
+              return value
+          }
+        } else {
+          return null
+        }
+      })
+
+      rows.push(row)
+    })
+
+    sheet.setData(rows)
+    workbook.addWorksheet(sheet)
+    return new Promise(function(resolve, reject) {
+
+      Builder.createFile(workbook, {type: 'blob'}).then((blobData) => {
+        const blob = new Blob( [blobData], {type: "application/octet-stream"} )
+        saveAs(blob, filename)
+        resolve()
+      })
+    })
   }
 
   init() {
-    const { container, schema, per_page, url, fetchData, fetchDataInBatches, downloadXLSX } = this
+    const { container, name, schema, per_page, url, fetchData, fetchDataInBatches, downloadXLSX } = this
 
     const reactable = Reactable.init({
       container:   container,
       schema:      schema,
       limit:       parseInt(window.innerHeight / 30) - 2,
       controls: {
-        csv: {
+        xlsx: {
           onClick: (e) => {
             const button = e.target
-            button.disabled = true
-            const data = reactable.getFilteredData()
-            downloadXLSX.bind(this)(data).then((disabled) => {
-              button.disabled = disabled
-            })
+            const suggestedFilename = `${name}.xlsx`
+
+            const filename = prompt('filename', suggestedFilename)
+            if (filename !== null) {
+              button.disabled = true
+              const data = reactable.getFilteredData()
+              downloadXLSX(data, schema, filename).then(() => {
+                button.disabled = false
+              })
+            }
           },
           className: 'btn',
           key: 'xlsx',
