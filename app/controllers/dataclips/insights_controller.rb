@@ -1,4 +1,6 @@
+require "pg_clip"
 # https://api.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/ConnectionPool.html
+
 module Dataclips
   class InsightsController < ApplicationController
 
