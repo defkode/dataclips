@@ -28,11 +28,12 @@ export default class Dataclips {
       })
     }
 
-    this.schema    = schema
-    this.container = document.getElementById(config.dom_id)
-    this.per_page  = config.per_page
-    this.url       = config.url
-    this.name      = config.name
+    this.schema     = schema
+    this.container  = document.getElementById(config.dom_id)
+    this.identifier = config.identifier
+    this.per_page   = config.per_page
+    this.url        = config.url
+    this.name       = config.name
   }
 
   fetchData(url, reactable) {
@@ -166,11 +167,12 @@ export default class Dataclips {
   }
 
   init() {
-    const { container, name, schema, per_page, url, fetchData, fetchDataInBatches, downloadXLSX } = this
+    const { container, name, schema, identifier, per_page, url, fetchData, fetchDataInBatches, downloadXLSX } = this
 
     const reactable = Reactable.init({
       container:   container,
       schema:      schema,
+      identifier:  identifier,
       limit:       parseInt(window.innerHeight / 30) - 2,
       controls: {
         xlsx: {
