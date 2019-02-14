@@ -12,19 +12,22 @@ if (!window.Promise) {
 }
 
 export default class Dataclips {
-  constructor(config) {
+  constructor(config, customFormatters) {
     let schema = Object.assign({}, config.schema)
 
-    Object.keys(config.schema).forEach((key) => {
-      const formatter = config.schema[key]['formatter']
-      if (formatter) {
-        if (window[formatter]) {
-          schema[key]['formatter'] = window[formatter]
-        } else {
-          delete schema[key]['formatter']
+    if (customFormatters) {
+      Object.keys(config.schema).forEach((key) => {
+        const formatter = config.schema[key]['formatter']
+        if (formatter) {
+          if (customFormatters[formatter]) {
+            schema[key]['formatter'] = customFormatters[formatter]
+          } else {
+            delete schema[key]['formatter']
+          }
         }
-      }
-    })
+      })
+    }
+
     this.schema    = schema
     this.container = document.getElementById(config.dom_id)
     this.per_page  = config.per_page

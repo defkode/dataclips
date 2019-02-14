@@ -1,20 +1,3 @@
 <% content_for :title, @insight.name  %>
 
-<!-- container -->
-<div id='<%= dom_id(@insight) %>'></div>
-
-<script>
-  var config = <%= raw dataclips_insight_config(@insight).to_json %>
-</script>
-
-<!-- custom formatters -->
-<% if File.exists?("#{Rails.root}/app/dataclips/#{@insight.clip_id}.js") %>
-  <script>
-    <%= raw File.read("#{Rails.root}/app/dataclips/#{@insight.clip_id}.js") %>
-  </script>
-<% end %>
-
-<!-- init table -->
-<script>
-  new Dataclips(config).init();
-</script>
+<%= display_insight(@insight) %>
