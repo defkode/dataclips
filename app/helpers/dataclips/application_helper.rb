@@ -20,6 +20,7 @@ module Dataclips::ApplicationHelper
   def dataclips_insight_config(insight)
     {
       url:        dataclips.data_insight_path(insight),
+      identifier: insight.hash_id,
       dom_id:     dom_id(insight),
       per_page:   insight.per_page,
       schema:     load_dataclip_insight_schema(insight),
