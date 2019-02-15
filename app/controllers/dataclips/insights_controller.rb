@@ -29,7 +29,7 @@ module Dataclips
         else
           @result = paginator.execute_query(sql)
         end
-        ActiveRecord::Base.connection_pool.release_connection
+        # ActiveRecord::Base.connection_pool.release_connection
       end
 
       render json: @result
