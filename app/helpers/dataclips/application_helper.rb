@@ -36,7 +36,7 @@ module Dataclips::ApplicationHelper
   end
 
   def load_dataclip_insight_schema(insight)
-    file = File.read "#{Rails.root}/app/dataclips/#{@insight.clip_id}.json"
+    file = File.read "#{Rails.root}/app/dataclips/#{insight.clip_id}.json"
     schema = JSON.parse(file)
     schema.keys.each do |key|
       schema[key]['label'] = t("dataclips.#{insight.clip_id}.#{key}", default: key)
