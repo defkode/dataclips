@@ -2,10 +2,11 @@ module Dataclips
   class Insight < ApplicationRecord
     class FileNotFound < ArgumentError; end
 
-    validates :clip_id, presence: true
-    validates :hash_id, presence: true, uniqueness: true
-    validates :checksum, presence: true, uniqueness: true
+    validates :clip_id,   presence: true
+    validates :hash_id,   presence: true, uniqueness: true
+    validates :checksum,  presence: true, uniqueness: true
     validates :time_zone, presence: true
+    validates :per_page,  numericality: {greater_than: 0, less_than_or_equal_to: 50_000}, allow_nil: true
 
     before_validation :set_checksum
 
@@ -22,11 +23,13 @@ module Dataclips
     end
 
     def self.get!(clip_id, params = {}, options = {})
-      schema    = options[:schema]
-      time_zone = options[:time_zone] || Rails.configuration.time_zone
+      time_zone  = options[:time_zone] || Rails.configuration.time_zone
+      schema     = options[:schema]
+      per_page   = options[:per_page]
+      connection = options[:per_page]
 
       name      = options.fetch(:name, clip_id)
-      checksum = calculate_checksum(clip_id, params, schema)
+      checksum = calculate_checksum(clip_id, params, per_page, connection)
 
       if insight = Dataclips::Insight.find_by(clip_id: clip_id, checksum: checksum)
         return insight
@@ -51,12 +54,12 @@ module Dataclips
       end
     end
 
-    def self.calculate_checksum(clip_id, params, schema)
-      Digest::MD5.hexdigest Marshal.dump({clip_id: clip_id, params: params, schema: schema}.to_json)
+    def self.calculate_checksum(clip_id, params, per_page, connection)
+      Digest::MD5.hexdigest Marshal.dump({clip_id: clip_id, params: params, per_page: per_page, connection: connection}.to_json)
     end
 
     def set_checksum
-      self.checksum = self.class.calculate_checksum(clip_id, params, schema)
+      self.checksum = self.class.calculate_checksum(clip_id, params, per_page, connection)
     end
   end
 end
