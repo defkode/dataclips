@@ -26,7 +26,7 @@ module Dataclips
       time_zone  = options[:time_zone] || Rails.configuration.time_zone
       schema     = options[:schema]
       per_page   = options[:per_page]
-      connection = options[:per_page]
+      connection = options[:connection]
 
       name      = options.fetch(:name, clip_id)
       checksum = calculate_checksum(clip_id, params, per_page, connection)
