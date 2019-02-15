@@ -43,13 +43,15 @@ module Dataclips
         end
 
         Dataclips::Insight.create!({
-          clip_id:   clip_id,
-          hash_id:   hash_id,
-          name:      name,
-          params:    params,
-          schema:    schema,
+          clip_id:                clip_id,
+          hash_id:                hash_id,
+          name:                   name,
+          params:                 params,
+          schema:                 schema,
           basic_auth_credentials: basic_auth_credentials,
-          time_zone: time_zone
+          time_zone:              time_zone,
+          per_page:               per_page,
+          connection:             connection
         })
       end
     end
