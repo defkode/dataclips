@@ -169,6 +169,8 @@ export default class Dataclips {
   init() {
     const { container, name, schema, identifier, per_page, url, fetchData, fetchDataInBatches, downloadXLSX } = this
 
+    console.log(schema)
+
     const reactable = Reactable.init({
       container:   container,
       schema:      schema,
