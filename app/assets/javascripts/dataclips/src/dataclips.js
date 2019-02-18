@@ -60,7 +60,7 @@ export default class Dataclips {
         Object.entries(schema).forEach(([schemaKey, options]) => {
           const recordValue = parsedRecord[schemaKey]
           if (recordValue !== undefined) {
-            if (options.type === 'datetime') {
+            if (options.type === 'datetime' && recordValue !== null) {
               if (ISO8601.test(recordValue)) {
                 const matches = recordValue.match(ISO8601)
                 const tz      = matches[2]
@@ -71,14 +71,15 @@ export default class Dataclips {
                   record[schemaKey] = `${recordValue}Z` // UTC
                 }
               } else {
-                throw new TypeError(`Dataclips: attribute '${schemaKey}' is valid ISO8601.`)
+                debugger
+                throw new TypeError(`Dataclips: ensure attribute '${schemaKey}' is valid ISO8601.`)
               }
             } else {
               record[schemaKey] = recordValue
             }
 
           } else {
-            throw new TypeError(`Dataclips: attribute '${schemaKey}' is undefined. Please check verify schema.`)
+            throw new TypeError(`Dataclips: attribute '${schemaKey}' is undefined. Please verify schema.`)
           }
         })
         return record
