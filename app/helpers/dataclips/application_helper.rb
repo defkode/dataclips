@@ -1,6 +1,6 @@
 module Dataclips::ApplicationHelper
-  def find_and_display_insight(clip_id, params)
-    insight = Dataclips::Insight.get!(clip_id, params)
+  def find_and_display_insight(clip_id, params, options = {})
+    insight = Dataclips::Insight.get!(clip_id, params, options)
     display_insight(insight)
   end
 

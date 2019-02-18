@@ -20,14 +20,10 @@ module Dataclips
         databases = ActiveRecord::Base.configurations
         resolver = ActiveRecord::ConnectionAdapters::ConnectionSpecification::Resolver.new(databases)
 
-        # Get one specific database from our list of databases in database.yml. pick any database identifier (:development, :user_shard1, etc)
         spec = resolver.spec(@insight.connection.present? ? @insight.connection.to_sym : Rails.env.to_sym)
 
-        # Make a new pool for the database we picked
         pool = ActiveRecord::ConnectionAdapters::ConnectionPool.new(spec)
 
-        # Use the pool
-        # This is thread-safe, ie unlike ActiveRecord's establish_connection, it won't leak to other threads
         pool.with_connection do |connection|
           paginator = PgClip::Paginator.new(sql, connection)
           if per_page = @insight.per_page
