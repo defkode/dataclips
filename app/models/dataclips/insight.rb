@@ -1,5 +1,5 @@
 module Dataclips
-  class Insight < ApplicationRecord
+  class Insight < ActiveRecord::Base
     class FileNotFound < ArgumentError; end
 
     validates :clip_id,   presence: true
