@@ -6,10 +6,10 @@ module Dataclips::ApplicationHelper
 
   def display_insight(insight)
     config            = dataclips_insight_config(insight).to_json
-    custom_formatters = load_custom_dataclips_formatters(insight)
+    custom_config = load_custom_dataclips_formatters(insight)
 
-    script_tag = if custom_formatters
-      "<script>\nnew Dataclips(#{config}, #{custom_formatters}).init();\n</script>"
+    script_tag = if custom_config
+      "<script>\nnew Dataclips(#{config}, #{custom_config}).init();\n</script>"
     else
       "<script>\nnew Dataclips(#{config}).init();</script>"
     end

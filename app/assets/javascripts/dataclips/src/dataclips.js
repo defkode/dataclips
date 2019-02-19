@@ -12,20 +12,26 @@ if (!window.Promise) {
 }
 
 export default class Dataclips {
-  constructor(config, customFormatters) {
+  constructor(config, customConfig) {
     let schema = Object.assign({}, config.schema)
 
-    if (customFormatters) {
-      Object.keys(config.schema).forEach((key) => {
-        const formatter = config.schema[key]['formatter']
-        if (formatter) {
-          if (customFormatters[formatter]) {
-            schema[key]['formatter'] = customFormatters[formatter]
-          } else {
-            delete schema[key]['formatter']
+    if (customConfig) {
+      const customFormatters = customConfig.formatters
+      this.default_filter = customConfig.default_filter
+      this.filters = customConfig.filters
+
+      if (customFormatters) {
+        Object.keys(config.schema).forEach((key) => {
+          const formatter = config.schema[key]['formatter']
+          if (formatter) {
+            if (customFormatters[formatter]) {
+              schema[key]['formatter'] = customFormatters[formatter]
+            } else {
+              delete schema[key]['formatter']
+            }
           }
-        }
-      })
+        })
+      }
     }
 
     this.schema     = schema
@@ -168,13 +174,14 @@ export default class Dataclips {
   }
 
   init() {
-    const { container, name, schema, identifier, per_page, url, fetchData, fetchDataInBatches, downloadXLSX } = this
+    const { container, name, schema, identifier, per_page, url, fetchData, fetchDataInBatches, downloadXLSX, filters, default_filter } = this
 
     const reactable = Reactable.init({
       container:   container,
       schema:      schema,
       identifier:  identifier,
       limit:       parseInt(window.innerHeight / 30) - 2,
+      searchPresets: filters,
       controls: {
         xlsx: {
           onClick: (e) => {
@@ -198,6 +205,7 @@ export default class Dataclips {
     })
 
     reactable.render()
+    reactable.selectSearchPreset(default_filter)
 
     if (per_page) {
       const processBatch = (result) => {
