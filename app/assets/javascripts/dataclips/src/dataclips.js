@@ -205,7 +205,7 @@ export default class Dataclips {
     })
 
     reactable.render()
-    reactable.selectSearchPreset(default_filter)
+    reactable.applySearchPreset(default_filter)
 
     if (per_page) {
       const processBatch = (result) => {
