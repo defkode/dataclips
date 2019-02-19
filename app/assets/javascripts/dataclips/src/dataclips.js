@@ -14,11 +14,20 @@ if (!window.Promise) {
 export default class Dataclips {
   constructor(config, customConfig) {
     let schema = Object.assign({}, config.schema)
+    const filters = {}
 
     if (customConfig) {
       const customFormatters = customConfig.formatters
       this.default_filter = customConfig.default_filter
-      this.filters = customConfig.filters
+
+      if (customConfig.filters) {
+        Object.keys(customConfig.filters).forEach((filterName) => {
+          filters[filterName] = {}
+          Object.keys(customConfig.filters[filterName]).forEach((key) => {
+            filters[filterName][key] = { value: customConfig.filters[filterName][key] }
+          })
+        })
+      }
 
       if (customFormatters) {
         Object.keys(config.schema).forEach((key) => {
@@ -40,6 +49,7 @@ export default class Dataclips {
     this.per_page   = config.per_page
     this.url        = config.url
     this.name       = config.name
+    this.filters    = filters
   }
 
   fetchData(url, reactable) {
@@ -182,6 +192,7 @@ export default class Dataclips {
       identifier:  identifier,
       limit:       parseInt(window.innerHeight / 30) - 2,
       searchPresets: filters,
+      defaultSearchPreset: default_filter,
       controls: {
         xlsx: {
           onClick: (e) => {
