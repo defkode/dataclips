@@ -216,7 +216,10 @@ export default class Dataclips {
     })
 
     reactable.render()
-    reactable.applySearchPreset(default_filter)
+
+    if (default_filter) {
+      reactable.applySearchPreset(default_filter)
+    }
 
     if (per_page) {
       const processBatch = (result) => {
