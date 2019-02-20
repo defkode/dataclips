@@ -198,6 +198,8 @@ export default class Dataclips {
       itemsChange: (items) => {
         this.onChange(items)
       },
+      dateSeparator: '.',
+      dateFormat: 'eu',
       controls: {
         xlsx: {
           onClick: (e) => {
