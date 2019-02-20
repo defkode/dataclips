@@ -35,6 +35,7 @@ module Dataclips
 
         render json: @result
       rescue => ex
+        raise ex
         Rails.logger.warn ex, ex.backtrace
         head :internal_server_error
       ensure

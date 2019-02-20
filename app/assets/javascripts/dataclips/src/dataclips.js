@@ -56,16 +56,21 @@ export default class Dataclips {
 
   refresh() {
     this.reactable.clearData()
+    this.fetch()
   }
 
-  fetchData(url, reactable) {
-    return fetch(url).then(function(response) {
-      return response.json()
-    }).then(function(data) {
-      return data.map(function(i){
-        return JSON.parse(i.record)
-      })
-    })
+  fetch() {
+    const { url, schema, reactable, fetchDataInBatches } = this
+    const processBatch = (result) => {
+      const { data, currentPage, total_count, total_pages} = result
+
+      if (currentPage < total_pages) {
+        fetchDataInBatches(currentPage + 1, url, schema).then(processBatch)
+      }
+      reactable.addData(result.data, total_count)
+    }
+
+    fetchDataInBatches(1, url, schema).then(processBatch)
   }
 
 
@@ -75,43 +80,52 @@ export default class Dataclips {
     return fetch(url + '?page=' + page).then(function(response) {
       return response.json()
     }).then(function(data) {
-      const records = data.map(function(i){
-        const parsedRecord = JSON.parse(i.record)
-        let record = {}
+      if (data.length) {
 
-        Object.entries(schema).forEach(([schemaKey, options]) => {
-          const recordValue = parsedRecord[schemaKey]
-          if (recordValue !== undefined) {
-            if (options.type === 'datetime' && recordValue !== null) {
-              if (ISO8601.test(recordValue)) {
-                const matches = recordValue.match(ISO8601)
-                const tz      = matches[2]
-                if (tz) {
-                  record[schemaKey] = recordValue
+        const records = data.map(function(i){
+          const parsedRecord = JSON.parse(i.record)
+          let record = {}
+
+          Object.entries(schema).forEach(([schemaKey, options]) => {
+            const recordValue = parsedRecord[schemaKey]
+            if (recordValue !== undefined) {
+              if (options.type === 'datetime' && recordValue !== null) {
+                if (ISO8601.test(recordValue)) {
+                  const matches = recordValue.match(ISO8601)
+                  const tz      = matches[2]
+                  if (tz) {
+                    record[schemaKey] = recordValue
+                  } else {
+                    // console.warn(`Dataclips: attribute '${schemaKey}' has no TZ information, assuming UTC`)
+                    record[schemaKey] = `${recordValue}Z` // UTC
+                  }
                 } else {
-                  // console.warn(`Dataclips: attribute '${schemaKey}' has no TZ information, assuming UTC`)
-                  record[schemaKey] = `${recordValue}Z` // UTC
+                  throw new TypeError(`Dataclips: ensure attribute '${schemaKey}' is valid ISO8601.`)
                 }
               } else {
-                debugger
-                throw new TypeError(`Dataclips: ensure attribute '${schemaKey}' is valid ISO8601.`)
+                record[schemaKey] = recordValue
               }
+
             } else {
-              record[schemaKey] = recordValue
+              throw new TypeError(`Dataclips: attribute '${schemaKey}' is undefined. Please verify schema.`)
             }
-
-          } else {
-            throw new TypeError(`Dataclips: attribute '${schemaKey}' is undefined. Please verify schema.`)
-          }
+          })
+          return record
         })
-        return record
-      })
 
-      return {
-        data:        records,
-        currentPage: data[0].page,
-        total_count: data[0].total_count,
-        total_pages: parseInt(data[0].total_pages, 10)
+        return {
+          data:        records,
+          currentPage: data[0].page,
+          total_count: data[0].total_count,
+          total_pages: data[0].total_pages
+        }
+      } else {
+        return {
+          data:        [],
+          currentPage: page,
+          total_count: data.length,
+          total_pages: page
+        }
       }
     })
   }
@@ -190,7 +204,7 @@ export default class Dataclips {
   }
 
   init(fn) {
-    const { container, name, schema, identifier, per_page, url, fetchData, fetchDataInBatches, downloadXLSX, filters, default_filter } = this
+    const { container, name, schema, identifier, per_page, url, fetchDataInBatches, downloadXLSX, filters, default_filter } = this
 
     const reactable = Reactable.init({
       container:   container,
@@ -234,23 +248,7 @@ export default class Dataclips {
       reactable.applySearchPreset(default_filter)
     }
 
-    if (per_page) {
-      const processBatch = (result) => {
-        const { data, currentPage, total_count, total_pages} = result
-
-        if (currentPage < total_pages) {
-          fetchDataInBatches(currentPage + 1, url, schema).then(processBatch)
-        }
-        reactable.addData(result.data, total_count)
-      }
-
-      fetchDataInBatches(1, url, schema).then(processBatch)
-    } else {
-      fetchData(url).then(function(data){
-        reactable.addData(data)
-      })
-    }
-
+    this.fetch()
     fn(this)
   }
 }

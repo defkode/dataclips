@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     dataclips (0.2.0)
-      pg_clip (= 0.1.1)
+      pg_clip (= 0.1.4)
       rails (>= 5.1.6)
 
 GEM
@@ -75,7 +75,7 @@ GEM
     nokogiri (1.10.1)
       mini_portile2 (~> 2.4.0)
     pg (1.1.4)
-    pg_clip (0.1.1)
+    pg_clip (0.1.4)
       liquid
       pg
     rack (2.0.6)
