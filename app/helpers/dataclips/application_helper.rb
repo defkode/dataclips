@@ -1,21 +1,22 @@
 module Dataclips::ApplicationHelper
-  def find_and_display_insight(clip_id, params, options = {})
+  def find_and_display_insight(clip_id, params = {}, options = {}, &block)
     insight = Dataclips::Insight.get!(clip_id, params, options)
-    display_insight(insight)
+    display_insight(insight, &block)
   end
 
-  def display_insight(insight)
-    config            = dataclips_insight_config(insight).to_json
+  def display_insight(insight, &block)
+    config        = dataclips_insight_config(insight).to_json
     custom_config = load_custom_dataclips_formatters(insight)
 
-    script_tag = if custom_config
-      "<script>\nnew Dataclips(#{config}, #{custom_config}).init();\n</script>"
-    else
-      "<script>\nnew Dataclips(#{config}).init();</script>"
-    end
-
-    "<div id='#{dom_id(insight)}'></div>\n#{script_tag}".html_safe
+    "<div id='#{dom_id(insight)}'></div>
+    <script>
+      new Dataclips(#{config}, #{custom_config}).init(function(dataclip){
+        #{capture(&block) if block_given?}
+      });
+    </script>".html_safe
   end
+
+  private
 
   def dataclips_insight_config(insight)
     {

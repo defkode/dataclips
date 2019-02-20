@@ -52,6 +52,8 @@ export default class Dataclips {
     this.filters    = filters
   }
 
+  onChange() {} // implement me
+
   fetchData(url, reactable) {
     return fetch(url).then(function(response) {
       return response.json()
@@ -183,7 +185,7 @@ export default class Dataclips {
     })
   }
 
-  init() {
+  init(fn) {
     const { container, name, schema, identifier, per_page, url, fetchData, fetchDataInBatches, downloadXLSX, filters, default_filter } = this
 
     const reactable = Reactable.init({
@@ -193,6 +195,9 @@ export default class Dataclips {
       limit:       parseInt(window.innerHeight / 30) - 2,
       searchPresets: filters,
       defaultSearchPreset: default_filter,
+      itemsChange: (items) => {
+        this.onChange(items)
+      },
       controls: {
         xlsx: {
           onClick: (e) => {
@@ -237,5 +242,7 @@ export default class Dataclips {
         reactable.addData(data)
       })
     }
+
+    fn(this)
   }
 }
