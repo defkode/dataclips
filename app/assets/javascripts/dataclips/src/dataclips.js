@@ -193,6 +193,8 @@ export default class Dataclips {
       limit:       parseInt(window.innerHeight / 30) - 2,
       searchPresets: filters,
       defaultSearchPreset: default_filter,
+      dateSeparator: '.',
+      dateFormat: 'eu',
       controls: {
         xlsx: {
           onClick: (e) => {
