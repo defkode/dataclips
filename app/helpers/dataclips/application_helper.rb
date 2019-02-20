@@ -10,7 +10,7 @@ module Dataclips::ApplicationHelper
 
     "<div id='#{dom_id(insight)}'></div>
     <script>
-      new Dataclips(#{config}, #{custom_config}).init(function(dataclip){
+      new Dataclips(#{config}, #{custom_config}).init(function(insight){
         #{capture(&block) if block_given?}
       });
     </script>".html_safe

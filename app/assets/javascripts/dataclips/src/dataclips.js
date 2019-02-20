@@ -54,6 +54,10 @@ export default class Dataclips {
 
   onChange() {} // implement me
 
+  refresh() {
+    this.reactable.clearData()
+  }
+
   fetchData(url, reactable) {
     return fetch(url).then(function(response) {
       return response.json()
@@ -223,6 +227,8 @@ export default class Dataclips {
     })
 
     reactable.render()
+
+    this.reactable = reactable
 
     if (default_filter) {
       reactable.applySearchPreset(default_filter)
