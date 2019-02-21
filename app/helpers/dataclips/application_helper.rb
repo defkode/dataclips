@@ -45,11 +45,15 @@ module Dataclips::ApplicationHelper
       schema[key]['label'] = t("dataclips.#{insight.clip_id}.#{key}", default: key)
       dictionary_name = schema[key]['dictionary']
       if dictionary_name.present?
-        dictionary = Dataclips::Engine.config.dictionaries[dictionary_name.to_sym].call(insight.params)
+        dictionary = Dataclips::Engine.config.dictionaries[dictionary_name.to_sym]
 
-        schema[key]['dictionary'] = dictionary.reduce({}) do |memo, key|
-          memo[key] = I18n.t("dataclips.dictionaries.#{dictionary_name}.#{key}", locale: locale, default: key)
-          memo
+        if dictionary
+          schema[key]['dictionary'] = dictionary.call(insight.params).reduce({}) do |memo, key|
+            memo[key] = I18n.t("dataclips.dictionaries.#{dictionary_name}.#{key}", locale: locale, default: key)
+            memo
+          end
+        else
+          schema[key].delete('dictionary')
         end
       end
     end
