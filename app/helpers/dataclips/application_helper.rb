@@ -39,8 +39,19 @@ module Dataclips::ApplicationHelper
   def load_dataclip_insight_schema(insight)
     file = File.read "#{Rails.root}/app/dataclips/#{insight.clip_id}.json"
     schema = JSON.parse(file)
+    lcoale = I18n.locale
+
     schema.keys.each do |key|
       schema[key]['label'] = t("dataclips.#{insight.clip_id}.#{key}", default: key)
+      dictionary_name = schema[key]['dictionary']
+      if dictionary_name.present?
+        dictionary = Dataclips::Engine.config.dictionaries[dictionary_name.to_sym].call(insight.params)
+
+        schema[key]['dictionary'] = dictionary.reduce({}) do |memo, key|
+          memo[key] = I18n.t("dataclips.dictionaries.#{dictionary_name}.#{key}", locale: locale, default: key)
+          memo
+        end
+      end
     end
     schema
   end
