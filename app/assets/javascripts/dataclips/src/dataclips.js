@@ -233,7 +233,7 @@ export default class Dataclips {
               })
             }
           },
-          className: 'btn',
+          className: 'download-xlsx',
           key: 'xlsx',
           label: 'Download XLSX',
         }

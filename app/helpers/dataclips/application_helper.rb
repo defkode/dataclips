@@ -19,14 +19,17 @@ module Dataclips::ApplicationHelper
   private
 
   def dataclips_insight_config(insight)
+    schema = load_dataclip_insight_schema(insight)
+    schema_md5 = Digest::MD5.hexdigest(Marshal.dump(schema.to_json))
+
     {
       url:        dataclips.data_insight_path(insight),
-      identifier: insight.hash_id,
+      identifier: "#{insight.clip_id}-#{schema_md5}",
       dom_id:     dom_id(insight),
       per_page:   insight.per_page,
-      schema:     load_dataclip_insight_schema(insight),
+      schema:     schema,
       name:       insight.name
-    }
+    }.compact
   end
 
   def load_custom_dataclips_formatters(insight)
