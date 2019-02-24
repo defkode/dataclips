@@ -6,10 +6,12 @@ module Dataclips
 
     def show
       @insight = Dataclips::Insight.find_by_hash_id!(params[:id])
+      @insight.touch(:last_viewed_at)
     end
 
     def data
       @insight = Dataclips::Insight.find_by_hash_id!(params[:id])
+      @insight.touch(:last_viewed_at)
 
       template  = File.read("#{Rails.root}/app/dataclips/#{@insight.clip_id}.sql")
       clip      = PgClip::Query.new(template)
