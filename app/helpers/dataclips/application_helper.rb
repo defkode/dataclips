@@ -8,7 +8,7 @@ module Dataclips::ApplicationHelper
     config        = dataclips_insight_config(insight).to_json
     custom_config = load_custom_dataclips_formatters(insight)
 
-    "<div id='#{dom_id(insight)}'></div>
+    "<div class='insight' id='#{dom_id(insight)}'></div>
     <script>
       new Dataclips(#{config}, #{custom_config}).init(function(insight){
         #{capture(&block) if block_given?}

@@ -206,11 +206,13 @@ export default class Dataclips {
   init(fn) {
     const { container, name, schema, identifier, per_page, url, fetchDataInBatches, downloadXLSX, filters, default_filter } = this
 
+    console.log(container.offsetTop)
+
     const reactable = Reactable.init({
       container:   container,
       schema:      schema,
       identifier:  identifier,
-      limit:       parseInt(window.innerHeight / 30) - 2,
+      limit:       parseInt((window.innerHeight - container.offsetTop) / 30) - 2,
       searchPresets: filters,
       defaultSearchPreset: default_filter,
       itemsChange: (items) => {
