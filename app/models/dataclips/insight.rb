@@ -56,6 +56,25 @@ module Dataclips
       end
     end
 
+    def records
+      template  = File.read("#{Rails.root}/app/dataclips/#{clip_id}.sql")
+      clip      = PgClip::Query.new(template)
+      sql       = clip.query(params)
+
+      databases = ActiveRecord::Base.configurations
+      resolver = ActiveRecord::ConnectionAdapters::ConnectionSpecification::Resolver.new(databases)
+
+      spec = resolver.spec(connection.present? ? connection.to_sym : Rails.env.to_sym)
+
+      pool = ActiveRecord::ConnectionAdapters::ConnectionPool.new(spec)
+
+      pool.with_connection do |connection|
+        paginator = PgClip::Paginator.new(sql, connection)
+        @result = paginator.records
+      end
+      @result
+    end
+
     def self.calculate_checksum(clip_id, params, per_page, connection)
       Digest::MD5.hexdigest Marshal.dump({clip_id: clip_id, params: params, per_page: per_page, connection: connection}.to_json)
     end
