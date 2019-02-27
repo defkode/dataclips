@@ -1,11 +1,15 @@
 module Dataclips::ApplicationHelper
+  # visual options:  limit
   def find_and_display_insight(clip_id, params = {}, options = {}, &block)
-    insight = Dataclips::Insight.get!(clip_id, params, options)
-    display_insight(insight, &block)
+    options.stringify_keys!
+
+    # insight options: time_zone, per_page, connection, schema
+    insight = Dataclips::Insight.get!(clip_id, params, options.slice('time_zone', 'per_page', 'connection', 'schema'))
+    display_insight(insight, {limit: options['limit']}, &block)
   end
 
-  def display_insight(insight, &block)
-    config        = dataclips_insight_config(insight).to_json
+  def display_insight(insight, options = {}, &block)
+    config        = dataclips_insight_config(insight, options).to_json
     custom_config = load_custom_dataclips_formatters(insight)
 
     "<div class='insight' id='#{dom_id(insight)}'></div>
@@ -18,7 +22,9 @@ module Dataclips::ApplicationHelper
 
   private
 
-  def dataclips_insight_config(insight)
+  def dataclips_insight_config(insight, options = {})
+    options.stringify_keys!
+
     schema = load_dataclip_insight_schema(insight)
     schema_md5 = Digest::MD5.hexdigest(Marshal.dump(schema.to_json))
 
@@ -28,7 +34,8 @@ module Dataclips::ApplicationHelper
       dom_id:     dom_id(insight),
       per_page:   insight.per_page,
       schema:     schema,
-      name:       insight.name
+      name:       insight.name,
+      limit:      options['limit']
     }.compact
   end
 

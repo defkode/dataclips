@@ -50,6 +50,14 @@ export default class Dataclips {
     this.url        = config.url
     this.name       = config.name
     this.filters    = filters
+
+
+    if (config.limit) {
+      this.limit = config.limit
+    } else {
+      const availableHeight = window.innerHeight - this.container.offsetTop
+      this.limit = Math.max(parseInt(availableHeight / 30) - 2, 20)
+    }
   }
 
   onChange() {} // implement me
@@ -204,13 +212,13 @@ export default class Dataclips {
   }
 
   init(fn) {
-    const { container, name, schema, identifier, per_page, url, fetchDataInBatches, downloadXLSX, filters, default_filter } = this
+    const { container, name, schema, identifier, per_page, limit, url, fetchDataInBatches, downloadXLSX, filters, default_filter } = this
 
     const reactable = Reactable.init({
       container:   container,
       schema:      schema,
       identifier:  identifier,
-      limit:       parseInt((window.innerHeight - container.offsetTop) / 30) - 2,
+      limit:       limit,
       searchPresets: filters,
       defaultSearchPreset: default_filter,
       itemsChange: (items) => {
