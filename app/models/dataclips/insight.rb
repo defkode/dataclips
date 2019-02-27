@@ -23,12 +23,14 @@ module Dataclips
     end
 
     def self.get!(clip_id, params = {}, options = {})
-      time_zone  = options[:time_zone] || Rails.configuration.time_zone
-      schema     = options[:schema]
-      per_page   = options[:per_page]
-      connection = options[:connection]
+      options.stringify_keys!
+      params.stringify_keys!
+      time_zone  = options['time_zone'] || Rails.configuration.time_zone
+      schema     = options['schema']
+      per_page   = options['per_page']
+      connection = options['connection']
 
-      name      = options.fetch(:name, clip_id)
+      name      = options.fetch('name', clip_id)
       checksum = calculate_checksum(clip_id, params, per_page, connection)
 
       if insight = Dataclips::Insight.find_by(clip_id: clip_id, checksum: checksum)
@@ -36,9 +38,9 @@ module Dataclips
       else
         hash_id = SecureRandom.urlsafe_base64(6)
 
-        if basic_auth = options[:basic_auth]
-          if basic_auth[:username].present? && basic_auth[:password].present?
-            basic_auth_credentials = [basic_auth[:username], basic_auth[:password]].join(":")
+        if basic_auth = options['basic_auth']
+          if basic_auth['username'].present? && basic_auth['password'].present?
+            basic_auth_credentials = [basic_auth['username'], basic_auth['password']].join(":")
           end
         end
 
