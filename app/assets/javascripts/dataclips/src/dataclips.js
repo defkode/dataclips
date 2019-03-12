@@ -19,6 +19,7 @@ export default class Dataclips {
     if (customConfig) {
       const customFormatters = customConfig.formatters
       this.default_filter = customConfig.default_filter
+      this.rowActions = customConfig.rowActions
 
       if (customConfig.filters) {
         Object.keys(customConfig.filters).forEach((filterName) => {
@@ -212,7 +213,7 @@ export default class Dataclips {
   }
 
   init(fn) {
-    const { container, name, schema, identifier, per_page, limit, url, fetchDataInBatches, downloadXLSX, filters, default_filter } = this
+    const { container, name, schema, identifier, per_page, limit, url, fetchDataInBatches, downloadXLSX, filters, default_filter, rowActions } = this
 
     const reactable = Reactable.init({
       container:   container,
@@ -220,6 +221,7 @@ export default class Dataclips {
       identifier:  identifier,
       limit:       limit,
       searchPresets: filters,
+      actions: rowActions,
       defaultSearchPreset: default_filter,
       itemsChange: (items) => {
         this.onChange(items)
