@@ -144,8 +144,9 @@ export default class Dataclips {
 
     const xlsx_number_formats = {
       date_formatter:      {id: 1, numFmtId: 14},
-      datetime_formatter:  {id: 2, numFmtId: 22},
-      duration_formatter:  {id: 3, numFmtId: 46}
+      time_formatter:      {id: 2, numFmtId: 21},
+      datetime_formatter:  {id: 3, numFmtId: 22},
+      duration_formatter:  {id: 4, numFmtId: 46}
     }
 
     const stylesheet = workbook.getStyleSheet()
@@ -178,21 +179,24 @@ export default class Dataclips {
               }
             case 'date':
               return {
-                value: 25569.0 + (Date.parse(value) / dayMs),
+                value: 25569 + (Date.parse(value) / dayMs),
                 metadata: {style: xlsx_number_formats.date_formatter.id}
+              }
+            case 'time':
+              return {
+                value: value.as('day'),
+                metadata: {style: xlsx_number_formats.time_formatter.id}
               }
             case 'datetime':
               return {
-                value:  25569.0 + ((value.ts + (value.offset * minMs)) / dayMs),
+                value:  25569 + ((value.ts + (value.offset * minMs)) / dayMs),
                 metadata: {style: xlsx_number_formats.datetime_formatter.id}
               }
             case 'duration':
-            case 'time':
               return {
                 value: value.as('day'),
                 metadata: {style: xlsx_number_formats.duration_formatter.id}
               }
-
             default:
               return value
           }
