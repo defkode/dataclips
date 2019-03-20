@@ -236,7 +236,11 @@ export default class Dataclips {
       keys.forEach(function(key) {
         if (ctr > 0) result += columnDelimiter
 
-        result += `"${item[key]}"`
+        if (item[key] === null) {
+          result += ""
+        } else {
+          result += `"${item[key]}"`
+        }
         ctr++
       })
       result += lineDelimiter
@@ -292,7 +296,7 @@ export default class Dataclips {
             const suggestedFilename = `${name}.csv`
 
             const filename = prompt('filename', suggestedFilename)
-            const columnDelimiter = prompt('column delimiter', ';')
+            const columnDelimiter = prompt('column delimiter', ',')
             if (filename !== null && columnDelimiter !== null) {
               button.disabled = true
               const data = reactable.getFilteredData()
