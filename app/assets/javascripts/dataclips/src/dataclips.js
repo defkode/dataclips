@@ -220,8 +220,39 @@ export default class Dataclips {
     })
   }
 
+  downloadCSV(data, schema, filename, columnDelimiter) {
+    if (data === null || !data.length) {
+      return null;
+    }
+    const lineDelimiter = '\n'
+    const keys = Object.keys(data[0])
+
+    let result = ''
+    result += keys.join(columnDelimiter)
+    result += lineDelimiter
+
+    data.forEach(function(item) {
+      let ctr = 0
+      keys.forEach(function(key) {
+        if (ctr > 0) result += columnDelimiter
+
+        result += `"${item[key]}"`
+        ctr++
+      })
+      result += lineDelimiter
+    })
+
+    if (result === '') return
+
+    return new Promise(function(resolve, reject) {
+      var blob = new Blob([result], {type: "text/csv;charset=utf-8"});
+      saveAs(blob, filename)
+      resolve()
+    })
+  }
+
   init(fn) {
-    const { container, name, schema, identifier, per_page, limit, url, fetchDataInBatches, downloadXLSX, filters, default_filter, rowActions } = this
+    const { container, name, schema, identifier, per_page, limit, url, fetchDataInBatches, downloadXLSX, downloadCSV, filters, default_filter, rowActions } = this
 
     const reactable = Reactable.init({
       container:   container,
@@ -254,6 +285,25 @@ export default class Dataclips {
           className: 'download-xlsx',
           key: 'xlsx',
           label: 'Download XLSX',
+        },
+        csv: {
+          onClick: (e) => {
+            const button = e.target
+            const suggestedFilename = `${name}.csv`
+
+            const filename = prompt('filename', suggestedFilename)
+            const columnDelimiter = prompt('column delimiter', ';')
+            if (filename !== null && columnDelimiter !== null) {
+              button.disabled = true
+              const data = reactable.getFilteredData()
+              downloadCSV(data, schema, filename, columnDelimiter).then(() => {
+                button.disabled = false
+              })
+            }
+          },
+          className: 'download-csv',
+          key: 'csv',
+          label: 'Download CSV',
         }
       }
     })
