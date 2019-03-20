@@ -222,28 +222,34 @@ export default class Dataclips {
 
   downloadCSV(data, schema, filename, columnDelimiter) {
     if (data === null || !data.length) {
-      return null;
+      return null
     }
     const lineDelimiter = '\n'
-    const keys = Object.keys(data[0])
 
     let result = ''
-    result += keys.join(columnDelimiter)
+    result += Object.keys(schema).join(columnDelimiter)
     result += lineDelimiter
 
     data.forEach(function(item) {
-      let ctr = 0
-      keys.forEach(function(key) {
-        if (ctr > 0) result += columnDelimiter
-
-        if (item[key] === null) {
-          result += ""
+      const row = Object.entries(item).map(([key, value]) => {
+        if (value === null) {
+          return ""
         } else {
-          result += `"${item[key]}"`
+          const type = schema[key].type
+          let valueFormated = value
+          switch (type) {
+            case 'time':
+              valueFormated = value.toFormat('hh:mm:ss')
+            case 'datetime':
+              valueFormated = value.toFormat('yyyy-MM-dd hh:mm:ss')
+            case 'duration':
+              valueFormated = value.toFormat('hh:mm:ss')
+          }
+          return `"${valueFormated}"`
         }
-        ctr++
-      })
-      result += lineDelimiter
+        result += columnDelimiter
+      }).join(columnDelimiter)
+      result += row + lineDelimiter
     })
 
     if (result === '') return
