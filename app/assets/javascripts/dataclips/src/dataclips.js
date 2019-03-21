@@ -158,7 +158,7 @@ export default class Dataclips {
 
     const sheet = workbook.createWorksheet()
 
-    const headers = Object.keys(schema)
+    const headers = Object.values(schema).map(function(value) {return value.label })
 
     const rows = []
 
@@ -220,8 +220,61 @@ export default class Dataclips {
     })
   }
 
+  downloadCSV(data, schema, filename) {
+    if (data === null || !data.length) {
+      return null
+    }
+
+    const decimalSeparator = new Intl.NumberFormat().formatToParts(1.1).find(part => part.type === 'decimal').value
+    const columnDelimiter = (decimalSeparator === '.') ? ',' : ';'
+
+    let lines = []
+
+    const headerRow = Object.values(schema).map(function(value) {return `"${value.label}"` }).join(columnDelimiter)
+
+    lines.push(headerRow)
+
+    data.forEach(function(item) {
+      const row = Object.entries(item).map(([key, value]) => {
+        if (value !== null) {
+          const type = schema[key].type
+
+          switch(type) {
+            case 'number':
+              return new Intl.NumberFormat().format(value)
+            case 'date':
+              return value
+            case 'datetime':
+              return value.toFormat('yyyy-MM-dd HH:mm:ss')
+            case 'time':
+            case 'duration':
+              return value.toFormat('hh:mm:ss')
+            case 'boolean':
+              return value.toString().toUpperCase()
+            default:
+              return value
+          }
+        } else {
+          return null
+        }
+      }).map(function(fieldValue){
+        if (fieldValue !== null) { return `"${fieldValue}"` } else { return null }
+      }).join(columnDelimiter)
+
+      lines.push(row)
+    })
+
+    const result = lines.join('\n')
+
+    return new Promise(function(resolve, reject) {
+      var blob = new Blob([result], {type: "text/csv;charset=utf-8"});
+      saveAs(blob, filename)
+      resolve()
+    })
+  }
+
   init(fn) {
-    const { container, name, schema, identifier, per_page, limit, url, fetchDataInBatches, downloadXLSX, filters, default_filter, rowActions } = this
+    const { container, name, schema, identifier, per_page, limit, url, fetchDataInBatches, downloadXLSX, downloadCSV, filters, default_filter, rowActions } = this
 
     const reactable = Reactable.init({
       container:   container,
@@ -254,6 +307,25 @@ export default class Dataclips {
           className: 'download-xlsx',
           key: 'xlsx',
           label: 'Download XLSX',
+        },
+        csv: {
+          onClick: (e) => {
+            const button = e.target
+            const suggestedFilename = `${name}.csv`
+
+            const filename = prompt('filename', suggestedFilename)
+
+            if (filename !== null) {
+              button.disabled = true
+              const data = reactable.getFilteredData()
+              downloadCSV(data, schema, filename).then(() => {
+                button.disabled = false
+              })
+            }
+          },
+          className: 'download-csv',
+          key: 'csv',
+          label: 'Download CSV',
         }
       }
     })
