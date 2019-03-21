@@ -158,7 +158,7 @@ export default class Dataclips {
 
     const sheet = workbook.createWorksheet()
 
-    const headers = Object.keys(schema)
+    const headers = Object.values(schema).map(function(value) {return value.label })
 
     const rows = []
 
@@ -220,39 +220,51 @@ export default class Dataclips {
     })
   }
 
-  downloadCSV(data, schema, filename, columnDelimiter) {
+  downloadCSV(data, schema, filename) {
     if (data === null || !data.length) {
       return null
     }
-    const lineDelimiter = '\n'
 
-    let result = ''
-    result += Object.keys(schema).join(columnDelimiter)
-    result += lineDelimiter
+    const decimalSeparator = new Intl.NumberFormat().formatToParts(1.1).find(part => part.type === 'decimal').value
+    const columnDelimiter = (decimalSeparator === '.') ? ',' : ';'
+
+    let lines = []
+
+    const headerRow = Object.values(schema).map(function(value) {return `"${value.label}"` }).join(columnDelimiter)
+
+    lines.push(headerRow)
 
     data.forEach(function(item) {
       const row = Object.entries(item).map(([key, value]) => {
-        if (value === null) {
-          return ""
-        } else {
+        if (value !== null) {
           const type = schema[key].type
-          let valueFormated = value
-          switch (type) {
-            case 'time':
-              valueFormated = value.toFormat('hh:mm:ss')
+
+          switch(type) {
+            case 'number':
+              return new Intl.NumberFormat().format(value)
+            case 'date':
+              return value
             case 'datetime':
-              valueFormated = value.toFormat('yyyy-MM-dd hh:mm:ss')
+              return value.toFormat('yyyy-MM-dd HH:mm:ss')
+            case 'time':
             case 'duration':
-              valueFormated = value.toFormat('hh:mm:ss')
+              return value.toFormat('hh:mm:ss')
+            case 'boolean':
+              return value.toString().toUpperCase()
+            default:
+              return value
           }
-          return `"${valueFormated}"`
+        } else {
+          return null
         }
-        result += columnDelimiter
+      }).map(function(fieldValue){
+        if (fieldValue !== null) { return `"${fieldValue}"` } else { return null }
       }).join(columnDelimiter)
-      result += row + lineDelimiter
+
+      lines.push(row)
     })
 
-    if (result === '') return
+    const result = lines.join('\n')
 
     return new Promise(function(resolve, reject) {
       var blob = new Blob([result], {type: "text/csv;charset=utf-8"});
@@ -302,11 +314,11 @@ export default class Dataclips {
             const suggestedFilename = `${name}.csv`
 
             const filename = prompt('filename', suggestedFilename)
-            const columnDelimiter = prompt('column delimiter', ',')
-            if (filename !== null && columnDelimiter !== null) {
+
+            if (filename !== null) {
               button.disabled = true
               const data = reactable.getFilteredData()
-              downloadCSV(data, schema, filename, columnDelimiter).then(() => {
+              downloadCSV(data, schema, filename).then(() => {
                 button.disabled = false
               })
             }
