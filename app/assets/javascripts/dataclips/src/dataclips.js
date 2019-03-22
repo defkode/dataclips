@@ -304,9 +304,9 @@ export default class Dataclips {
               })
             }
           },
-          className: 'download-xlsx',
+          className: 'icon-download',
           key: 'xlsx',
-          label: 'Download XLSX',
+          label: 'XLSX',
         },
         csv: {
           onClick: (e) => {
@@ -323,9 +323,9 @@ export default class Dataclips {
               })
             }
           },
-          className: 'download-csv',
+          className: 'icon-download',
           key: 'csv',
-          label: 'Download CSV',
+          label: 'CSV',
         }
       }
     })
