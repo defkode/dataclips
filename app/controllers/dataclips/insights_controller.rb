@@ -3,13 +3,16 @@ require "pg_clip"
 
 module Dataclips
   class InsightsController < ApplicationController
+
     def show
       @insight = Dataclips::Insight.find_by_hash_id!(params[:id])
+      authenticate_insight(@insight)
       @insight.touch(:last_viewed_at)
     end
 
     def data
       @insight = Dataclips::Insight.find_by_hash_id!(params[:id])
+      authenticate_insight(@insight)
       @insight.touch(:last_viewed_at)
 
       template  = File.read("#{Rails.root}/app/dataclips/#{@insight.clip_id}.sql")
@@ -25,6 +28,14 @@ module Dataclips
       end
 
       render json: @result
+    end
+
+    private
+
+    def authenticate_insight(insight)
+      if insight.basic_auth_credentials.present?
+        request_http_basic_authentication unless authenticate_with_http_basic { |login, password| insight.authenticate(login, password) }
+      end
     end
   end
 end
