@@ -36,7 +36,7 @@ module Dataclips
       if insight = Dataclips::Insight.find_by(clip_id: clip_id, checksum: checksum)
         return insight
       else
-        hash_id = SecureRandom.urlsafe_base64(6)
+        hash_id = SecureRandom.urlsafe_base64(Dataclips::Engine.config.hash_id_length)
 
         if basic_auth = options['basic_auth']
           if basic_auth['username'].present? && basic_auth['password'].present?
