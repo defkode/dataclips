@@ -34,7 +34,10 @@ module Dataclips
 
     def authenticate_insight(insight)
       if insight.basic_auth_credentials.present?
-        request_http_basic_authentication unless authenticate_with_http_basic { |login, password| insight.authenticate(login, password) }
+        if authenticate_with_http_basic { |login, password| insight.authenticate(login, password) }
+        else
+          request_http_basic_authentication
+        end
       end
     end
   end

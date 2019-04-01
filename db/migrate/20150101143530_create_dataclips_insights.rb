@@ -12,7 +12,6 @@ class CreateDataclipsInsights < ActiveRecord::Migration[5.2]
       t.string  :name
       t.string  :connection
       t.integer :per_page
-      t.string  :schema
       t.string  :basic_auth_credentials
       t.datetime :last_viewed_at
       t.timestamps
@@ -21,6 +20,5 @@ class CreateDataclipsInsights < ActiveRecord::Migration[5.2]
     add_index :dataclips_insights, :clip_id
     add_index :dataclips_insights, :checksum, unique: true
     add_index :dataclips_insights, :hash_id, unique: true
-    add_index :dataclips_insights, :schema
   end
 end

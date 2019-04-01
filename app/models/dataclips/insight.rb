@@ -26,7 +26,6 @@ module Dataclips
       options.stringify_keys!
       params.stringify_keys!
       time_zone  = options['time_zone'] || Rails.configuration.time_zone
-      schema     = options['schema']
       per_page   = options['per_page']
       connection = options['connection']
 
@@ -49,7 +48,6 @@ module Dataclips
           hash_id:                hash_id,
           name:                   name,
           params:                 params,
-          schema:                 schema,
           basic_auth_credentials: basic_auth_credentials,
           time_zone:              time_zone,
           per_page:               per_page,
