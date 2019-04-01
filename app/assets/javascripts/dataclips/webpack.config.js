@@ -2,35 +2,21 @@ const path = require('path');
 const webpack = require('webpack');
 
 module.exports = {
-  mode:  'development',
-  entry: ['babel-polyfill', path.resolve(__dirname, 'src', 'index.js')],
+  entry: [path.resolve(__dirname, 'src', 'index.js')],
   output: {
-    filename: 'bundle.js',
-    path: path.resolve('./dist')
-  },
-  resolve: {
-    alias: {}
+    filename: 'dataclips-bundle.js',
+    path: path.resolve(__dirname, './dist')
   },
   module: {
     rules: [
       {
-        test: /\.coffee$/,
+        test: /\.js$/,
         use: [
           {
             loader: 'babel-loader'
           },
-          {
-            loader: 'coffee-loader'
-          }
         ]
       }
     ]
-  },
-  plugins: [
-    new webpack.ProvidePlugin({
-      _:        'underscore',
-      Backbone: 'backbone'
-    })
-
-  ]
+  }
 };
