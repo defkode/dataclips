@@ -15,7 +15,7 @@ module Dataclips
       authenticate_insight(@insight)
       @insight.touch(:last_viewed_at)
 
-      template  = File.read("#{Rails.root}/app/dataclips/#{@insight.clip_id}.sql")
+      template  = File.read("#{Rails.root}/app/dataclips/#{@insight.clip_id}/query.sql")
       clip      = PgClip::Query.new(template)
       sql       = clip.query(@insight.params)
 
