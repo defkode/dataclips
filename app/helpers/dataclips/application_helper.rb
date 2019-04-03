@@ -6,7 +6,7 @@ module Dataclips::ApplicationHelper
 
     # insight options: time_zone, per_page, connection, schema
     insight = Dataclips::Insight.get!(clip_id, params, options.slice('time_zone', 'per_page', 'connection', 'schema'))
-    display_insight(insight, {limit: options['limit']}, &block)
+    display_insight(insight, {limit: options['limit'], save_schema_config: options['save_schema_config']}, &block)
   end
 
   def display_insight(insight, options = {}, &block)
@@ -28,6 +28,7 @@ module Dataclips::ApplicationHelper
 
     schema = load_dataclip_insight_schema(insight)
     schema_md5 = Digest::MD5.hexdigest(Marshal.dump(schema.to_json))
+    schema_md5 = nil if options['remember_schema_config'] == false
 
     {
       url:        dataclips.data_insight_path(insight),
