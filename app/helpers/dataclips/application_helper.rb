@@ -6,7 +6,7 @@ module Dataclips::ApplicationHelper
 
     # insight options: time_zone, per_page, connection, schema
     insight = Dataclips::Insight.get!(clip_id, params, options.slice('time_zone', 'per_page', 'connection', 'schema'))
-    display_insight(insight, {limit: options['limit'], save_schema_config: options['save_schema_config']}, &block)
+    display_insight(insight, {limit: options['limit'], remember_schema_config: options['remember_schema_config']}, &block)
   end
 
   def display_insight(insight, options = {}, &block)
