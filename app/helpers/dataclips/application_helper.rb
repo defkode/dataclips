@@ -26,13 +26,17 @@ module Dataclips::ApplicationHelper
   def dataclips_insight_config(insight, options = {})
     options.stringify_keys!
 
+    remember_schema_config = options.fetch('remember_schema_config', true)
+
     schema = load_dataclip_insight_schema(insight)
-    schema_md5 = Digest::MD5.hexdigest(Marshal.dump(schema.to_json))
-    schema_md5 = nil if options['remember_schema_config'] == false
+    if remember_schema_config
+      schema_md5 = Digest::MD5.hexdigest(Marshal.dump(schema.to_json))
+      identifier = "#{insight.clip_id}-#{schema_md5}"
+    end
 
     {
       url:        dataclips.data_insight_path(insight),
-      identifier: "#{insight.clip_id}-#{schema_md5}",
+      identifier: identifier,
       dom_id:     dom_id(insight),
       per_page:   insight.per_page,
       schema:     schema,
