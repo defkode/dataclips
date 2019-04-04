@@ -10,12 +10,13 @@ module Dataclips::ApplicationHelper
   end
 
   def display_insight(insight, options = {}, &block)
-    config        = dataclips_insight_config(insight, options).to_json
-    custom_config = load_custom_dataclips_formatters(insight)
+    config     = dataclips_insight_config(insight, options).to_json
+    formatters = load_custom_dataclips_formatters(insight) || {}
+    options    = load_custom_dataclips_options(insight) || {}
 
     "<div class='insight' id='#{dom_id(insight)}'></div>
     <script>
-      new Dataclips(#{config}, #{custom_config}).init(function(insight){
+      new Dataclips(#{config}, #{formatters}, #{options}).init(function(insight){
         #{capture(&block) if block_given?}
       });
     </script>".html_safe
@@ -46,14 +47,21 @@ module Dataclips::ApplicationHelper
   end
 
   def load_custom_dataclips_formatters(insight)
-    formatters_path = "#{Rails.root}/app/dataclips/#{insight.clip_id}.js"
+    formatters_path = "#{Rails.root}/app/dataclips/#{insight.clip_id}/formatters.js"
     if File.exists?(formatters_path)
       File.read(formatters_path)
     end
   end
 
+  def load_custom_dataclips_options(insight)
+    options_path = "#{Rails.root}/app/dataclips/#{insight.clip_id}/options.js"
+    if File.exists?(options_path)
+      File.read(options_path)
+    end
+  end
+
   def load_dataclip_insight_schema(insight)
-    file = File.read "#{Rails.root}/app/dataclips/#{insight.clip_id}.json"
+    file = File.read "#{Rails.root}/app/dataclips/#{insight.clip_id}/schema.json"
     schema = JSON.parse(file)
     locale = I18n.locale
 

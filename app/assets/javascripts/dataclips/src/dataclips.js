@@ -12,36 +12,39 @@ if (!window.Promise) {
 }
 
 export default class Dataclips {
-  constructor(config, customConfig) {
+  constructor(config, customFormatters, customOptions) {
     let schema = Object.assign({}, config.schema)
+
+
+    if (Object.keys(customFormatters).length) {
+      Object.keys(config.schema).forEach((key) => {
+        const formatter = config.schema[key]['formatter']
+        if (formatter) {
+          if (customFormatters.formatters[formatter]) {
+            schema[key]['formatter'] = customFormatters.formatters[formatter]
+          } else {
+            delete schema[key]['formatter']
+          }
+        }
+      })
+    }
+
     const filters = {}
 
-    if (customConfig) {
-      const customFormatters = customConfig.formatters
-      this.default_filter = customConfig.default_filter
-      this.rowActions = customConfig.rowActions
+    if (Object.keys(customOptions).length) {
 
-      if (customConfig.filters) {
-        Object.keys(customConfig.filters).forEach((filterName) => {
+      this.default_filter = customOptions.default_filter
+      this.rowActions     = customOptions.rowActions
+
+      if (customOptions.filters) {
+        Object.keys(customOptions.filters).forEach((filterName) => {
           filters[filterName] = {}
-          Object.keys(customConfig.filters[filterName]).forEach((key) => {
-            filters[filterName][key] = { value: customConfig.filters[filterName][key] }
+          Object.keys(customOptions.filters[filterName]).forEach((key) => {
+            filters[filterName][key] = { value: customOptions.filters[filterName][key] }
           })
         })
       }
 
-      if (customFormatters) {
-        Object.keys(config.schema).forEach((key) => {
-          const formatter = config.schema[key]['formatter']
-          if (formatter) {
-            if (customFormatters[formatter]) {
-              schema[key]['formatter'] = customFormatters[formatter]
-            } else {
-              delete schema[key]['formatter']
-            }
-          }
-        })
-      }
     }
 
     this.schema     = schema

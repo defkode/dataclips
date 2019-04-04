@@ -2,7 +2,7 @@ module Dataclips
   module Test
     module Helpers
       def sql_template(clip_name)
-        template = File.read("#{Rails.root}/app/dataclips/#{clip_name}.sql")
+        template = File.read("#{Rails.root}/app/dataclips/#{clip_name}/query.sql")
         PgClip::Query.new(template)
       end
 
