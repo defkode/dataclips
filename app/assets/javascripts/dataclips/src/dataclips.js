@@ -277,7 +277,7 @@ export default class Dataclips {
   }
 
   init(fn) {
-    const { container, name, schema, identifier, per_page, limit, url, fetchDataInBatches, downloadXLSX, downloadCSV, filters, default_filter, rowActions } = this
+    const { container, name, schema, identifier, per_page, limit, url, fetchDataInBatches, downloadXLSX, downloadCSV, filters, default_filter, rowActions, fetch } = this
 
     const reactable = Reactable.init({
       container:   container,
@@ -307,7 +307,7 @@ export default class Dataclips {
               })
             }
           },
-          className: 'icon-download',
+          className: 'r-icon-download',
           key: 'xlsx',
           label: 'XLSX',
         },
@@ -326,9 +326,18 @@ export default class Dataclips {
               })
             }
           },
-          className: 'icon-download',
+          className: 'r-icon-download',
           key: 'csv',
           label: 'CSV',
+        },
+        refresh: {
+          onClick: (e) => {
+            reactable.clearData()
+            fetch.apply(this)
+          },
+          className: 'r-icon-refresh',
+          key: 'refresh',
+          label: 'Refresh',
         }
       }
     })
