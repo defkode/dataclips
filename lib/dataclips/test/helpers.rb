@@ -1,3 +1,5 @@
+require 'pg_clip'
+
 module Dataclips
   module Test
     module Helpers
