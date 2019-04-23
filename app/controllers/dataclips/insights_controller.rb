@@ -7,7 +7,6 @@ module Dataclips
     def show
       @insight = Dataclips::Insight.find_by_hash_id!(params[:id])
       authenticate_insight(@insight)
-      @insight.touch(:last_viewed_at)
     end
 
     def data
@@ -19,15 +18,31 @@ module Dataclips
       clip      = PgClip::Query.new(template)
       sql       = clip.query(@insight.params)
 
-      paginator = PgClip::Paginator.new(sql, ActiveRecord::Base.connection)
+      begin
+        databases = ActiveRecord::Base.configurations
+        resolver = ActiveRecord::ConnectionAdapters::ConnectionSpecification::Resolver.new(databases)
 
-      if per_page = @insight.per_page
-        @result = paginator.execute_paginated_query(sql, page: params['page']&.to_i || 1, per_page: @insight.per_page)
-      else
-        @result = paginator.execute_query(sql)
+        spec = resolver.spec(@insight.connection.present? ? @insight.connection.to_sym : Rails.env.to_sym)
+
+        pool = ActiveRecord::ConnectionAdapters::ConnectionPool.new(spec)
+
+        pool.with_connection do |connection|
+          paginator = PgClip::Paginator.new(sql, connection)
+          if per_page = @insight.per_page
+            @result = paginator.execute_paginated_query(sql, page: params['page']&.to_i || 1, per_page: @insight.per_page)
+          else
+            @result = paginator.execute_query(sql)
+          end
+        end
+
+        render json: @result
+      rescue => ex
+        raise ex
+        Rails.logger.warn ex, ex.backtrace
+        head :internal_server_error
+      ensure
+        pool.disconnect!
       end
-
-      render json: @result
     end
 
     private
