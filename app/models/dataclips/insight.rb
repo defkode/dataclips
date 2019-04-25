@@ -10,6 +10,8 @@ module Dataclips
 
     before_validation :set_checksum
 
+    scope :shared, -> { where(shared: true) }
+
     def to_param
       hash_id
     end

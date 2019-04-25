@@ -4,7 +4,8 @@ module Dataclips
 
     config.before_configuration do
       config.path           = Rails.root.join('app/dataclips').to_s
-      config.hash_id_length = 6
+      config.hash_id_length = 8
+      config.multiple_db    = false
     end
   end
 end

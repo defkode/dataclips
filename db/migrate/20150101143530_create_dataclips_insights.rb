@@ -1,11 +1,12 @@
 class CreateDataclipsInsights < ActiveRecord::Migration[5.2]
   def change
-    execute "DROP TABLE IF EXISTS dataclips_insights;"
     create_table :dataclips_insights do |t|
       t.string  :hash_id, null: false
 
       t.string  :clip_id, null: false
       t.json    :params
+
+      t.boolean :shared, null: false, default: true
 
       t.string  :checksum, null: false
       t.string  :time_zone, null: false

@@ -5,12 +5,12 @@ module Dataclips
   class InsightsController < ApplicationController
 
     def show
-      @insight = Dataclips::Insight.find_by_hash_id!(params[:id])
+      @insight = Dataclips::Insight.shared.find_by!(hash_id: params[:id])
       authenticate_insight(@insight)
     end
 
     def data
-      @insight = Dataclips::Insight.find_by_hash_id!(params[:id])
+      @insight = Dataclips::Insight.shared.find_by!(hash_id: params[:id])
       authenticate_insight(@insight)
       @insight.touch(:last_viewed_at)
 
@@ -18,30 +18,44 @@ module Dataclips
       clip      = PgClip::Query.new(template)
       sql       = clip.query(@insight.params)
 
-      begin
-        databases = ActiveRecord::Base.configurations
-        resolver = ActiveRecord::ConnectionAdapters::ConnectionSpecification::Resolver.new(databases)
+      if Dataclips::Engine.config.multiple_db
+        # MULTIPLE DB - conenction switching
+        begin
+          databases = ActiveRecord::Base.configurations
+          resolver = ActiveRecord::ConnectionAdapters::ConnectionSpecification::Resolver.new(databases)
 
-        spec = resolver.spec(@insight.connection.present? ? @insight.connection.to_sym : Rails.env.to_sym)
+          spec = resolver.spec(@insight.connection.present? ? @insight.connection.to_sym : Rails.env.to_sym)
 
-        pool = ActiveRecord::ConnectionAdapters::ConnectionPool.new(spec)
+          pool = ActiveRecord::ConnectionAdapters::ConnectionPool.new(spec)
 
-        pool.with_connection do |connection|
-          paginator = PgClip::Paginator.new(sql, connection)
-          if per_page = @insight.per_page
-            @result = paginator.execute_paginated_query(sql, page: params['page']&.to_i || 1, per_page: @insight.per_page)
-          else
-            @result = paginator.execute_query(sql)
+          pool.with_connection do |connection|
+            paginator = PgClip::Paginator.new(sql, connection)
+            if per_page = @insight.per_page
+              @result = paginator.execute_paginated_query(sql, page: params['page']&.to_i || 1, per_page: @insight.per_page)
+            else
+              @result = paginator.execute_query(sql)
+            end
           end
+
+          render json: @result
+        rescue => ex
+          raise ex
+          Rails.logger.warn ex, ex.backtrace
+          head :internal_server_error
+        ensure
+          pool.disconnect!
+        end
+      else
+        # SINGLE DB (reports in the same DB as insights)
+        paginator = PgClip::Paginator.new(sql, ActiveRecord::Base.connection)
+
+        if per_page = @insight.per_page
+          @result = paginator.execute_paginated_query(sql, page: params['page']&.to_i || 1, per_page: @insight.per_page)
+        else
+          @result = paginator.execute_query(sql)
         end
 
         render json: @result
-      rescue => ex
-        raise ex
-        Rails.logger.warn ex, ex.backtrace
-        head :internal_server_error
-      ensure
-        pool.disconnect!
       end
     end
 
