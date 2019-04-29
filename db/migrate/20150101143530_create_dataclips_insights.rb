@@ -13,7 +13,6 @@ class CreateDataclipsInsights < ActiveRecord::Migration[5.2]
       t.string  :name
       t.string  :connection
       t.integer :per_page
-      t.string  :basic_auth_credentials
       t.datetime :last_viewed_at
       t.timestamps
     end

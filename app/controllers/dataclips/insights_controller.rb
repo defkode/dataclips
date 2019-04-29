@@ -3,41 +3,31 @@ require "pg_clip"
 
 module Dataclips
   class InsightsController < ApplicationController
+    before_action :find_and_authenticate_insight
 
-    def show
-      @insight = Dataclips::Insight.shared.find_by!(hash_id: params[:id])
-      authenticate_insight(@insight)
-    end
+    def show; end
 
     def data
-      @insight = Dataclips::Insight.shared.find_by!(hash_id: params[:id])
-      authenticate_insight(@insight)
       @insight.touch(:last_viewed_at)
 
       template  = File.read("#{Rails.root}/app/dataclips/#{@insight.clip_id}/query.sql")
       clip      = PgClip::Query.new(template)
-      sql       = clip.query(@insight.params)
+      query     = clip.query(@insight.params)
+      page      = params['page']&.to_i
+      per_page  = @insight.per_page
 
       if Dataclips::Engine.config.multiple_db
         # MULTIPLE DB - conenction switching
         begin
           databases = ActiveRecord::Base.configurations
+
           resolver = ActiveRecord::ConnectionAdapters::ConnectionSpecification::Resolver.new(databases)
+          spec     = resolver.spec(@insight.connection.present? ? @insight.connection.to_sym : Rails.env.to_sym)
+          pool     = ActiveRecord::ConnectionAdapters::ConnectionPool.new(spec)
 
-          spec = resolver.spec(@insight.connection.present? ? @insight.connection.to_sym : Rails.env.to_sym)
-
-          pool = ActiveRecord::ConnectionAdapters::ConnectionPool.new(spec)
-
-          pool.with_connection do |connection|
-            paginator = PgClip::Paginator.new(sql, connection)
-            if per_page = @insight.per_page
-              @result = paginator.execute_paginated_query(sql, page: params['page']&.to_i || 1, per_page: @insight.per_page)
-            else
-              @result = paginator.execute_query(sql)
-            end
+          pool.with_connection do |conn|
+            render json: retrieve_results(query: query, page: page, per_page: per_page, connection: conn)
           end
-
-          render json: @result
         rescue => ex
           raise ex
           Rails.logger.warn ex, ex.backtrace
@@ -47,26 +37,19 @@ module Dataclips
         end
       else
         # SINGLE DB (reports in the same DB as insights)
-        paginator = PgClip::Paginator.new(sql, ActiveRecord::Base.connection)
-
-        if per_page = @insight.per_page
-          @result = paginator.execute_paginated_query(sql, page: params['page']&.to_i || 1, per_page: @insight.per_page)
-        else
-          @result = paginator.execute_query(sql)
-        end
-
-        render json: @result
+        render json: retrieve_results(query: query, page: page, per_page: per_page)
       end
     end
 
     private
 
-    def authenticate_insight(insight)
-      if insight.basic_auth_credentials.present?
-        if authenticate_with_http_basic { |login, password| insight.authenticate(login, password) }
-        else
-          request_http_basic_authentication
-        end
+    def retrieve_results(query: , page: 1, per_page: nil, connection: ActiveRecord::Base.connection)
+      paginator = PgClip::Paginator.new(query, connection)
+
+      if per_page
+        paginator.execute_paginated_query(query, page: page, per_page: per_page)
+      else
+        paginator.execute_query(query)
       end
     end
   end
