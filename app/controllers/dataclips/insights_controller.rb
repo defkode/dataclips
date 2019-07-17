@@ -14,7 +14,7 @@ module Dataclips
 
           template  = File.read("#{Rails.root}/app/dataclips/#{@insight.clip_id}/query.sql")
           clip      = PgClip::Query.new(template)
-          sql       = clip.query(@insight.params)
+          query     = clip.query(@insight.params)
           page      = params['page']&.to_i
           per_page  = @insight.per_page
 
