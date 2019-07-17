@@ -60,7 +60,7 @@ export default class Dataclips {
       this.limit = config.limit
     } else {
       const availableHeight = window.innerHeight - this.container.offsetTop
-      this.limit = Math.max(parseInt(availableHeight / 30) - 2, 20)
+      this.limit = Math.max(parseInt(availableHeight / 30) - 1, 20)
     }
   }
 
