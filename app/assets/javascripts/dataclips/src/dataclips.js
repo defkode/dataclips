@@ -299,6 +299,8 @@ export default class Dataclips {
       controls: {
         xlsx: {
           onClick: (e) => {
+            e.stopPropagation();
+
             const button = e.target
             const suggestedFilename = `${name}.xlsx`
 
@@ -311,12 +313,14 @@ export default class Dataclips {
               })
             }
           },
-          className: 'r-icon-download',
+          className: 'r-icon-file-excel',
           key: 'xlsx',
           label: 'XLSX',
         },
         csv: {
           onClick: (e) => {
+            e.stopPropagation();
+
             const button = e.target
             const suggestedFilename = `${name}.csv`
 
@@ -330,16 +334,17 @@ export default class Dataclips {
               })
             }
           },
-          className: 'r-icon-download',
+          className: 'r-icon-doc-text',
           key: 'csv',
           label: 'CSV',
         },
         refresh: {
           onClick: (e) => {
+            e.stopPropagation();
             reactable.clearData()
             fetch.apply(this)
           },
-          className: 'r-icon-refresh',
+          className: 'r-icon-arrows-cw',
           key: 'refresh',
           label: 'Refresh',
         }

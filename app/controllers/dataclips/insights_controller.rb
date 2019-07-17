@@ -8,36 +8,40 @@ module Dataclips
     def show; end
 
     def data
-      @insight.touch(:last_viewed_at)
+      respond_to do |format|
+        format.json do
+          @insight.touch(:last_viewed_at)
 
-      template  = File.read("#{Rails.root}/app/dataclips/#{@insight.clip_id}/query.sql")
-      clip      = PgClip::Query.new(template)
-      query     = clip.query(@insight.params)
-      page      = params['page']&.to_i
-      per_page  = @insight.per_page
+          template  = File.read("#{Rails.root}/app/dataclips/#{@insight.clip_id}/query.sql")
+          clip      = PgClip::Query.new(template)
+          sql       = clip.query(@insight.params)
+          page      = params['page']&.to_i
+          per_page  = @insight.per_page
 
-      if Dataclips::Engine.config.multiple_db
-        # MULTIPLE DB - conenction switching
-        begin
-          databases = ActiveRecord::Base.configurations
+          if Dataclips::Engine.config.multiple_db
+            # MULTIPLE DB - conenction switching
+            begin
+              databases = ActiveRecord::Base.configurations
 
-          resolver = ActiveRecord::ConnectionAdapters::ConnectionSpecification::Resolver.new(databases)
-          spec     = resolver.spec(@insight.connection.present? ? @insight.connection.to_sym : Rails.env.to_sym)
-          pool     = ActiveRecord::ConnectionAdapters::ConnectionPool.new(spec)
+              resolver = ActiveRecord::ConnectionAdapters::ConnectionSpecification::Resolver.new(databases)
+              spec     = resolver.spec(@insight.connection.present? ? @insight.connection.to_sym : Rails.env.to_sym)
+              pool     = ActiveRecord::ConnectionAdapters::ConnectionPool.new(spec)
 
-          pool.with_connection do |conn|
-            render json: retrieve_results(query: query, page: page, per_page: per_page, connection: conn)
+              pool.with_connection do |conn|
+                render json: retrieve_results(query: query, page: page, per_page: per_page, connection: conn)
+              end
+            rescue => ex
+              raise ex
+              Rails.logger.warn ex, ex.backtrace
+              head :internal_server_error
+            ensure
+              pool.disconnect!
+            end
+          else
+            # SINGLE DB (reports in the same DB as insights)
+            render json: retrieve_results(query: query, page: page, per_page: per_page)
           end
-        rescue => ex
-          raise ex
-          Rails.logger.warn ex, ex.backtrace
-          head :internal_server_error
-        ensure
-          pool.disconnect!
         end
-      else
-        # SINGLE DB (reports in the same DB as insights)
-        render json: retrieve_results(query: query, page: page, per_page: per_page)
       end
     end
 
