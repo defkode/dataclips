@@ -2,8 +2,7 @@ namespace :dataclips do
   desc "HealthCheck"
   task health_check: :environment do
     Dataclips::Insight.pluck(:clip_id).uniq.sort.each do |clip_id|
-      clip_path = File.join(Dataclips::Engine.config.path, "#{clip_id}.sql")
-      puts "#{clip_id}.sql ... NOT FOUND" unless File.exists?(clip_path)
+      puts "#{clip_id}/query.sql ... NOT FOUND" unless Dataclips.available.include?(clip_id)
     end
   end
 
