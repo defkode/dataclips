@@ -53,6 +53,7 @@ export default class Dataclips {
     this.per_page   = config.per_page
     this.url        = config.url
     this.name       = config.name
+    this.time_zone  = config.time_zone
     this.filters    = filters
 
 
@@ -277,7 +278,7 @@ export default class Dataclips {
   }
 
   init(fn) {
-    const { container, name, schema, identifier, per_page, limit, url, fetchDataInBatches, downloadXLSX, downloadCSV, filters, default_filter, rowActions, fetch } = this
+    const { container, name, schema, identifier, per_page, limit, time_zone, url, fetchDataInBatches, downloadXLSX, downloadCSV, filters, default_filter, rowActions, fetch } = this
 
     const reactable = Reactable.init({
       container:   container,
@@ -286,6 +287,7 @@ export default class Dataclips {
       limit:       limit,
       searchPresets: filters,
       actions: rowActions,
+      displayTimeZone: time_zone,
       defaultSearchPreset: default_filter,
       itemsChange: (items) => {
         this.onChange(items)
