@@ -78,7 +78,7 @@ GEM
     pg_clip (0.1.4)
       liquid
       pg
-    rack (2.0.8)
+    rack (2.2.3)
     rack-test (1.1.0)
       rack (>= 1.0, < 3)
     rails (5.2.2)
