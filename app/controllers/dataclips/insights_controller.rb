@@ -33,10 +33,6 @@ module Dataclips
 
     def find_and_authenticate_insight
       @insight = Dataclips::Insight.find_by!(hash_id: params[:id])
-
-      if @insight.basic_auth_credentials.present?
-        authenticate_or_request_with_http_basic { |login, password| @insight.authenticate(login, password) }
-      end
     end
   end
 end
