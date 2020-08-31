@@ -18,10 +18,6 @@ module Dataclips
       read_attribute(:name) || clip_id
     end
 
-    def authenticate(login, password)
-      basic_auth_credentials == [login,password].join(":")
-    end
-
     def self.get!(clip_id, params = {}, options = {})
       options.stringify_keys!
       params.stringify_keys!
@@ -37,18 +33,11 @@ module Dataclips
       else
         hash_id = SecureRandom.urlsafe_base64(Dataclips::Engine.config.hash_id_length)
 
-        if basic_auth = options['basic_auth']
-          if basic_auth['username'].present? && basic_auth['password'].present?
-            basic_auth_credentials = [basic_auth['username'], basic_auth['password']].join(":")
-          end
-        end
-
         Dataclips::Insight.create!({
           clip_id:                clip_id,
           hash_id:                hash_id,
           name:                   name,
           params:                 params,
-          basic_auth_credentials: basic_auth_credentials,
           time_zone:              time_zone,
           per_page:               per_page,
           connection:             connection
