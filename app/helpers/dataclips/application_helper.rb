@@ -42,7 +42,8 @@ module Dataclips::ApplicationHelper
       per_page:   insight.per_page,
       schema:     schema,
       name:       insight.name,
-      limit:      options['limit']
+      limit:      options['limit'],
+      time_zone:  insight.time_zone
     }.compact
   end
 

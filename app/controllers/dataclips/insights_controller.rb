@@ -46,7 +46,7 @@ module Dataclips
     end
 
     private
-
+    
     def retrieve_results(query: , page: 1, per_page: nil, connection: ActiveRecord::Base.connection)
       paginator = PgClip::Paginator.new(query, connection)
 
