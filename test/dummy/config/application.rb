@@ -20,3 +20,4 @@ module Dummy
     # config.i18n.default_locale = :de
   end
 end
+
