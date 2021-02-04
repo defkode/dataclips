@@ -21,11 +21,8 @@ module Dataclips
           if Dataclips::Engine.config.multiple_db
             # MULTIPLE DB - conenction switching
             begin
-              databases = ActiveRecord::Base.configurations
-
-              resolver = ActiveRecord::ConnectionAdapters::ConnectionSpecification::Resolver.new(databases)
-              spec     = resolver.spec(@insight.connection.present? ? @insight.connection.to_sym : Rails.env.to_sym)
-              pool     = ActiveRecord::ConnectionAdapters::ConnectionPool.new(spec)
+              pool_config = @insight.connection.present? ? @insight.connection.to_sym : Rails.env.to_sym
+              pool = ActiveRecord::Base.connection_handler.establish_connection(pool_config)
 
               pool.with_connection do |conn|
                 render json: retrieve_results(query: query, page: page, per_page: per_page, connection: conn)
@@ -35,7 +32,7 @@ module Dataclips
               Rails.logger.warn ex, ex.backtrace
               head :internal_server_error
             ensure
-              pool.disconnect!
+              pool&.disconnect!
             end
           else
             # SINGLE DB (reports in the same DB as insights)
