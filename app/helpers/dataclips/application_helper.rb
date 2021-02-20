@@ -36,7 +36,7 @@ module Dataclips::ApplicationHelper
     end
 
     {
-      url:        dataclips.data_insight_path(insight),
+      url:        dataclips.data_insight_url(insight),
       identifier: identifier,
       dom_id:     dom_id(insight),
       per_page:   insight.per_page,

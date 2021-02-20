@@ -61,7 +61,7 @@ export default class Dataclips {
       this.limit = config.limit
     } else {
       const availableHeight = window.innerHeight - this.container.offsetTop
-      this.limit = Math.max(parseInt(availableHeight / 30) - 2, 20)
+      this.limit = Math.max(parseInt(availableHeight / 30) - 1, 20)
     }
   }
 
@@ -83,62 +83,66 @@ export default class Dataclips {
       reactable.addData(result.data, total_count)
     }
 
-    fetchDataInBatches(1, url, schema).then(processBatch)
+    fetchDataInBatches(1, url, schema).then(processBatch).catch(response => alert(response.statusText))
   }
 
 
   fetchDataInBatches(page = 1, url, schema) {
     const ISO8601 = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?(([+-]\d\d:\d\d)|Z)?$/i
 
-    return fetch(url + '?page=' + page).then(function(response) {
-      return response.json()
-    }).then(function(data) {
-      if (data.length) {
+    return fetch(url + '?page=' + page).then(response => {
+      if(response.ok) {
+        return response.json().then(data => {
+          if (data.length) {
 
-        const records = data.map(function(i){
-          const parsedRecord = JSON.parse(i.record)
-          let record = {}
+            const records = data.map(function(i){
+              const parsedRecord = JSON.parse(i.record)
+              let record = {}
 
-          Object.entries(schema).forEach(([schemaKey, options]) => {
-            const recordValue = parsedRecord[schemaKey]
-            if (recordValue !== undefined) {
-              if (options.type === 'datetime' && recordValue !== null) {
-                if (ISO8601.test(recordValue)) {
-                  const matches = recordValue.match(ISO8601)
-                  const tz      = matches[2]
-                  if (tz) {
-                    record[schemaKey] = recordValue
+              Object.entries(schema).forEach(([schemaKey, options]) => {
+                const recordValue = parsedRecord[schemaKey]
+                if (recordValue !== undefined) {
+                  if (options.type === 'datetime' && recordValue !== null) {
+                    if (ISO8601.test(recordValue)) {
+                      const matches = recordValue.match(ISO8601)
+                      const tz      = matches[2]
+                      if (tz) {
+                        record[schemaKey] = recordValue
+                      } else {
+                        // console.warn(`Dataclips: attribute '${schemaKey}' has no TZ information, assuming UTC`)
+                        record[schemaKey] = `${recordValue}Z` // UTC
+                      }
+                    } else {
+                      throw new TypeError(`Dataclips: ensure attribute '${schemaKey}' is valid ISO8601.`)
+                    }
                   } else {
-                    // console.warn(`Dataclips: attribute '${schemaKey}' has no TZ information, assuming UTC`)
-                    record[schemaKey] = `${recordValue}Z` // UTC
+                    record[schemaKey] = recordValue
                   }
+
                 } else {
-                  throw new TypeError(`Dataclips: ensure attribute '${schemaKey}' is valid ISO8601.`)
+                  throw new TypeError(`Dataclips: attribute '${schemaKey}' is undefined. Please verify schema.`)
                 }
-              } else {
-                record[schemaKey] = recordValue
-              }
+              })
+              return record
+            })
 
-            } else {
-              throw new TypeError(`Dataclips: attribute '${schemaKey}' is undefined. Please verify schema.`)
+            return {
+              data:        records,
+              currentPage: data[0].page,
+              total_count: data[0].total_count,
+              total_pages: data[0].total_pages
             }
-          })
-          return record
-        })
-
-        return {
-          data:        records,
-          currentPage: data[0].page,
-          total_count: data[0].total_count,
-          total_pages: data[0].total_pages
-        }
+          } else {
+            return {
+              data:        [],
+              currentPage: page,
+              total_count: data.length,
+              total_pages: page
+            }
+          }
+      })
       } else {
-        return {
-          data:        [],
-          currentPage: page,
-          total_count: data.length,
-          total_pages: page
-        }
+        return Promise.reject(response)
       }
     })
   }
