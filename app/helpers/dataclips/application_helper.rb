@@ -6,7 +6,7 @@ module Dataclips::ApplicationHelper
 
     # insight options: time_zone, per_page, connection, schema
     insight = Dataclips::Insight.get!(clip_id, params, options.slice('time_zone', 'per_page', 'connection', 'schema'))
-    display_insight(insight, {limit: options['limit'], remember_schema_config: options['remember_schema_config']}, &block)
+    display_insight(insight, options, &block)
   end
 
   def display_insight(insight, options = {}, &block)
@@ -28,6 +28,7 @@ module Dataclips::ApplicationHelper
     options.stringify_keys!
 
     remember_schema_config = options.fetch('remember_schema_config', true)
+    disable_seconds = options.fetch('disable_seconds', false)
 
     schema = load_dataclip_insight_schema(insight)
     if remember_schema_config
@@ -36,14 +37,15 @@ module Dataclips::ApplicationHelper
     end
 
     {
-      url:        dataclips.data_insight_path(insight),
+      url: dataclips.data_insight_path(insight),
       identifier: identifier,
-      dom_id:     dom_id(insight),
-      per_page:   insight.per_page,
-      schema:     schema,
-      name:       insight.name,
-      limit:      options['limit'],
-      time_zone:  insight.time_zone
+      dom_id: dom_id(insight),
+      per_page: insight.per_page,
+      schema: schema,
+      name: insight.name,
+      limit: options['limit'],
+      time_zone: insight.time_zone,
+      disable_seconds: disable_seconds
     }.compact
   end
 
