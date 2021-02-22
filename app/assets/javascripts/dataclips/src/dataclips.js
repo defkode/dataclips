@@ -309,6 +309,7 @@ export default class Dataclips {
       default_filter,
       rowActions,
       fetch,
+      disable_seconds,
     } = this;
 
     const reactable = Reactable.init({
@@ -323,7 +324,7 @@ export default class Dataclips {
       itemsChange: (items) => {
         this.onChange(items);
       },
-      disableSeconds: true,
+      disableSeconds: disable_seconds,
       controls: {
         xlsx: {
           onClick: (e) => {
