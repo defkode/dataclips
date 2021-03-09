@@ -29,6 +29,7 @@ module Dataclips::ApplicationHelper
 
     remember_schema_config = options.fetch('remember_schema_config', true)
     disable_seconds = options.fetch('disable_seconds', false)
+    selectable = options.fetch('selectable', false)
 
     schema = load_dataclip_insight_schema(insight)
     if remember_schema_config
@@ -45,7 +46,8 @@ module Dataclips::ApplicationHelper
       name: insight.name,
       limit: options['limit'],
       time_zone: insight.time_zone,
-      disable_seconds: disable_seconds
+      disable_seconds: disable_seconds,
+      selectable: selectable
     }.compact
   end
 

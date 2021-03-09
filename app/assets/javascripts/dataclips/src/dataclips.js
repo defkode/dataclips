@@ -54,6 +54,8 @@ export default class Dataclips {
     this.name = config.name;
     this.time_zone = config.time_zone;
     this.filters = filters;
+    this.disable_seconds = config.disable_seconds;
+    this.selectable = config.selectable;
 
     if (config.limit) {
       this.limit = config.limit;
@@ -68,6 +70,10 @@ export default class Dataclips {
   refresh() {
     this.reactable.clearData();
     this.fetch();
+  }
+
+  getSelected() {
+    return this.reactable.getSelectedData()
   }
 
   fetch() {
@@ -310,6 +316,7 @@ export default class Dataclips {
       rowActions,
       fetch,
       disable_seconds,
+      selectable,
     } = this;
 
     const reactable = Reactable.init({
@@ -325,6 +332,7 @@ export default class Dataclips {
         this.onChange(items);
       },
       disableSeconds: disable_seconds,
+      selectable: selectable,
       controls: {
         xlsx: {
           onClick: (e) => {
