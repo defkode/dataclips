@@ -1,15 +1,8 @@
 # Dataclips
 
-
-## DB Setup
+## Setup
 
 ```
-rails dataclips:install:migrations
+rails g dataclips:install
 rails db:migrate
-```
-
-## Mount engine (config/routes.rb)
-
-```ruby
-mount Dataclips::Engine, at: "/dataclips", as: :dataclips
 ```
