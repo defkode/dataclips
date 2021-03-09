@@ -18,24 +18,4 @@ namespace :dataclips do
       end
     end
   end
-
-  desc "Delete insights for clip_id"
-  task :delete_insights, [:clip_id] => :environment do |t, args|
-    Dataclips::Insight.where(clip_id: args.clip_id).delete_all
-  end
-
-  desc "Migrate dataclips schema yml"
-  task migrate_schema: :environment do
-    Dir.glob('app/dataclips/**/*.yml').each do |path|
-      File.open(path.gsub('.yml', '.json'), 'w') do |file|
-        file.write(
-          JSON.pretty_generate(
-            YAML.load(
-              File.read(path)
-            )["schema"]
-          )
-        )
-      end
-    end
-  end
 end
