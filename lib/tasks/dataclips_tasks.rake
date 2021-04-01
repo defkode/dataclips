@@ -2,7 +2,7 @@ namespace :dataclips do
   desc "HealthCheck"
   task health_check: :environment do
     Dataclips::Insight.pluck(:clip_id).uniq.sort.each do |clip_id|
-      puts "#{clip_id}/query.sql ... NOT FOUND" unless Dataclips.available.include?(clip_id)
+      puts "#{clip_id}/query.sql ... NOT FOUND" unless Dataclips::Query.all.include?(clip_id)
     end
   end
 

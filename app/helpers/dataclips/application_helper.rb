@@ -52,21 +52,21 @@ module Dataclips::ApplicationHelper
   end
 
   def load_custom_dataclips_formatters(insight)
-    formatters_path = "#{Rails.root}/app/dataclips/#{insight.clip_id}/formatters.js"
+    formatters_path = File.join(Dataclips::Engine.config.path, insight.clip_id, "formatters.js")
     if File.exists?(formatters_path)
       File.read(formatters_path)
     end
   end
 
   def load_custom_dataclips_options(insight)
-    options_path = "#{Rails.root}/app/dataclips/#{insight.clip_id}/options.js"
+    options_path = File.join(Dataclips::Engine.config.path, insight.clip_id, "options.js")
     if File.exists?(options_path)
       File.read(options_path)
     end
   end
 
   def load_dataclip_insight_schema(insight)
-    file = File.read "#{Rails.root}/app/dataclips/#{insight.clip_id}/schema.json"
+    file = File.read File.join(Dataclips::Engine.config.path, insight.clip_id, "schema.json")
     schema = JSON.parse(file)
     locale = I18n.locale
 
