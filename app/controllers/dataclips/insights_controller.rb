@@ -12,10 +12,7 @@ module Dataclips
         format.json do
           @insight.touch(:last_viewed_at)
 
-          template  = File.read("#{Rails.root}/app/dataclips/#{@insight.clip_id}/query.sql")
-          clip      = PgClip::Query.new(template)
-          sql       = clip.query(@insight.params)
-
+          sql = Dataclips::QueryTemplate.new(@insight.clip_id).to_sql(@insight.params)
           paginator = PgClip::Paginator.new(sql, ActiveRecord::Base.connection)
 
           if per_page = @insight.per_page
