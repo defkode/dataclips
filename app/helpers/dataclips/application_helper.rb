@@ -14,12 +14,13 @@ module Dataclips::ApplicationHelper
     formatters = load_custom_dataclips_formatters(insight) || {}
     options    = load_custom_dataclips_options(insight) || {}
 
-    "<div class='insight' id='#{dom_id(insight)}'></div>
-    <script>
-      new Dataclips(#{config}, #{formatters}, #{options}).init(function(insight){
-        #{capture(&block) if block_given?}
-      });
-    </script>".html_safe
+
+    tag.div(class: 'insight', id: dom_id(insight)) +
+    javascript_tag do
+      "
+        Dataclips.insight(#{config}, #{formatters}, #{options});
+      ".html_safe
+    end
   end
 
   private

@@ -1,11 +1,12 @@
-const path = require('path');
-const webpack = require('webpack');
+const path = require("path");
+const webpack = require("webpack");
 
 module.exports = {
-  entry: [path.resolve(__dirname, 'src', 'index.js')],
+  entry: [path.resolve(__dirname, "src", "index.js")],
   output: {
-    filename: 'dataclips-bundle.js',
-    path: path.resolve(__dirname, './dist')
+    path: path.resolve(__dirname, "dist"),
+    filename: "dataclips-bundle.js",
+    library: "Dataclips",
   },
   module: {
     rules: [
@@ -13,10 +14,10 @@ module.exports = {
         test: /\.js$/,
         use: [
           {
-            loader: 'babel-loader'
+            loader: "babel-loader",
           },
-        ]
-      }
-    ]
-  }
+        ],
+      },
+    ],
+  },
 };
