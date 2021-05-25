@@ -1,11 +1,10 @@
 module Dataclips
   class Insight < ActiveRecord::Base
-    class FileNotFound < ArgumentError; end
-
     validates :clip_id,   presence: true
     validates :hash_id,   presence: true, uniqueness: true
     validates :checksum,  presence: true, uniqueness: true
     validates :time_zone, presence: true
+    validates :name,      presence: true
     validates :per_page,  numericality: {greater_than: 0, less_than_or_equal_to: 50_000}, allow_nil: true
 
     before_validation :set_checksum
@@ -14,13 +13,10 @@ module Dataclips
       hash_id
     end
 
-    def name
-      read_attribute(:name) || clip_id
-    end
-
     def self.get!(clip_id, params = {}, options = {})
       options.stringify_keys!
       params.stringify_keys!
+      
       time_zone  = options['time_zone'] || Rails.configuration.time_zone
       per_page   = options['per_page']
       connection = options['connection']

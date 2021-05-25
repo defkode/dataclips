@@ -1,75 +1,26 @@
 module Dataclips::ApplicationHelper
-  # visual options:  limit
-  def find_and_display_insight(clip_id, params = {}, options = {}, &block)
-    options.stringify_keys!
-    params.stringify_keys!
-
-    # insight options: time_zone, per_page, connection, schema
-    insight = Dataclips::Insight.get!(clip_id, params, options.slice('time_zone', 'per_page', 'connection', 'schema'))
-    display_insight(insight, options, &block)
-  end
-
-  def display_insight(insight, options = {}, &block)
-    config     = dataclips_insight_config(insight, options).to_json
-    formatters = load_custom_dataclips_formatters(insight) || {}
-    options    = load_custom_dataclips_options(insight) || {}
-
-
-    tag.div(class: 'insight', id: dom_id(insight)) +
-    javascript_tag do
-      "
-        Dataclips.insight(#{config}, #{formatters}, #{options});
-      ".html_safe
-    end
-  end
-
-  private
-
-  def dataclips_insight_config(insight, options = {})
+  # insight stores clip_id, query params, and fetch options (per_page, connection)
+  def display_insight(insight, options = {})
     options.stringify_keys!
 
-    remember_schema_config = options.fetch('remember_schema_config', true)
-    disable_seconds = options.fetch('disable_seconds', false)
-    selectable = options.fetch('selectable', false)
+    clip_id = insight.clip_id
 
-    schema = load_dataclip_insight_schema(insight)
-    if remember_schema_config
-      schema_md5 = Digest::MD5.hexdigest(Marshal.dump(schema.to_json))
-      identifier = "#{insight.clip_id}-#{schema_md5}"
-    end
+    schema_file     = read_insight_config_file("schema.json", clip_id)
+    formatters_file = read_insight_config_file("formatters.js", clip_id)
+    filters_file    = read_insight_config_file("filters.json", clip_id)
 
-    {
-      url: dataclips.data_insight_path(insight),
-      identifier: identifier,
-      dom_id: dom_id(insight),
-      per_page: insight.per_page,
-      schema: schema,
+    display_options = {
       name: insight.name,
-      limit: options['limit'],
       time_zone: insight.time_zone,
-      disable_seconds: disable_seconds,
-      selectable: selectable
-    }.compact
-  end
+      disable_seconds: options.fetch('disable_seconds', false)
+    }
 
-  def load_custom_dataclips_formatters(insight)
-    formatters_path = File.join(Dataclips::Engine.config.path, insight.clip_id, "formatters.js")
-    if File.exists?(formatters_path)
-      File.read(formatters_path)
+    # allow caching user config (like column visibility, regardless of changing params like date, user_id etc)
+    if options.fetch('cache_user_config', true)
+      display_options[:cache_id] = [insight.clip_id, Digest::MD5.hexdigest(schema_file)].join("-") # invalidate cache when schema is changed
     end
-  end
 
-  def load_custom_dataclips_options(insight)
-    options_path = File.join(Dataclips::Engine.config.path, insight.clip_id, "options.js")
-    if File.exists?(options_path)
-      File.read(options_path)
-    end
-  end
-
-  def load_dataclip_insight_schema(insight)
-    file = File.read File.join(Dataclips::Engine.config.path, insight.clip_id, "schema.json")
-    schema = JSON.parse(file)
-    locale = I18n.locale
+    schema = JSON.parse(schema_file)
 
     schema.keys.each do |key|
       translation_path = "dataclips.#{insight.clip_id.gsub('/', '.')}.schema.#{key}"
@@ -88,6 +39,28 @@ module Dataclips::ApplicationHelper
         end
       end
     end
-    schema
+
+    filters = JSON.parse(filters_file)
+
+    tag.div(class: 'insight', id: dom_id(insight)) +
+    javascript_tag do
+      "
+        const insight = Dataclips.insight('#{dom_id(insight)}',
+          #{schema.to_json},
+          '#{dataclips.data_insight_path(insight)}',
+          #{formatters_file},
+          #{display_options.to_json},
+          #{filters.to_json}
+        );
+        insight.fetch();
+      ".html_safe
+    end
+  end
+
+  private
+
+  def read_insight_config_file(filename, clip_id)
+    config_file_path = File.join(Dataclips::Engine.config.path, clip_id, filename)
+    File.read(config_file_path) if File.exists?(config_file_path)
   end
 end

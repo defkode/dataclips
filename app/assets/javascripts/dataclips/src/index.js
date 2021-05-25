@@ -3,6 +3,7 @@ import Promise from "promise-polyfill";
 
 import downloadCSV from "./download-csv";
 import downloadXLSX from "./download-xlsx";
+import fetchDataInBatches from "./fetch-in-batches";
 
 // To add to window
 if (!window.Promise) {
@@ -10,178 +11,125 @@ if (!window.Promise) {
 }
 
 class Insight {
-  constructor(config) {
-    let schema = Object.assign({}, config.schema);
+  constructor(domId, schema, url, formatters, displayOptions, filters) {
     // dom_id
-    const container = document.getElementById(config.dom_id);
+    const container = document.getElementById(domId);
 
-    if (container) {
-    } else {
-      throw `element: ${config.dom_id} not found`;
+    // UI: used in suggestedFilename
+    const name = displayOptions.name;
+
+    // UI: used for time formatting (default: browser's time_zone)
+    const time_zone = displayOptions.time_zone;
+
+    // used for remembering configuration between page reloads (i.e: visible columns) - saved in localStorage
+    const cache_id = displayOptions.cache_id;
+
+    // UI: limit - how many rows should be displayed?
+    // TODO: autoscaling for fullpage view
+    const limit = displayOptions.limit || 20;
+
+    // UI: hide seconds - used in time formatters
+    const disable_seconds = displayOptions.disable_seconds;
+
+    if (Object.keys(formatters).length) {
+      Object.keys(schema).forEach((key) => {
+        const formatter = schema[key]["formatter"];
+        if (formatter) {
+          if (formatters.formatters[formatter]) {
+            schema[key]["formatter"] = formatters.formatters[formatter];
+          } else {
+            delete schema[key]["formatter"];
+          }
+        }
+      });
     }
 
-    // if (Object.keys(customFormatters).length) {
-    //   Object.keys(config.schema).forEach((key) => {
-    //     const formatter = config.schema[key]["formatter"];
-    //     if (formatter) {
-    //       if (customFormatters.formatters[formatter]) {
-    //         schema[key]["formatter"] = customFormatters.formatters[formatter];
-    //       } else {
-    //         delete schema[key]["formatter"];
-    //       }
-    //     }
-    //   });
-    // }
-    //
-    // const filters = {};
-    //
-    // if (Object.keys(customOptions).length) {
-    //   this.default_filter = customOptions.default_filter;
-    //   this.rowActions = customOptions.rowActions;
-    //
-    //   if (customOptions.filters) {
-    //     Object.keys(customOptions.filters).forEach((filterName) => {
-    //       filters[filterName] = {};
-    //       Object.keys(customOptions.filters[filterName]).forEach((key) => {
-    //         filters[filterName][key] = {
-    //           value: customOptions.filters[filterName][key],
-    //         };
-    //       });
-    //     });
-    //   }
-    // }
+    let searchPresets = {};
+
+    if (Object.keys(filters).length) {
+      // this.default_filter = customOptions.default_filter;
+
+      Object.keys(filters).forEach((filterName) => {
+        searchPresets[filterName] = {};
+        Object.keys(filters[filterName]).forEach((key) => {
+          searchPresets[filterName][key] = {
+            value: filters[filterName][key],
+          };
+        });
+      });
+    }
+
+    this.reactable = Reactable.init({
+      container: container,
+      schema: schema,
+      identifier: cache_id,
+      searchPresets: searchPresets,
+      limit: limit,
+      controls: {
+        xlsx: {
+          onClick: (e) => {
+            e.stopPropagation();
+
+            const button = e.target;
+            const suggestedFilename = `${name}.xlsx`;
+
+            const filename = prompt("filename", suggestedFilename);
+            if (filename !== null) {
+              button.disabled = true;
+              const data = reactable.getFilteredData();
+              downloadXLSX(data, schema, filename).then(() => {
+                button.disabled = false;
+              });
+            }
+          },
+          className: "r-icon-file-excel",
+          key: "xlsx",
+          label: "XLSX",
+        },
+        csv: {
+          onClick: (e) => {
+            e.stopPropagation();
+
+            const button = e.target;
+            const suggestedFilename = `${name}.csv`;
+
+            const filename = prompt("filename", suggestedFilename);
+
+            if (filename !== null) {
+              button.disabled = true;
+              const data = reactable.getFilteredData();
+              downloadCSV(data, schema, filename).then(() => {
+                button.disabled = false;
+              });
+            }
+          },
+          className: "r-icon-doc-text",
+          key: "csv",
+          label: "CSV",
+        },
+        refresh: {
+          onClick: (e) => {
+            e.stopPropagation();
+            reactable.clearData();
+            // fetch.apply(this);
+          },
+          className: "r-icon-arrows-cw",
+          key: "refresh",
+          label: "Refresh",
+        },
+      },
+    });
+
+    this.reactable.render();
 
     this.schema = schema;
-    this.identifier = config.identifier;
-    this.per_page = config.per_page;
-    this.url = config.url;
-    this.name = config.name;
-    this.time_zone = config.time_zone;
-    this.filters = filters;
-    this.disable_seconds = config.disable_seconds;
-    this.selectable = config.selectable;
 
-    if (config.limit) {
-      this.limit = config.limit;
-    } else {
-      const availableHeight = window.innerHeight - this.container.offsetTop;
-      this.limit = Math.max(parseInt(availableHeight / 30) - 2, 20);
-    }
-  }
-
-  // init(fn) {
-  //   const {
-  //     container,
-  //     name,
-  //     schema,
-  //     identifier,
-  //     per_page,
-  //     limit,
-  //     time_zone,
-  //     url,
-  //     fetchDataInBatches,
-  //     filters,
-  //     default_filter,
-  //     rowActions,
-  //     fetch,
-  //     disable_seconds,
-  //     selectable,
-  //   } = this;
-  //
-  //   const reactable = Reactable.init({
-  //     container: container,
-  //     schema: schema,
-  //     identifier: identifier,
-  //     limit: limit,
-  //     searchPresets: filters,
-  //     actions: rowActions,
-  //     displayTimeZone: time_zone,
-  //     defaultSearchPreset: default_filter,
-  //     itemsChange: (items) => {
-  //       this.onChange(items);
-  //     },
-  //     disableSeconds: disable_seconds,
-  //     selectable: selectable,
-  //     controls: {
-  //       xlsx: {
-  //         onClick: (e) => {
-  //           e.stopPropagation();
-  //
-  //           const button = e.target;
-  //           const suggestedFilename = `${name}.xlsx`;
-  //
-  //           const filename = prompt("filename", suggestedFilename);
-  //           if (filename !== null) {
-  //             button.disabled = true;
-  //             const data = reactable.getFilteredData();
-  //             downloadXLSX(data, schema, filename).then(() => {
-  //               button.disabled = false;
-  //             });
-  //           }
-  //         },
-  //         className: "r-icon-file-excel",
-  //         key: "xlsx",
-  //         label: "XLSX",
-  //       },
-  //       csv: {
-  //         onClick: (e) => {
-  //           e.stopPropagation();
-  //
-  //           const button = e.target;
-  //           const suggestedFilename = `${name}.csv`;
-  //
-  //           const filename = prompt("filename", suggestedFilename);
-  //
-  //           if (filename !== null) {
-  //             button.disabled = true;
-  //             const data = reactable.getFilteredData();
-  //             downloadCSV(data, schema, filename).then(() => {
-  //               button.disabled = false;
-  //             });
-  //           }
-  //         },
-  //         className: "r-icon-doc-text",
-  //         key: "csv",
-  //         label: "CSV",
-  //       },
-  //       refresh: {
-  //         onClick: (e) => {
-  //           e.stopPropagation();
-  //           reactable.clearData();
-  //           fetch.apply(this);
-  //         },
-  //         className: "r-icon-arrows-cw",
-  //         key: "refresh",
-  //         label: "Refresh",
-  //       },
-  //     },
-  //   });
-  //
-  //   reactable.render();
-  //
-  //   this.reactable = reactable;
-  //
-  //   if (default_filter) {
-  //     reactable.applySearchPreset(default_filter);
-  //   }
-  //
-  //   this.fetch();
-  //   fn(this);
-  }
-
-  onChange() {} // implement me
-
-  refresh() {
-    this.reactable.clearData();
-    this.fetch();
-  }
-
-  getSelected() {
-    return this.reactable.getSelectedData();
+    this.url = url;
   }
 
   fetch() {
-    const { url, schema, reactable, fetchDataInBatches } = this;
+    const { schema, reactable, url } = this;
+
     const processBatch = (result) => {
       const { data, currentPage, total_count, total_pages } = result;
 
@@ -193,71 +141,22 @@ class Insight {
 
     fetchDataInBatches(1, url, schema).then(processBatch);
   }
-
-  fetchDataInBatches(page = 1, url, schema) {
-    const ISO8601 = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?(([+-]\d\d:\d\d)|Z)?$/i;
-
-    return fetch(url + "?page=" + page)
-      .then(function (response) {
-        return response.json();
-      })
-      .then(function (data) {
-        if (data.length) {
-          const records = data.map(function (i) {
-            const parsedRecord = JSON.parse(i.record);
-            let record = {};
-
-            Object.entries(schema).forEach(([schemaKey, options]) => {
-              const recordValue = parsedRecord[schemaKey];
-              if (recordValue !== undefined) {
-                if (options.type === "datetime" && recordValue !== null) {
-                  if (ISO8601.test(recordValue)) {
-                    const matches = recordValue.match(ISO8601);
-                    const tz = matches[2];
-                    if (tz) {
-                      record[schemaKey] = recordValue;
-                    } else {
-                      // console.warn(`Dataclips: attribute '${schemaKey}' has no TZ information, assuming UTC`)
-                      record[schemaKey] = `${recordValue}Z`; // UTC
-                    }
-                  } else {
-                    throw new TypeError(
-                      `Dataclips: ensure attribute '${schemaKey}' is valid ISO8601.`
-                    );
-                  }
-                } else {
-                  record[schemaKey] = recordValue;
-                }
-              } else {
-                throw new TypeError(
-                  `Dataclips: attribute '${schemaKey}' is undefined. Please verify schema.`
-                );
-              }
-            });
-            return record;
-          });
-
-          return {
-            data: records,
-            currentPage: data[0].page,
-            total_count: data[0].total_count,
-            total_pages: data[0].total_pages,
-          };
-        } else {
-          return {
-            data: [],
-            currentPage: page,
-            total_count: data.length,
-            total_pages: page,
-          };
-        }
-      });
-  }
 }
 
-export function insight(config, formatters, options) {
-  const insight = new Insight(config);
-  // insight.setFormatters(formatters);
-  // insight.setOptions(options);
-  insight.init();
+export function insight(
+  dom_id,
+  schema,
+  fetchOptions,
+  formatters,
+  displayOptions,
+  filters
+) {
+  return new Insight(
+    dom_id,
+    schema,
+    fetchOptions,
+    formatters,
+    displayOptions,
+    filters
+  );
 }
