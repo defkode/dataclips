@@ -1,9 +1,8 @@
 import "whatwg-fetch";
 import Promise from "promise-polyfill";
 
-import downloadCSV from "./download-csv";
-import downloadXLSX from "./download-xlsx";
 import fetchDataInBatches from "./fetch-in-batches";
+import controls from "./controls";
 
 // To add to window
 if (!window.Promise) {
@@ -26,7 +25,7 @@ class Insight {
 
     // UI: limit - how many rows should be displayed?
     // TODO: autoscaling for fullpage view
-    const limit = displayOptions.limit || 20;
+    const limit = displayOptions.limit || 25;
 
     // UI: hide seconds - used in time formatters
     const disable_seconds = displayOptions.disable_seconds;
@@ -47,8 +46,6 @@ class Insight {
     let searchPresets = {};
 
     if (Object.keys(filters).length) {
-      // this.default_filter = customOptions.default_filter;
-
       Object.keys(filters).forEach((filterName) => {
         searchPresets[filterName] = {};
         Object.keys(filters[filterName]).forEach((key) => {
@@ -59,72 +56,23 @@ class Insight {
       });
     }
 
+    controls.bind(this);
+
     this.reactable = Reactable.init({
       container: container,
       schema: schema,
       identifier: cache_id,
       searchPresets: searchPresets,
+      defaultSearchPreset: displayOptions.default_filter,
       limit: limit,
-      controls: {
-        xlsx: {
-          onClick: (e) => {
-            e.stopPropagation();
-
-            const button = e.target;
-            const suggestedFilename = `${name}.xlsx`;
-
-            const filename = prompt("filename", suggestedFilename);
-            if (filename !== null) {
-              button.disabled = true;
-              const data = reactable.getFilteredData();
-              downloadXLSX(data, schema, filename).then(() => {
-                button.disabled = false;
-              });
-            }
-          },
-          className: "r-icon-file-excel",
-          key: "xlsx",
-          label: "XLSX",
-        },
-        csv: {
-          onClick: (e) => {
-            e.stopPropagation();
-
-            const button = e.target;
-            const suggestedFilename = `${name}.csv`;
-
-            const filename = prompt("filename", suggestedFilename);
-
-            if (filename !== null) {
-              button.disabled = true;
-              const data = reactable.getFilteredData();
-              downloadCSV(data, schema, filename).then(() => {
-                button.disabled = false;
-              });
-            }
-          },
-          className: "r-icon-doc-text",
-          key: "csv",
-          label: "CSV",
-        },
-        refresh: {
-          onClick: (e) => {
-            e.stopPropagation();
-            reactable.clearData();
-            // fetch.apply(this);
-          },
-          className: "r-icon-arrows-cw",
-          key: "refresh",
-          label: "Refresh",
-        },
-      },
+      controls: controls({ csv: true, xlsx: true, refresh: true }, this),
     });
 
-    this.reactable.render();
-
     this.schema = schema;
-
     this.url = url;
+    this.name = name;
+
+    this.reactable.render();
   }
 
   fetch() {

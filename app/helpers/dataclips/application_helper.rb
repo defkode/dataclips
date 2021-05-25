@@ -12,8 +12,9 @@ module Dataclips::ApplicationHelper
     display_options = {
       name: insight.name,
       time_zone: insight.time_zone,
-      disable_seconds: options.fetch('disable_seconds', false)
-    }
+      disable_seconds: options.fetch('disable_seconds', false),
+      default_filter: options['default_filter'].presence
+    }.compact
 
     # allow caching user config (like column visibility, regardless of changing params like date, user_id etc)
     if options.fetch('cache_user_config', true)
