@@ -73,7 +73,7 @@ export default class Dataclips {
   }
 
   getSelected() {
-    return this.reactable.getSelectedData()
+    return this.reactable.getSelectedData();
   }
 
   fetch() {
@@ -169,9 +169,7 @@ export default class Dataclips {
 
     const sheet = workbook.createWorksheet();
 
-    const headers = Object.values(schema).map(function (value) {
-      return value.label;
-    });
+    const headers = Object.values(schema).map((value) => value.label);
 
     const rows = [];
 
@@ -181,7 +179,9 @@ export default class Dataclips {
     const dayMs = 60 * 60 * 24 * 1000;
 
     data.forEach((item) => {
-      const row = Object.entries(item).map(([key, value]) => {
+      const row = Object.keys(schema).map((key) => {
+        const value = item[key];
+
         if (value !== null) {
           const type = schema[key].type;
 
@@ -245,16 +245,15 @@ export default class Dataclips {
     let lines = [];
 
     const headerRow = Object.values(schema)
-      .map(function (value) {
-        return `"${value.label}"`;
-      })
+      .map((value) => `"${value.label}"`)
       .join(columnDelimiter);
 
     lines.push(headerRow);
 
-    data.forEach(function (item) {
-      const row = Object.entries(item)
-        .map(([key, value]) => {
+    data.forEach((item) => {
+      const row = Object.keys(schema)
+        .map((key) => {
+          const value = item[key];
           if (value !== null) {
             const type = schema[key].type;
 
@@ -277,7 +276,7 @@ export default class Dataclips {
             return null;
           }
         })
-        .map(function (fieldValue) {
+        .map((fieldValue) => {
           if (fieldValue !== null) {
             return `"${fieldValue}"`;
           } else {
@@ -291,7 +290,7 @@ export default class Dataclips {
 
     const result = lines.join("\n");
 
-    return new Promise(function (resolve, reject) {
+    return new Promise((resolve, reject) => {
       var blob = new Blob([result], { type: "text/csv;charset=utf-8" });
       saveAs(blob, filename);
       resolve();
@@ -345,9 +344,11 @@ export default class Dataclips {
             if (filename !== null) {
               button.disabled = true;
               const data = reactable.getFilteredData();
-              downloadXLSX(data, schema, filename).then(() => {
-                button.disabled = false;
-              });
+              downloadXLSX(data, reactable.getFilteredSchema(), filename).then(
+                () => {
+                  button.disabled = false;
+                }
+              );
             }
           },
           className: "r-icon-file-excel",
@@ -366,9 +367,11 @@ export default class Dataclips {
             if (filename !== null) {
               button.disabled = true;
               const data = reactable.getFilteredData();
-              downloadCSV(data, schema, filename).then(() => {
-                button.disabled = false;
-              });
+              downloadCSV(data, reactable.getFilteredSchema(), filename).then(
+                () => {
+                  button.disabled = false;
+                }
+              );
             }
           },
           className: "r-icon-doc-text",
